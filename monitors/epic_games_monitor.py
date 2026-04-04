@@ -153,6 +153,8 @@ class EpicGamesMonitor(BaseMonitor):
         if image_url:
             embed.set_image(url=image_url)
             
+        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
+            
         # Add Fields
         if original_price and original_price != "0" and original_price != "N/A":
             embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
@@ -271,6 +273,8 @@ class EpicGamesMonitor(BaseMonitor):
         )
         if image_url:
             embed.set_image(url=image_url)
+            
+        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
             
         # Add Fields
         if original_price and original_price != "0" and original_price != "N/A":
