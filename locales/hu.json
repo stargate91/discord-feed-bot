@@ -1,0 +1,14 @@
+{
+    "new_video_alert": "Új videó érkezett!",
+    "new_stream_alert": "Új stream indult!",
+    "new_tiktok_alert": "Új TikTok videó érkezett!",
+    "new_instagram_alert": "Új Instagram poszt érkezett!",
+    "new_rss_alert": "Új bejegyzés érkezett!",
+    "new_free_game_alert": "Új ingyenes játék érkezett!",
+    "upcoming_free_game_alert": "Közelgő ingyenes játék:",
+    "new_steam_free_alert": "Ingyenes Steam loot érkezett!",
+    "new_gog_free_alert": "Ingyenes GOG játék érkezett!",
+    "view_on_platform": "Megtekintés itt",
+    "monitor_started": "Figyelés elindítva: {name}",
+    "error_occurred": "Hiba történt a(z) {name} ellenőrzése közben."
+}

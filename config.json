@@ -1,0 +1,64 @@
+{
+    "language": "hu",
+    "database_path": "data/feed_bot.db",
+    "refresh_interval_minutes": 10,
+    "monitors": [
+        {
+            "type": "youtube",
+            "name": "Example YouTube Channel",
+            "channel_id": "UC_x5XG1OV2P6uYZ5gzMCURQ",
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": true
+        },
+        {
+            "type": "tiktok",
+            "name": "Example TikTok User",
+            "username": "tiktok",
+            "instance_url": "https://proxitok.pabloferreiro.es",
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        },
+        {
+            "type": "instagram",
+            "name": "Example Instagram Profile",
+            "username": "instagram",
+            "rss_url": "https://rss.app/feeds/example_feed_id.xml",
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        },
+        {
+            "type": "rss",
+            "name": "Generic RSS Feed",
+            "rss_url": "https://example.com/feed.xml",
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        },
+        {
+            "type": "epic_games",
+            "name": "Epic Games Free Loot",
+            "include_upcoming": true,
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        },
+        {
+            "type": "steam_free",
+            "name": "Steam Free Loot",
+            "include_dlc": false,
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        },
+        {
+            "type": "gog_free",
+            "name": "GOG Free Loot",
+            "discord_channel_id": 0,
+            "ping_role_id": 0,
+            "enabled": false
+        }
+    ]
+}

@@ -1,0 +1,74 @@
+import feedparser
+import discord
+from core.base_monitor import BaseMonitor
+from logger import log
+
+class YouTubeMonitor(BaseMonitor):
+    def __init__(self, bot, config, db, language_data):
+        super().__init__(bot, config, db)
+        self.channel_id = config.get("channel_id")
+        self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
+        self.lang = language_data
+        self.is_first_run = True
+
+    async def check_for_updates(self):
+        """Fetch YouTube RSS feed and look for new videos."""
+        if not self.channel_id:
+            log.warning(f"No channel ID for YouTube monitor: {self.name}")
+            return
+
+        # Fetch the feed
+        feed = feedparser.parse(self.feed_url)
+        
+        if not hasattr(feed, 'entries'):
+            log.debug(f"Could not fetch feed entries for {self.name}")
+            return
+
+        # Process entries in reverse chronological order (oldest first)
+        new_entries = []
+        for entry in reversed(feed.entries):
+            # Extract video ID
+            video_id = entry.get("yt_videoid")
+            if not video_id:
+                # Fallback extraction from id tag
+                video_id = entry.get("id", "").split(":")[-1]
+            
+            if not video_id:
+                continue
+
+            if not await self.db.is_published(video_id, "youtube"):
+                if self.is_first_run:
+                    # On first run, we just mark existing videos as published without sending alerts
+                    log.debug(f"Seeding database with existing video: {video_id}")
+                    await self.db.mark_as_published(video_id, "youtube", self.feed_url)
+                else:
+                    new_entries.append(entry)
+                    log.info(f"New YouTube video detected: {entry.get('title', 'Unknown')} ({video_id})")
+
+        # Send updates for new entries
+        for entry in new_entries:
+            video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+            video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
+            video_title = entry.get("title", "New Video")
+            author_name = entry.get("summary_detail", {}).get("author", self.name)
+            
+            embed = discord.Embed(
+                title=video_title,
+                url=video_link,
+                color=0xFF0000 # YouTube Red
+            )
+            embed.set_author(name=author_name)
+            
+            # Thumbnail handling (YouTube RSS usually has media_thumbnail)
+            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+                embed.set_image(url=entry.media_thumbnail[0]["url"])
+
+            alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
+            ping = f"{self.ping_role} " if self.ping_role else ""
+            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed)
+            await self.db.mark_as_published(video_id, "youtube", self.feed_url)
+
+        # After the first successful check, mark as not first run
+        if self.is_first_run:
+            log.info(f"Initial seed completed for {self.name}. Monitoring active for next updates.")
+            self.is_first_run = False

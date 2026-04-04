@@ -1,0 +1,14 @@
+{
+    "new_video_alert": "New video published!",
+    "new_stream_alert": "New stream started!",
+    "new_tiktok_alert": "New TikTok video published!",
+    "new_instagram_alert": "New Instagram post published!",
+    "new_rss_alert": "New post published!",
+    "new_free_game_alert": "New free game available!",
+    "upcoming_free_game_alert": "Upcoming free game:",
+    "new_steam_free_alert": "Free Steam loot available!",
+    "new_gog_free_alert": "Free GOG game available!",
+    "view_on_platform": "View on platform",
+    "monitor_started": "Monitoring started: {name}",
+    "error_occurred": "An error occurred checking {name}."
+}
