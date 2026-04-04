@@ -2,7 +2,6 @@ import asyncio
 import discord
 import json
 import os
-import sys
 from logger import log, setup_logging
 from config_loader import load_config
 from database import Database
@@ -87,6 +86,17 @@ class FeedBot(discord.Client):
         log.info(f"Identity: {self.user} (ID: {self.user.id})")
         log.info(f"------------------------")
 
+        # Set Rich Presence
+        monitor_count = len(self.monitor_manager.monitors) if self.monitor_manager else 0
+        presence_text = self.language_data.get("watching_feeds", "Watching {count} feed(s)")
+        presence_text = presence_text.replace("{count}", str(monitor_count))
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name=presence_text
+        )
+        await self.change_presence(activity=activity, status=discord.Status.online)
+        log.info(f"Rich Presence set: {presence_text}")
+
 async def main():
     # Setup logging first
     setup_logging()
@@ -117,6 +127,7 @@ async def main():
     except Exception as e:
         log.critical(f"Critical error during startup: {e}", exc_info=True)
     finally:
+        await db.close()
         log.info("Feed Bot closed.")
 
 if __name__ == "__main__":

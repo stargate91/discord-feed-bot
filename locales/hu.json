@@ -10,5 +10,16 @@
     "new_gog_free_alert": "Ingyenes GOG játék érkezett!",
     "view_on_platform": "Megtekintés itt",
     "monitor_started": "Figyelés elindítva: {name}",
-    "error_occurred": "Hiba történt a(z) {name} ellenőrzése közben."
+    "error_occurred": "Hiba történt a(z) {name} ellenőrzése közben.",
+    "watching_feeds": "{count} feed figyelése",
+    "field_worth": "Érték",
+    "field_type": "Típus",
+    "field_expiry": "Lejárat",
+    "btn_view_youtube": "Megtekintés YouTube-on",
+    "btn_view_tiktok": "Megtekintés TikTok-on",
+    "btn_view_instagram": "Megtekintés Instagramon",
+    "btn_read_more": "Tovább a bejegyzéshez",
+    "btn_get_game": "Játék beszerzése",
+    "btn_view_steam": "Megtekintés Steamen",
+    "btn_view_gog": "Megtekintés GOG-on"
 }

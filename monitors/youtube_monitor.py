@@ -17,8 +17,10 @@ class YouTubeMonitor(BaseMonitor):
             log.warning(f"No channel ID for YouTube monitor: {self.name}")
             return
 
-        # Fetch the feed
-        feed = feedparser.parse(self.feed_url)
+        # Fetch the feed as a blocking operation in an executor
+        import asyncio
+        loop = asyncio.get_event_loop()
+        feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         
         if not hasattr(feed, 'entries'):
             log.debug(f"Could not fetch feed entries for {self.name}")
@@ -50,7 +52,7 @@ class YouTubeMonitor(BaseMonitor):
             video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
             video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
             video_title = entry.get("title", "New Video")
-            author_name = entry.get("summary_detail", {}).get("author", self.name)
+            author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
             
             embed = discord.Embed(
                 title=video_title,
@@ -65,7 +67,13 @@ class YouTubeMonitor(BaseMonitor):
 
             alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
             ping = f"{self.ping_role} " if self.ping_role else ""
-            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed)
+            
+            # Create interactive button
+            view = discord.ui.View()
+            btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
+            view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+            
+            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed, view=view)
             await self.db.mark_as_published(video_id, "youtube", self.feed_url)
 
         # After the first successful check, mark as not first run

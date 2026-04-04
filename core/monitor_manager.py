@@ -26,6 +26,9 @@ class MonitorManager:
         self.is_running = True
         log.info(f"Starting monitor loop (Interval: {self.refresh_interval // 60}m)")
         
+        # Wait for the bot to be ready before the first check
+        await self.bot.wait_until_ready()
+        
         while self.is_running and not self.bot.is_closed():
             for monitor in self.monitors:
                 try:

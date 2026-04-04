@@ -1,5 +1,7 @@
 import feedparser
 import discord
+import re
+import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
 
@@ -18,9 +20,10 @@ class TikTokMonitor(BaseMonitor):
             log.warning(f"No username for TikTok monitor: {self.name}")
             return
 
-        # Fetch the feed
+        # Fetch the feed as a blocking operation in an executor
         try:
-            feed = feedparser.parse(self.feed_url)
+            loop = asyncio.get_event_loop()
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Failed to fetch TikTok feed for {self.name}: {e}")
             return
@@ -65,14 +68,19 @@ class TikTokMonitor(BaseMonitor):
                 embed.set_image(url=entry.media_thumbnail[0]["url"])
             elif 'description' in entry:
                 # Attempt to find an image in description if possible (ProxiTok sometimes does this)
-                import re
                 img_match = re.search(r'<img src="([^"]+)"', entry.description)
                 if img_match:
                     embed.set_image(url=img_match.group(1))
 
             alert_text = self.lang.get("new_tiktok_alert", "Új TikTok érkezett!")
             ping = f"{self.ping_role} " if self.ping_role else ""
-            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed)
+
+            # Create interactive button
+            view = discord.ui.View()
+            btn_label = self.lang.get("btn_view_tiktok", "Watch on TikTok")
+            view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+
+            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed, view=view)
             await self.db.mark_as_published(video_id, "tiktok", self.feed_url)
 
         # After the first successful check, mark as not first run

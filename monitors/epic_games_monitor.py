@@ -74,6 +74,9 @@ class EpicGamesMonitor(BaseMonitor):
                 if price.get("discountPrice") != 0:
                     is_active = False # Not actually free right now
 
+            if not is_active and not is_upcoming:
+                continue
+
             status_type = "active" if is_active else "upcoming"
             # Unique ID for DB (combine game_id and status to allow notifying both when upcoming and when active)
             db_id = f"{game_id}_{status_type}"
@@ -126,5 +129,11 @@ class EpicGamesMonitor(BaseMonitor):
         embed.set_footer(text="Epic Games Store")
         
         ping = f"{self.ping_role} " if self.ping_role else ""
-        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed)
+        
+        # Create interactive button
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_get_game", "Get Game")
+        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+        
+        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
         log.info(f"Sent Epic Games notification for: {title} ({'active' if is_active else 'upcoming'})")

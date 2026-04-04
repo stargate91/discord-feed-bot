@@ -107,7 +107,13 @@ class GOGFreeMonitor(BaseMonitor):
 
         alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
         ping = f"{self.ping_role} " if self.ping_role else ""
-        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed)
+        
+        # Create interactive button
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
+        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+        
+        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
         log.info(f"Sent GOG catalog notification for: {title}")
 
     async def _send_gamerpower_notification(self, game):
@@ -128,12 +134,18 @@ class GOGFreeMonitor(BaseMonitor):
         if image_url:
             embed.set_image(url=image_url)
         if worth and worth != "N/A":
-            embed.add_field(name="💰 Érték", value=worth, inline=True)
+            embed.add_field(name=f"💰 {self.lang.get('field_worth', 'Érték')}", value=worth, inline=True)
         if end_date and end_date != "N/A":
-            embed.add_field(name="⏰ Lejárat", value=end_date, inline=True)
-        embed.set_footer(text="GOG.com • GamerPower")
+            embed.add_field(name=f"⏰ {self.lang.get('field_expiry', 'Lejárat')}", value=end_date, inline=True)
+        embed.set_footer(text="Gog.com • GamerPower")
 
         alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
         ping = f"{self.ping_role} " if self.ping_role else ""
-        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed)
+
+        # Create interactive button
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
+        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+
+        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
         log.info(f"Sent GOG GamerPower notification for: {title}")

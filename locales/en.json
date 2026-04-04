@@ -10,5 +10,16 @@
     "new_gog_free_alert": "Free GOG game available!",
     "view_on_platform": "View on platform",
     "monitor_started": "Monitoring started: {name}",
-    "error_occurred": "An error occurred checking {name}."
+    "error_occurred": "An error occurred checking {name}.",
+    "watching_feeds": "Watching {count} feed(s)",
+    "field_worth": "Worth",
+    "field_type": "Type",
+    "field_expiry": "Expiry",
+    "btn_view_youtube": "Watch on YouTube",
+    "btn_view_tiktok": "Watch on TikTok",
+    "btn_view_instagram": "Watch on Instagram",
+    "btn_read_more": "Read More",
+    "btn_get_game": "Get Game",
+    "btn_view_steam": "Watch on Steam",
+    "btn_view_gog": "Watch on GOG"
 }

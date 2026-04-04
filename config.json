@@ -6,10 +6,10 @@
         {
             "type": "youtube",
             "name": "Example YouTube Channel",
-            "channel_id": "UC_x5XG1OV2P6uYZ5gzMCURQ",
+            "channel_id": "UC_xxxxxxxxxxxxxxxxxxxxx",
             "discord_channel_id": 0,
             "ping_role_id": 0,
-            "enabled": true
+            "enabled": false
         },
         {
             "type": "tiktok",

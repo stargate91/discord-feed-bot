@@ -1,5 +1,7 @@
 import feedparser
 import discord
+import re
+import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
 
@@ -18,9 +20,10 @@ class InstagramMonitor(BaseMonitor):
             log.warning(f"No RSS URL for Instagram monitor: {self.name}")
             return
 
-        # Fetch the feed
+        # Fetch the feed as a blocking operation in an executor
         try:
-            feed = feedparser.parse(self.feed_url)
+            loop = asyncio.get_event_loop()
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Failed to fetch Instagram feed for {self.name}: {e}")
             return
@@ -68,14 +71,19 @@ class InstagramMonitor(BaseMonitor):
                 embed.set_image(url=entry.media_content[0]["url"])
             elif 'description' in entry:
                 # Attempt to find an image in description
-                import re
                 img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.description)
                 if img_match:
                     embed.set_image(url=img_match.group(1))
 
             alert_text = self.lang.get("new_instagram_alert", "Új Instagram poszt érkezett!")
             ping = f"{self.ping_role} " if self.ping_role else ""
-            await self.send_update(content=f"{ping}{alert_text}\n{post_link}", embed=embed)
+
+            # Create interactive button
+            view = discord.ui.View()
+            btn_label = self.lang.get("btn_view_instagram", "Watch on Instagram")
+            view.add_item(discord.ui.Button(label=btn_label, url=post_link, style=discord.ButtonStyle.link))
+
+            await self.send_update(content=f"{ping}{alert_text}\n{post_link}", embed=embed, view=view)
             await self.db.mark_as_published(post_id, "instagram", self.feed_url)
 
         # After the first successful check, mark as not first run

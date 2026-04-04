@@ -25,7 +25,7 @@ class BaseMonitor(ABC):
         """Perform the check for updates and return a list of new entries/embeds."""
         pass
 
-    async def send_update(self, content=None, embed=None):
+    async def send_update(self, content=None, embed=None, view=None):
         """Send an update to the configured Discord channel."""
         if not self.discord_channel_id:
             log.warning(f"No Discord channel ID configured for monitor: {self.name}")
@@ -41,7 +41,7 @@ class BaseMonitor(ABC):
 
         if channel:
             try:
-                await channel.send(content=content, embed=embed)
+                await channel.send(content=content, embed=embed, view=view)
                 log.info(f"Published update for {self.name} on channel {channel.name}")
             except Exception as e:
                 log.error(f"Failed to send update for {self.name}: {e}")
