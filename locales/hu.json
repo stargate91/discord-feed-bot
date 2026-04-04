@@ -32,5 +32,8 @@
     "check_no_feeds": "Nincs aktív feed a rendszerben.",
     "check_list_title": "Aktív Feedek Listája",
     "check_triggering": "Kézi ellenőrzés indítása: {name}...",
-    "check_not_found": "A megadott feed nem található: {name}"
+    "check_not_found": "A megadott feed nem található: {name}",
+    "check_success": "A(z) {name} feed legújabb tartalma sikeresen elküldve.",
+    "error_no_content": "Nem sikerült lekérni tartalmat a(z) {name} feed-ből.",
+    "error_monitor_not_found": "A megadott feed nem található vagy nincs engedélyezve."
 }

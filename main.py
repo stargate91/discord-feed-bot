@@ -3,6 +3,7 @@ import discord
 import json
 import os
 from discord.ext import commands
+from discord import app_commands
 from logger import log, setup_logging
 from config_loader import load_config
 from database import Database
@@ -158,6 +159,67 @@ async def clear_commands(ctx):
     
     await ctx.send(ctx.bot.get_feedback("clear_commands_success"))
 
+# --- Slash Commands ---
+
+@app_commands.command(name="check", description="Manuális ellenőrzés és legutóbbi tartalom küldése")
+@app_commands.describe(monitor_name="Melyik feed-et ellenőrizze a bot?")
+@app_commands.default_permissions(administrator=True)
+async def check(interaction: discord.Interaction, monitor_name: str):
+    """[Admin] Manuálisan lekéri és elküldi a legfrissebb bejegyzést egy feed-ből."""
+    bot = interaction.client
+    
+    # Find monitor by name
+    target_monitor = None
+    if bot.monitor_manager:
+        for m in bot.monitor_manager.monitors:
+            if m.name == monitor_name:
+                target_monitor = m
+                break
+    
+    if not target_monitor:
+        await interaction.response.send_message(
+            bot.get_feedback("error_monitor_not_found"), 
+            ephemeral=True
+        )
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        data = await target_monitor.get_latest_item()
+        if data:
+            # Send to the channel (not as a direct response to interaction, but as a normal message)
+            await interaction.channel.send(
+                content=data.get("content"),
+                embed=data.get("embed"),
+                view=data.get("view")
+            )
+            await interaction.followup.send(
+                bot.get_feedback("check_success", name=monitor_name), 
+                ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                bot.get_feedback("error_no_content", name=monitor_name), 
+                ephemeral=True
+            )
+    except Exception as e:
+        log.error(f"Error in /check command for {monitor_name}: {e}", exc_info=True)
+        await interaction.followup.send(
+            f"Hiba történt: {e}", 
+            ephemeral=True
+        )
+
+@check.autocomplete("monitor_name")
+async def monitor_autocomplete(interaction: discord.Interaction, current: str):
+    bot = interaction.client
+    choices = []
+    if bot.monitor_manager:
+        for m in bot.monitor_manager.monitors:
+            if m.enabled and current.lower() in m.name.lower():
+                choices.append(app_commands.Choice(name=m.name, value=m.name))
+    return choices[:25]
+
 # --- Main Logic ---
 
 async def main():
@@ -187,6 +249,10 @@ async def main():
             # We add commands manually since we are not using Cogs for these simple ones
             bot.add_command(sync)
             bot.add_command(clear_commands)
+            
+            # Add slash commands to the tree
+            bot.tree.add_command(check)
+            
             await bot.start(token)
             
     except KeyboardInterrupt:
