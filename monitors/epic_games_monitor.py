@@ -97,10 +97,16 @@ class EpicGamesMonitor(BaseMonitor):
         title = game.get("title", "Unknown Game")
         description = game.get("description", "")
         
-        # Link construction
-        product_slug = game.get("productSlug") or game.get("urlSlug")
-        if not product_slug and game.get("catalogNs", {}).get("mappings"):
-            product_slug = game.get("catalogNs", {}).get("mappings", [{}])[0].get("pageSlug")
+        # Link construction priority: productSlug > pageSlug from mappings > urlSlug
+        product_slug = game.get("productSlug")
+        if not product_slug:
+            mappings = game.get("catalogNs", {}).get("mappings", [])
+            if mappings:
+                product_slug = mappings[0].get("pageSlug")
+        
+        # Fallback to urlSlug if still None
+        if not product_slug:
+            product_slug = game.get("urlSlug")
         
         if product_slug:
             game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}"
@@ -145,7 +151,6 @@ class EpicGamesMonitor(BaseMonitor):
         
         embed = discord.Embed(
             title=title,
-            description=description[:2048],
             url=game_url,
             color=0x000000 
         )
@@ -220,9 +225,25 @@ class EpicGamesMonitor(BaseMonitor):
             return None
 
         title = target_game.get("title", "Unknown Game")
-        description = target_game.get("description", "")
-        product_slug = target_game.get("productSlug") or target_game.get("urlSlug")
+        # Link construction priority: productSlug > pageSlug from mappings > urlSlug
+        product_slug = target_game.get("productSlug")
+        if not product_slug:
+            mappings = target_game.get("catalogNs", {}).get("mappings", [])
+            if mappings:
+                product_slug = mappings[0].get("pageSlug")
+        
+        # Fallback to urlSlug if still None
+        if not product_slug:
+            product_slug = target_game.get("urlSlug")
+            
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
+        
+        # Image selection
+        image_url = None
+        for img in target_game.get("keyImages", []):
+            if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]:
+                image_url = img.get("url")
+                break
         
         # Extraction logic
         original_price = target_game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
@@ -255,7 +276,6 @@ class EpicGamesMonitor(BaseMonitor):
         
         embed = discord.Embed(
             title=title,
-            description=description[:2048],
             url=game_url,
             color=0x000000 
         )
