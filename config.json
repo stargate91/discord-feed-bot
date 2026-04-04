@@ -15,6 +15,70 @@
             "enabled": true
         },
         {
+            "type": "youtube",
+            "name": "The Critical Drinker",
+            "channel_id": "UCSJPFQdZwrOutnmSFYtbstA",
+            "discord_channel_id": 1440324855261298738,
+            "ping_role_id": 1442618108098379936,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "The Critical Gamer",
+            "channel_id": "UCBdwqWmXhupzV5q8TfD-kNQ",
+            "discord_channel_id": 1440324855261298738,
+            "ping_role_id": 1442618108098379936,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "Asmongold TV",
+            "channel_id": "UCQeRaTukNYft1_6AZPACnog",
+            "discord_channel_id": 1440391356135506040,
+            "ping_role_id": 1442617811363954688,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "TheVR Gaming+",
+            "channel_id": "UCSFMCn1xtj_4kOy6KNK_fNg",
+            "discord_channel_id": 1439157327755345922,
+            "ping_role_id": 1471017960138215487,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "TheVR Podcast",
+            "channel_id": "UCTY9vSAwOVsXw1lE1vBD0Hg",
+            "discord_channel_id": 1439157327755345922,
+            "ping_role_id": 1471017960138215487,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "TheVR",
+            "channel_id": "UCrpWCVp9FuGA8OnGtA0rgsw",
+            "discord_channel_id": 1439157327755345922,
+            "ping_role_id": 1471017960138215487,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "TheVR Tech",
+            "channel_id": "UCDeRsDqcB8zdkzErxrdHCOw",
+            "discord_channel_id": 1439157327755345922,
+            "ping_role_id": 1471017960138215487,
+            "enabled": true
+        },
+        {
+            "type": "youtube",
+            "name": "TheVR Shortcut",
+            "channel_id": "UCnoVsxmXRCq3935G40SdBKA",
+            "discord_channel_id": 1439157327755345922,
+            "ping_role_id": 1471017960138215487,
+            "enabled": true
+        },
+        {
             "type": "tiktok",
             "name": "Example TikTok User",
             "username": "tiktok",
@@ -34,11 +98,11 @@
         },
         {
             "type": "rss",
-            "name": "Generic RSS Feed",
-            "rss_url": "https://example.com/feed.xml",
-            "discord_channel_id": 0,
+            "name": "Csillagászat.hu",
+            "rss_url": "https://www.csillagaszat.hu/feed/",
+            "discord_channel_id": 1432216772890722367,
             "ping_role_id": 0,
-            "enabled": false
+            "enabled": true
         },
         {
             "type": "epic_games",
