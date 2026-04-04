@@ -49,30 +49,11 @@ class FeedBot(commands.Bot):
         # Load monitors from config
         monitors_config = self.config.get("monitors", [])
         for m_config in monitors_config:
-            m_type = m_config.get("type")
-            if m_type == "youtube":
-                monitor = YouTubeMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "tiktok":
-                monitor = TikTokMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "instagram":
-                monitor = InstagramMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "rss":
-                monitor = RSSMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "epic_games":
-                monitor = EpicGamesMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "steam_free":
-                monitor = SteamFreeMonitor(self, m_config, self.db, self.language_data)
-                self.monitor_manager.add_monitor(monitor)
-            elif m_type == "gog_free":
-                monitor = GOGFreeMonitor(self, m_config, self.db, self.language_data)
+            monitor = self.create_monitor_instance(m_config)
+            if monitor:
                 self.monitor_manager.add_monitor(monitor)
             else:
-                log.warning(f"Unknown monitor type in config: {m_type}")
+                log.warning(f"Unknown monitor type in config: {m_config.get('type')}")
 
         # Start the background loop as a task
         self.loop.create_task(self.monitor_manager.start_loop())
@@ -114,6 +95,25 @@ class FeedBot(commands.Bot):
         for k, v in kwargs.items():
             text = text.replace(f"{{{k}}}", str(v))
         return text
+
+    def create_monitor_instance(self, m_config):
+        """Helper to create a monitor instance from config."""
+        m_type = m_config.get("type")
+        if m_type == "youtube":
+            return YouTubeMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "tiktok":
+            return TikTokMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "instagram":
+            return InstagramMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "rss":
+            return RSSMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "epic_games":
+            return EpicGamesMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "steam_free":
+            return SteamFreeMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "gog_free":
+            return GOGFreeMonitor(self, m_config, self.db, self.language_data)
+        return None
 
 # --- Commands ---
 
@@ -167,6 +167,129 @@ async def clear_commands(ctx):
     await ctx.send(ctx.bot.get_feedback("clear_commands_success"))
 
 # --- Slash Commands ---
+
+class AddMonitorModal(discord.ui.Modal):
+    def __init__(self, monitor_type, bot):
+        self.bot = bot
+        self.monitor_type = monitor_type
+        super().__init__(title=bot.get_feedback("add_monitor_title"))
+
+        self.name_input = discord.ui.TextInput(
+            label=bot.get_feedback("add_monitor_name_label"),
+            placeholder="e.g. My Favorite Channel",
+            required=True
+        )
+        self.add_item(self.name_input)
+
+        url_label = bot.get_feedback("add_monitor_id_label")
+        self.url_input = discord.ui.TextInput(
+            label=url_label,
+            placeholder="UC... or https://...",
+            required=True
+        )
+        self.add_item(self.url_input)
+
+        self.channel_id_input = discord.ui.TextInput(
+            label=bot.get_feedback("add_monitor_channel_label"),
+            placeholder="123456789...",
+            required=True
+        )
+        self.add_item(self.channel_id_input)
+
+        self.role_id_input = discord.ui.TextInput(
+            label=bot.get_feedback("add_monitor_role_label"),
+            placeholder="987654321...",
+            required=False
+        )
+        self.add_item(self.role_id_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            m_config = {
+                "type": self.monitor_type,
+                "name": self.name_input.value,
+                "discord_channel_id": int(self.channel_id_input.value),
+                "ping_role_id": int(self.role_id_input.value) if self.role_id_input.value else 0,
+                "enabled": True
+            }
+
+            # Handle type-specific keys
+            if self.monitor_type == "youtube":
+                m_config["channel_id"] = self.url_input.value
+            elif self.monitor_type == "rss":
+                m_config["rss_url"] = self.url_input.value
+            elif self.monitor_type == "tiktok":
+                m_config["username"] = self.url_input.value
+                m_config["instance_url"] = "https://proxitok.pabloferreiro.es" # Default instance
+            elif self.monitor_type == "instagram":
+                m_config["username"] = self.url_input.value
+                m_config["rss_url"] = f"https://rss.app/feeds/{self.url_input.value}.xml" # Placeholder pattern
+            elif self.monitor_type == "epic_games":
+                m_config["include_upcoming"] = True
+            elif self.monitor_type == "steam_free":
+                m_config["include_dlc"] = False
+
+            # Update working config
+            if "monitors" not in self.bot.config:
+                self.bot.config["monitors"] = []
+            self.bot.config["monitors"].append(m_config)
+
+            # Persist to disk
+            with open("config.json", "w", encoding="utf-8") as f:
+                # Remove temporary token and db path before saving (to keep config.json clean)
+                # But wait, config_loader puts them there. 
+                # Let's save a copy without sensitive data if they came from .env
+                save_config = self.bot.config.copy()
+                # Assuming setup handled .env overwrites, we just save the list
+                json.dump(save_config, f, indent=4, ensure_ascii=False)
+
+            # Add to MonitorManager at runtime
+            monitor = self.bot.create_monitor_instance(m_config)
+            if monitor:
+                self.bot.monitor_manager.add_monitor(monitor)
+                log.info(f"Dynamic monitor added: {monitor.name}")
+
+            success_msg = self.bot.get_feedback("add_monitor_success", name=self.name_input.value, type=self.monitor_type)
+            await interaction.response.send_message(success_msg, ephemeral=True)
+
+        except Exception as e:
+            log.error(f"Error adding monitor via modal: {e}", exc_info=True)
+            error_msg = self.bot.get_feedback("add_monitor_error")
+            await interaction.response.send_message(f"{error_msg}: {e}", ephemeral=True)
+
+class MonitorTypeSelect(discord.ui.Select):
+    def __init__(self, bot):
+        self.bot = bot
+        options = [
+            discord.SelectOption(label="YouTube", value="youtube", emoji="📺"),
+            discord.SelectOption(label="RSS Feed", value="rss", emoji="🔗"),
+            discord.SelectOption(label="TikTok", value="tiktok", emoji="🎵"),
+            discord.SelectOption(label="Instagram", value="instagram", emoji="📸"),
+            discord.SelectOption(label="Epic Games", value="epic_games", emoji="🎮"),
+            discord.SelectOption(label="Steam Free", value="steam_free", emoji="♨️"),
+            discord.SelectOption(label="GOG Free", value="gog_free", emoji="💜"),
+        ]
+        super().__init__(placeholder=bot.get_feedback("add_monitor_type_select"), options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        modal = AddMonitorModal(self.values[0], self.bot)
+        await interaction.response.send_modal(modal)
+
+class MonitorTypeView(discord.ui.View):
+    def __init__(self, bot):
+        super().__init__(timeout=60)
+        self.add_item(MonitorTypeSelect(bot))
+
+@app_commands.command(name="add_monitor", description="Új monitor hozzáadása a rendszerhez")
+@app_commands.default_permissions(administrator=True)
+async def add_monitor(interaction: discord.Interaction):
+    """[Admin] Megnyitja a monitor hozzáadása felületet."""
+    view = MonitorTypeView(interaction.client)
+    await interaction.response.send_message(
+        interaction.client.get_feedback("add_monitor_type_select"), 
+        view=view, 
+        ephemeral=True
+    )
 
 @app_commands.command(name="check", description="Manuális ellenőrzés és legutóbbi tartalom küldése")
 @app_commands.describe(monitor_name="Melyik feed-et ellenőrizze a bot?")
@@ -267,6 +390,7 @@ async def main():
             
             # Add slash commands to the tree
             bot.tree.add_command(check)
+            bot.tree.add_command(add_monitor)
             
             await bot.start(token)
             

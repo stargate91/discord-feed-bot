@@ -35,5 +35,14 @@
     "check_not_found": "The specified feed was not found: {name}",
     "check_success": "The latest content for {name} was successfully sent.",
     "error_no_content": "Failed to fetch content from the {name} feed.",
-    "error_monitor_not_found": "The specified feed was not found or is not enabled."
+    "error_monitor_not_found": "The specified feed was not found or is not enabled.",
+    "add_monitor_btn": "Add Monitor",
+    "add_monitor_title": "Add New Monitor",
+    "add_monitor_type_select": "Select monitor type",
+    "add_monitor_name_label": "Display Name",
+    "add_monitor_id_label": "Source ID / URL (YT channel, RSS, etc.)",
+    "add_monitor_channel_label": "Discord Channel ID",
+    "add_monitor_role_label": "Ping Role ID (Optional)",
+    "add_monitor_success": "Monitor {name} ({type}) added successfully!",
+    "add_monitor_error": "An error occurred while adding the monitor."
 }
