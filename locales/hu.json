@@ -21,5 +21,11 @@
     "btn_read_more": "Tovább a bejegyzéshez",
     "btn_get_game": "Játék beszerzése",
     "btn_view_steam": "Megtekintés Steamen",
-    "btn_view_gog": "Megtekintés GOG-on"
+    "btn_view_gog": "Megtekintés GOG-on",
+    "sync_success_guild": "Sikeresen szinkronizálva {count} parancs erre a szerverre.",
+    "sync_success_global": "Sikeresen szinkronizálva {count} parancs globálisan.",
+    "sync_success_copy": "Globális parancsok átmásolva és szinkronizálva ({count}).",
+    "clear_commands_success": "Minden Slash parancs törölve.",
+    "error_admin_only": "Ezt a parancsot csak adminisztrátorok használhatják!",
+    "syncing_wait": "Szinkronizálás folyamatban..."
 }

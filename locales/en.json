@@ -21,5 +21,11 @@
     "btn_read_more": "Read More",
     "btn_get_game": "Get Game",
     "btn_view_steam": "Watch on Steam",
-    "btn_view_gog": "Watch on GOG"
+    "btn_view_gog": "Watch on GOG",
+    "sync_success_guild": "Successfully synced {count} command(s) to this guild.",
+    "sync_success_global": "Successfully synced {count} command(s) globally.",
+    "sync_success_copy": "Global commands copied and synced ({count}).",
+    "clear_commands_success": "All slash commands cleared.",
+    "error_admin_only": "Only administrators can use this command!",
+    "syncing_wait": "Syncing in progress..."
 }

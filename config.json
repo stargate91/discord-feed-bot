@@ -2,6 +2,7 @@
     "language": "hu",
     "database_path": "data/feed_bot.db",
     "refresh_interval_minutes": 10,
+    "command_prefix": "!",
     "monitors": [
         {
             "type": "youtube",
