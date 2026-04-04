@@ -107,12 +107,34 @@ class EpicGamesMonitor(BaseMonitor):
         else:
             game_url = "https://store.epicgames.com/free-games"
 
-        # Image selection (prefer 'OfferImageWide' or 'featuredMedia')
+        # Image selection
         image_url = None
         for img in game.get("keyImages", []):
             if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]:
                 image_url = img.get("url")
                 break
+
+        # Extraction logic for Price and Expiry
+        original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
+        
+        end_date_str = None
+        promotions = game.get("promotions", {})
+        offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
+        for offer_wrap in promotions.get(offer_key, []):
+            for offer in offer_wrap.get("promotionalOffers", []):
+                if offer.get("discountSetting", {}).get("discountPercentage") == 0:
+                    end_date_str = offer.get("endDate")
+                    break
+            if end_date_str: break
+            
+        expiry_ts = None
+        if end_date_str:
+            try:
+                # 2024-04-11T15:00:00.000Z
+                dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                expiry_ts = int(dt.timestamp())
+            except:
+                pass
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
@@ -121,16 +143,22 @@ class EpicGamesMonitor(BaseMonitor):
             title=title,
             description=description[:2048],
             url=game_url,
-            color=0x000000 # Epic Games Black
+            color=0x000000 
         )
         if image_url:
             embed.set_image(url=image_url)
+            
+        # Add Fields
+        if original_price and original_price != "0":
+            embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
+            
+        if expiry_ts:
+            embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
         
         embed.set_footer(text="Epic Games Store")
         
         ping = f"{self.ping_role} " if self.ping_role else ""
         
-        # Create interactive button
         view = discord.ui.View()
         btn_label = self.lang.get("btn_get_game", "Get Game")
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
@@ -189,11 +217,26 @@ class EpicGamesMonitor(BaseMonitor):
         product_slug = target_game.get("productSlug") or target_game.get("urlSlug")
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
         
-        image_url = None
-        for img in target_game.get("keyImages", []):
-            if img.get("type") in ["OfferImageWide", "featuredMedia"]:
-                image_url = img.get("url")
-                break
+        # Extraction logic
+        original_price = target_game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
+        
+        end_date_str = None
+        promotions = target_game.get("promotions", {})
+        offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
+        for offer_wrap in promotions.get(offer_key, []):
+            for offer in offer_wrap.get("promotionalOffers", []):
+                if offer.get("discountSetting", {}).get("discountPercentage") == 0:
+                    end_date_str = offer.get("endDate")
+                    break
+            if end_date_str: break
+            
+        expiry_ts = None
+        if end_date_str:
+            try:
+                dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                expiry_ts = int(dt.timestamp())
+            except:
+                pass
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
@@ -206,6 +249,14 @@ class EpicGamesMonitor(BaseMonitor):
         )
         if image_url:
             embed.set_image(url=image_url)
+            
+        # Add Fields
+        if original_price and original_price != "0":
+            embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
+            
+        if expiry_ts:
+            embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
+            
         embed.set_footer(text="Epic Games Store")
         
         ping = f"{self.ping_role} " if self.ping_role else ""
