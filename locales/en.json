@@ -27,5 +27,10 @@
     "sync_success_copy": "Global commands copied and synced ({count}).",
     "clear_commands_success": "All slash commands cleared.",
     "error_admin_only": "Only administrators can use this command!",
-    "syncing_wait": "Syncing in progress..."
+    "syncing_wait": "Syncing in progress...",
+    "command_check_desc": "List and manually check feeds.",
+    "check_no_feeds": "No active feeds in the system.",
+    "check_list_title": "Active Feeds List",
+    "check_triggering": "Triggering manual check: {name}...",
+    "check_not_found": "The specified feed was not found: {name}"
 }

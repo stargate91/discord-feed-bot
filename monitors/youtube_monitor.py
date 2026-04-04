@@ -80,3 +80,44 @@ class YouTubeMonitor(BaseMonitor):
         if self.is_first_run:
             log.info(f"Initial seed completed for {self.name}. Monitoring active for next updates.")
             self.is_first_run = False
+    async def get_latest_item(self):
+        """Fetch the most recent YouTube video from the feed."""
+        if not self.channel_id:
+            return None
+
+        import asyncio
+        loop = asyncio.get_event_loop()
+        feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+        
+        if not hasattr(feed, 'entries') or not feed.entries:
+            return None
+
+        # Return the most recent entry (first in RSS)
+        entry = feed.entries[0]
+        video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+        video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
+        video_title = entry.get("title", "New Video")
+        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+        
+        embed = discord.Embed(
+            title=video_title,
+            url=video_link,
+            color=0xFF0000 
+        )
+        embed.set_author(name=author_name)
+        
+        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            embed.set_image(url=entry.media_thumbnail[0]["url"])
+
+        alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
+        ping = f"{self.ping_role} " if self.ping_role else ""
+        
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
+        view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+        
+        return {
+            "content": f"{ping}{alert_text}\n{video_link}",
+            "embed": embed,
+            "view": view
+        }

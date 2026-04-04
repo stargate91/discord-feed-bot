@@ -87,3 +87,52 @@ class TikTokMonitor(BaseMonitor):
         if self.is_first_run:
             log.info(f"Initial seed completed for TikTok {self.name}. Monitoring active.")
             self.is_first_run = False
+
+    async def get_latest_item(self):
+        """Fetch the most recent TikTok from the feed."""
+        if not self.username:
+            return None
+
+        import asyncio
+        import re
+        try:
+            loop = asyncio.get_event_loop()
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+        except:
+            return None
+            
+        if not hasattr(feed, 'entries') or not feed.entries:
+            return None
+
+        # ProxiTok RSS usually has most recent first
+        entry = feed.entries[0]
+        video_link = entry.get("link")
+        video_title = entry.get("title", f"New TikTok from @{self.username}")
+        author_name = entry.get("author", f"@{self.username}")
+        
+        embed = discord.Embed(
+            title=video_title[:256],
+            url=video_link,
+            color=0xEE1D52 
+        )
+        embed.set_author(name=author_name)
+        
+        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            embed.set_image(url=entry.media_thumbnail[0]["url"])
+        elif 'description' in entry:
+            img_match = re.search(r'<img src="([^"]+)"', entry.description)
+            if img_match:
+                embed.set_image(url=img_match.group(1))
+
+        alert_text = self.lang.get("new_tiktok_alert", "Új TikTok érkezett!")
+        ping = f"{self.ping_role} " if self.ping_role else ""
+        
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_view_tiktok", "Watch on TikTok")
+        view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+        
+        return {
+            "content": f"{ping}{alert_text}\n{video_link}",
+            "embed": embed,
+            "view": view
+        }

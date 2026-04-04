@@ -27,5 +27,10 @@
     "sync_success_copy": "Globális parancsok átmásolva és szinkronizálva ({count}).",
     "clear_commands_success": "Minden Slash parancs törölve.",
     "error_admin_only": "Ezt a parancsot csak adminisztrátorok használhatják!",
-    "syncing_wait": "Szinkronizálás folyamatban..."
+    "syncing_wait": "Szinkronizálás folyamatban...",
+    "command_check_desc": "Feedek listázása és manuális ellenőrzése.",
+    "check_no_feeds": "Nincs aktív feed a rendszerben.",
+    "check_list_title": "Aktív Feedek Listája",
+    "check_triggering": "Kézi ellenőrzés indítása: {name}...",
+    "check_not_found": "A megadott feed nem található: {name}"
 }

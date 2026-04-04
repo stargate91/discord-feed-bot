@@ -137,3 +137,84 @@ class EpicGamesMonitor(BaseMonitor):
         
         await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
         log.info(f"Sent Epic Games notification for: {title} ({'active' if is_active else 'upcoming'})")
+
+    async def get_latest_item(self):
+        """Fetch the most recent free game from Epic Games Store."""
+        import aiohttp
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.api_url) as response:
+                    if response.status != 200:
+                        return None
+                    data = await response.json()
+            elements = data["data"]["Catalog"]["searchStore"]["elements"]
+        except:
+            return None
+
+        # Find the first active or upcoming free game
+        target_game = None
+        is_active = False
+        
+        for game in elements:
+            promotions = game.get("promotions")
+            if not promotions: continue
+            
+            # Check active
+            for offer_wrap in promotions.get("promotionalOffers", []):
+                for offer in offer_wrap.get("promotionalOffers", []):
+                    if offer.get("discountSetting", {}).get("discountPercentage") == 0:
+                        target_game = game
+                        is_active = True
+                        break
+                if target_game: break
+            
+            if target_game: break
+            
+            # Check upcoming if active not found
+            for offer_wrap in promotions.get("upcomingPromotionalOffers", []):
+                for offer in offer_wrap.get("promotionalOffers", []):
+                    if offer.get("discountSetting", {}).get("discountPercentage") == 0:
+                        target_game = game
+                        is_active = False
+                        break
+                if target_game: break
+            
+            if target_game: break
+
+        if not target_game:
+            return None
+
+        title = target_game.get("title", "Unknown Game")
+        description = target_game.get("description", "")
+        product_slug = target_game.get("productSlug") or target_game.get("urlSlug")
+        game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
+        
+        image_url = None
+        for img in target_game.get("keyImages", []):
+            if img.get("type") in ["OfferImageWide", "featuredMedia"]:
+                image_url = img.get("url")
+                break
+
+        alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
+        alert_text = self.lang.get(alert_key, "Ingyenes játék!")
+        
+        embed = discord.Embed(
+            title=title,
+            description=description[:2048],
+            url=game_url,
+            color=0x000000 
+        )
+        if image_url:
+            embed.set_image(url=image_url)
+        embed.set_footer(text="Epic Games Store")
+        
+        ping = f"{self.ping_role} " if self.ping_role else ""
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_get_game", "Get Game")
+        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+        
+        return {
+            "content": f"{ping}{alert_text}\n{game_url}",
+            "embed": embed,
+            "view": view
+        }

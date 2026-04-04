@@ -86,3 +86,55 @@ class SteamFreeMonitor(BaseMonitor):
         if self.is_first_run:
             log.info(f"Initial seed completed for Steam Free Games. Monitoring active.")
             self.is_first_run = False
+
+    async def get_latest_item(self):
+        """Fetch the most recent Steam giveaway from GamerPower."""
+        import aiohttp
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.api_url) as response:
+                    if response.status != 200:
+                        return None
+                    data = await response.json()
+        except:
+            return None
+
+        if not isinstance(data, list) or not data:
+            return None
+
+        game = data[0]
+        title = game.get("title", "Unknown Game")
+        description = game.get("description", "")
+        game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
+        image_url = game.get("image") or game.get("thumbnail")
+        worth = game.get("worth", "N/A")
+        giveaway_type = game.get("type", "Game")
+        end_date = game.get("end_date", "N/A")
+
+        embed = discord.Embed(
+            title=title,
+            description=description[:2048],
+            url=game_url,
+            color=0x1B2838 
+        )
+        if image_url:
+            embed.set_image(url=image_url)
+        if worth and worth != "N/A":
+            embed.add_field(name=f"💰 {self.lang.get('field_worth', 'Érték')}", value=worth, inline=True)
+        embed.add_field(name=f"📦 {self.lang.get('field_type', 'Típus')}", value=giveaway_type, inline=True)
+        if end_date and end_date != "N/A":
+            embed.add_field(name=f"⏰ {self.lang.get('field_expiry', 'Lejárat')}", value=end_date, inline=True)
+        embed.set_footer(text="Steam • GamerPower")
+
+        alert_text = self.lang.get("new_steam_free_alert", "Ingyenes Steam loot érkezett!")
+        ping = f"{self.ping_role} " if self.ping_role else ""
+        
+        view = discord.ui.View()
+        btn_label = self.lang.get("btn_view_steam", "Watch on Steam")
+        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+        
+        return {
+            "content": f"{ping}{alert_text}\n{game_url}",
+            "embed": embed,
+            "view": view
+        }

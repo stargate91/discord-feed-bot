@@ -24,6 +24,11 @@ class BaseMonitor(ABC):
     async def check_for_updates(self):
         """Perform the check for updates and return a list of new entries/embeds."""
         pass
+    
+    @abstractmethod
+    async def get_latest_item(self):
+        """Fetch the most recent item and return its (content, embed, view) without posting or marking as published."""
+        pass
 
     async def send_update(self, content=None, embed=None, view=None):
         """Send an update to the configured Discord channel."""

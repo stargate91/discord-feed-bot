@@ -120,7 +120,7 @@ def is_admin():
         return False
     return commands.check(predicate)
 
-@FeedBot.command(name="sync")
+@commands.command(name="sync")
 @commands.guild_only()
 @is_admin()
 async def sync(ctx, spec: str | None = None):
@@ -142,7 +142,7 @@ async def sync(ctx, spec: str | None = None):
         msg = ctx.bot.get_feedback("sync_success_guild", count=len(synced))
         await ctx.send(msg)
 
-@FeedBot.command(name="clear_commands")
+@commands.command(name="clear_commands")
 @commands.guild_only()
 @is_admin()
 async def clear_commands(ctx):
