@@ -107,25 +107,25 @@
         {
             "type": "epic_games",
             "name": "Epic Games Free Loot",
-            "include_upcoming": true,
-            "discord_channel_id": 0,
+            "include_upcoming": false,
+            "discord_channel_id": 1277219345835229228,
             "ping_role_id": 0,
-            "enabled": false
+            "enabled": true
         },
         {
             "type": "steam_free",
             "name": "Steam Free Loot",
             "include_dlc": false,
-            "discord_channel_id": 0,
+            "discord_channel_id": 1277219345835229228,
             "ping_role_id": 0,
-            "enabled": false
+            "enabled": true
         },
         {
             "type": "gog_free",
             "name": "GOG Free Loot",
-            "discord_channel_id": 0,
+            "discord_channel_id": 1277219345835229228,
             "ping_role_id": 0,
-            "enabled": false
+            "enabled": true
         }
     ]
 }

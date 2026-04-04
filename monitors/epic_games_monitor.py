@@ -114,7 +114,7 @@ class EpicGamesMonitor(BaseMonitor):
                 image_url = img.get("url")
                 break
 
-        # Extraction logic for Price and Expiry
+        # Extraction logic for Price, Expiry and Tags
         original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
         
         end_date_str = None
@@ -130,11 +130,15 @@ class EpicGamesMonitor(BaseMonitor):
         expiry_ts = None
         if end_date_str:
             try:
-                # 2024-04-11T15:00:00.000Z
                 dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 expiry_ts = int(dt.timestamp())
             except:
                 pass
+
+        # Tags extraction
+        tags = game.get("tags", [])
+        genre_list = [tag.get("name") for tag in tags if tag.get("name")]
+        genres = ", ".join(genre_list) if genre_list else None
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
@@ -149,11 +153,14 @@ class EpicGamesMonitor(BaseMonitor):
             embed.set_image(url=image_url)
             
         # Add Fields
-        if original_price and original_price != "0":
+        if original_price and original_price != "0" and original_price != "N/A":
             embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
             
         if expiry_ts:
             embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
+        
+        if genres:
+            embed.add_field(name=self.lang.get("field_genres", "Genres"), value=genres, inline=False)
         
         embed.set_footer(text="Epic Games Store")
         
@@ -238,6 +245,11 @@ class EpicGamesMonitor(BaseMonitor):
             except:
                 pass
 
+        # Tags extraction
+        tags = target_game.get("tags", [])
+        genre_list = [tag.get("name") for tag in tags if tag.get("name")]
+        genres = ", ".join(genre_list) if genre_list else None
+
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
         
@@ -251,11 +263,14 @@ class EpicGamesMonitor(BaseMonitor):
             embed.set_image(url=image_url)
             
         # Add Fields
-        if original_price and original_price != "0":
+        if original_price and original_price != "0" and original_price != "N/A":
             embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
             
         if expiry_ts:
             embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
+            
+        if genres:
+            embed.add_field(name=self.lang.get("field_genres", "Genres"), value=genres, inline=False)
             
         embed.set_footer(text="Epic Games Store")
         
