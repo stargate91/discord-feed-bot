@@ -3,6 +3,7 @@
     "database_path": "data/feed_bot.db",
     "refresh_interval_minutes": 10,
     "command_prefix": "!",
+    "command_suffix": "_nova",
     "admin_channel_id": 1486516075905417216,
     "monitors": [
         {

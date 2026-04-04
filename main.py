@@ -252,6 +252,13 @@ async def main():
         # Initialize Bot
         bot = FeedBot(config, db)
         
+        # Apply optional command suffix
+        suffix = config.get("command_suffix", "")
+        if suffix:
+            sync.name = f"sync{suffix}"
+            clear_commands.name = f"clear_commands{suffix}"
+            log.info(f"Command suffix applied: {suffix}")
+
         # Start Bot
         async with bot:
             # We add commands manually since we are not using Cogs for these simple ones
