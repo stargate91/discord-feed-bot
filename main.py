@@ -99,6 +99,13 @@ class FeedBot(commands.Bot):
         if message.author.bot:
             return
         
+        # Restrict prefix commands to specified admin channel
+        if message.content.startswith(self.command_prefix):
+            admin_channel_id = self.config.get("admin_channel_id")
+            if admin_channel_id and message.channel.id != admin_channel_id:
+                # Silently ignore
+                return
+        
         await self.process_commands(message)
 
     def get_feedback(self, key, **kwargs):
@@ -188,11 +195,12 @@ async def check(interaction: discord.Interaction, monitor_name: str):
     try:
         data = await target_monitor.get_latest_item()
         if data:
-            # Send to the channel (not as a direct response to interaction, but as a normal message)
-            await interaction.channel.send(
+            # Send content as ephemeral followup (testing only)
+            await interaction.followup.send(
                 content=data.get("content"),
                 embed=data.get("embed"),
-                view=data.get("view")
+                view=data.get("view"),
+                ephemeral=True
             )
             await interaction.followup.send(
                 bot.get_feedback("check_success", name=monitor_name), 
