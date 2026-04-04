@@ -141,10 +141,6 @@ class EpicGamesMonitor(BaseMonitor):
             except:
                 pass
 
-        # Tags extraction
-        tags = game.get("tags", [])
-        genre_list = [tag.get("name") for tag in tags if tag.get("name")]
-        genres = ", ".join(genre_list) if genre_list else None
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
@@ -164,8 +160,6 @@ class EpicGamesMonitor(BaseMonitor):
         if expiry_ts:
             embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
         
-        if genres:
-            embed.add_field(name=self.lang.get("field_genres", "Genres"), value=genres, inline=False)
         
         embed.set_footer(text="Epic Games Store")
         
@@ -266,10 +260,6 @@ class EpicGamesMonitor(BaseMonitor):
             except:
                 pass
 
-        # Tags extraction
-        tags = target_game.get("tags", [])
-        genre_list = [tag.get("name") for tag in tags if tag.get("name")]
-        genres = ", ".join(genre_list) if genre_list else None
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.lang.get(alert_key, "Ingyenes játék!")
@@ -289,8 +279,6 @@ class EpicGamesMonitor(BaseMonitor):
         if expiry_ts:
             embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
             
-        if genres:
-            embed.add_field(name=self.lang.get("field_genres", "Genres"), value=genres, inline=False)
             
         embed.set_footer(text="Epic Games Store")
         
