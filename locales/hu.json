@@ -35,6 +35,7 @@
     "check_triggering": "Kézi ellenőrzés indítása: {name}...",
     "check_not_found": "A megadott feed nem található: {name}",
     "check_success": "A(z) {name} feed legújabb tartalma sikeresen elküldve.",
+    "check_no_active_offers": "Jelenleg nincs aktív ajánlat a(z) {name} feed-en (üres a lista).",
     "error_no_content": "Nem sikerült lekérni tartalmat a(z) {name} feed-ből.",
     "error_monitor_not_found": "A megadott feed nem található vagy nincs engedélyezve.",
     "add_monitor_btn": "Monitor hozzáadása",

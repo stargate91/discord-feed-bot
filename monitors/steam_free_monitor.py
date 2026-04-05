@@ -100,8 +100,11 @@ class SteamFreeMonitor(BaseMonitor):
         except:
             return None
 
+        if isinstance(data, dict) and data.get("status") == 0:
+            return {"empty": True}
+
         if not isinstance(data, list) or not data:
-            return None
+            return {"empty": True}
 
         game = data[0]
         title = game.get("title", "Unknown Game")

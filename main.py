@@ -318,17 +318,23 @@ async def check(interaction: discord.Interaction, monitor_name: str):
     try:
         data = await target_monitor.get_latest_item()
         if data:
-            # Send content as ephemeral followup (testing only)
-            await interaction.followup.send(
-                content=data.get("content"),
-                embed=data.get("embed"),
-                view=data.get("view"),
-                ephemeral=True
-            )
-            await interaction.followup.send(
-                bot.get_feedback("check_success", name=monitor_name), 
-                ephemeral=True
-            )
+            if data.get("empty"):
+                await interaction.followup.send(
+                    bot.get_feedback("check_no_active_offers", name=monitor_name),
+                    ephemeral=True
+                )
+            else:
+                # Send content as ephemeral followup (testing only)
+                await interaction.followup.send(
+                    content=data.get("content"),
+                    embed=data.get("embed"),
+                    view=data.get("view"),
+                    ephemeral=True
+                )
+                await interaction.followup.send(
+                    bot.get_feedback("check_success", name=monitor_name), 
+                    ephemeral=True
+                )
         else:
             await interaction.followup.send(
                 bot.get_feedback("error_no_content", name=monitor_name), 

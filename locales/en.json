@@ -35,6 +35,7 @@
     "check_triggering": "Triggering manual check: {name}...",
     "check_not_found": "The specified feed was not found: {name}",
     "check_success": "The latest content for {name} was successfully sent.",
+    "check_no_active_offers": "There are currently no active offers for {name} (the list is empty).",
     "error_no_content": "Failed to fetch content from the {name} feed.",
     "error_monitor_not_found": "The specified feed was not found or is not enabled.",
     "add_monitor_btn": "Add Monitor",
