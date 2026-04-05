@@ -13,11 +13,11 @@
     "error_occurred": "Hiba történt a(z) {name} ellenőrzése közben.",
     "watching_feeds": "{count} feed figyelése",
     "dynamic_status": [
-        "Elemzek {count} adatfolyamot...",
-        "Ingyenes zsákmányok után kutatva...",
-        "A hálózatok megfigyelése folyamatban...",
-        "Feed frissítések összeállítása...",
-        "Rendszerdiagnosztika futtatása..."
+        "{count} hírcsatorna elemzése...",
+        "Adatok rendszerezése...",
+        "Jelentések összeállítása...",
+        "Hálózatok monitorozása...",
+        "Kivonatok előkészítése..."
     ],
     "field_worth": "Érték",
     "field_type": "Típus",
