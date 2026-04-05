@@ -15,6 +15,9 @@ from monitors.rss_monitor import RSSMonitor
 from monitors.epic_games_monitor import EpicGamesMonitor
 from monitors.steam_free_monitor import SteamFreeMonitor
 from monitors.gog_free_monitor import GOGFreeMonitor
+from monitors.reddit_monitor import RedditMonitor
+from monitors.twitter_monitor import TwitterMonitor
+from monitors.stream_monitor import StreamMonitor
 
 class FeedBot(commands.Bot):
     def __init__(self, config, db):
@@ -130,6 +133,12 @@ class FeedBot(commands.Bot):
             return SteamFreeMonitor(self, m_config, self.db, self.language_data)
         elif m_type == "gog_free":
             return GOGFreeMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "reddit":
+            return RedditMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "twitter":
+            return TwitterMonitor(self, m_config, self.db, self.language_data)
+        elif m_type == "stream":
+            return StreamMonitor(self, m_config, self.db, self.language_data)
         return None
 
 # --- Commands ---
@@ -285,6 +294,9 @@ class MonitorTypeSelect(discord.ui.Select):
             discord.SelectOption(label="Epic Games", value="epic_games", emoji="🎮"),
             discord.SelectOption(label="Steam Free", value="steam_free", emoji="♨️"),
             discord.SelectOption(label="GOG Free", value="gog_free", emoji="💜"),
+            discord.SelectOption(label="Reddit", value="reddit", emoji="🟠"),
+            discord.SelectOption(label="Twitter/X", value="twitter", emoji="🐦"),
+            discord.SelectOption(label="Stream (Twitch/Kick)", value="stream", emoji="📡"),
         ]
         super().__init__(placeholder=bot.get_feedback("add_monitor_type_select"), options=options)
 
