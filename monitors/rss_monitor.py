@@ -66,14 +66,26 @@ class RSSMonitor(BaseMonitor):
             embed.set_author(name=author_name)
             
             # Thumbnail handling (Generic RSS handling)
+            img_url = None
             if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-                embed.set_image(url=entry.media_thumbnail[0]["url"])
+                img_url = entry.media_thumbnail[0]["url"]
             elif hasattr(entry, 'media_content') and entry.media_content:
-                embed.set_image(url=entry.media_content[0]["url"])
-            elif 'description' in entry:
-                img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.description)
-                if img_match:
-                    embed.set_image(url=img_match.group(1))
+                img_url = entry.media_content[0]["url"]
+            else:
+                # Try description first
+                if hasattr(entry, 'description') and entry.description:
+                    img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.description)
+                    if img_match:
+                        img_url = img_match.group(1)
+                
+                # If still no image, try content (content:encoded)
+                if not img_url and hasattr(entry, 'content') and entry.content:
+                    img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.content[0].get('value', ''))
+                    if img_match:
+                        img_url = img_match.group(1)
+
+            if img_url:
+                embed.set_image(url=img_url)
 
             alert_text = self.lang.get("new_rss_alert", "Új bejegyzés érkezett!")
             ping = f"{self.ping_role} " if self.ping_role else ""
@@ -120,14 +132,24 @@ class RSSMonitor(BaseMonitor):
         )
         embed.set_author(name=author_name)
         
+        img_url = None
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-            embed.set_image(url=entry.media_thumbnail[0]["url"])
+            img_url = entry.media_thumbnail[0]["url"]
         elif hasattr(entry, 'media_content') and entry.media_content:
-            embed.set_image(url=entry.media_content[0]["url"])
-        elif 'description' in entry:
-            img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.description)
-            if img_match:
-                embed.set_image(url=img_match.group(1))
+            img_url = entry.media_content[0]["url"]
+        else:
+            if hasattr(entry, 'description') and entry.description:
+                img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.description)
+                if img_match:
+                    img_url = img_match.group(1)
+            
+            if not img_url and hasattr(entry, 'content') and entry.content:
+                img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.content[0].get('value', ''))
+                if img_match:
+                    img_url = img_match.group(1)
+
+        if img_url:
+            embed.set_image(url=img_url)
 
         alert_text = self.lang.get("new_rss_alert", "Új bejegyzés érkezett!")
         ping = f"{self.ping_role} " if self.ping_role else ""
