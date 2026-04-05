@@ -100,11 +100,12 @@ class FeedBot(commands.Bot):
         if message.author.bot:
             return
         
-        # Restrict prefix commands to specified admin channel
+        # Restrict PREFIX commands (!sync, !clear_commands) to the admin channel.
+        # Slash commands (/add_monitor, /check, etc.) are NOT restricted here
+        # because they use the interaction system and are always ephemeral.
         if message.content.startswith(self.command_prefix):
             admin_channel_id = self.config.get("admin_channel_id")
             if admin_channel_id and message.channel.id != admin_channel_id:
-                # Silently ignore
                 return
         
         await self.process_commands(message)
@@ -140,6 +141,16 @@ class FeedBot(commands.Bot):
         elif m_type == "stream":
             return StreamMonitor(self, m_config, self.db, self.language_data)
         return None
+
+    def save_config(self):
+        """Persist config.json to disk, stripping sensitive runtime keys."""
+        save_config = self.config.copy()
+        # Remove keys that come from .env — never write secrets to config.json
+        for key in ("token",):
+            save_config.pop(key, None)
+        with open("config.json", "w", encoding="utf-8") as f:
+            json.dump(save_config, f, indent=4, ensure_ascii=False)
+        log.info("config.json saved to disk.")
 
 # --- Commands ---
 
@@ -260,14 +271,8 @@ class AddMonitorModal(discord.ui.Modal):
                 self.bot.config["monitors"] = []
             self.bot.config["monitors"].append(m_config)
 
-            # Persist to disk
-            with open("config.json", "w", encoding="utf-8") as f:
-                # Remove temporary token and db path before saving (to keep config.json clean)
-                # But wait, config_loader puts them there. 
-                # Let's save a copy without sensitive data if they came from .env
-                save_config = self.bot.config.copy()
-                # Assuming setup handled .env overwrites, we just save the list
-                json.dump(save_config, f, indent=4, ensure_ascii=False)
+            # Persist to disk (token-safe)
+            self.bot.save_config()
 
             # Add to MonitorManager at runtime
             monitor = self.bot.create_monitor_instance(m_config)
@@ -386,6 +391,104 @@ async def monitor_autocomplete(interaction: discord.Interaction, current: str):
                 choices.append(app_commands.Choice(name=m.name, value=m.name))
     return choices[:25]
 
+# --- /list_monitors ---
+
+@app_commands.command(name="list_monitors", description="Aktív és inaktív monitorok listázása")
+@app_commands.default_permissions(administrator=True)
+async def list_monitors(interaction: discord.Interaction):
+    """[Admin] List all configured monitors with their status."""
+    bot = interaction.client
+    monitors_cfg = bot.config.get("monitors", [])
+    
+    if not monitors_cfg:
+        await interaction.response.send_message(
+            bot.get_feedback("list_monitors_empty"),
+            ephemeral=True
+        )
+        return
+    
+    # Build an embed with all monitors
+    embed = discord.Embed(
+        title=bot.get_feedback("list_monitors_title"),
+        color=0x5865F2  # Discord Blurple
+    )
+    
+    type_emojis = {
+        "youtube": "📺", "rss": "🔗", "tiktok": "🎵", "instagram": "📸",
+        "epic_games": "🎮", "steam_free": "♨️", "gog_free": "💜",
+        "reddit": "🟠", "twitter": "🐦", "stream": "📡"
+    }
+    
+    for i, m_cfg in enumerate(monitors_cfg, 1):
+        m_type = m_cfg.get("type", "unknown")
+        m_name = m_cfg.get("name", "??")
+        m_enabled = m_cfg.get("enabled", True)
+        m_channel = m_cfg.get("discord_channel_id", 0)
+        emoji = type_emojis.get(m_type, "❓")
+        status = "✅" if m_enabled else "❌"
+        
+        embed.add_field(
+            name=f"{emoji} {m_name}",
+            value=f"{status} `{m_type}` • <#{m_channel}>",
+            inline=False
+        )
+    
+    embed.set_footer(text=bot.get_feedback("list_monitors_footer", count=len(monitors_cfg)))
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# --- /remove_monitor ---
+
+@app_commands.command(name="remove_monitor", description="Monitor eltávolítása a rendszerből")
+@app_commands.describe(monitor_name="Melyik monitor-t távolítsuk el?")
+@app_commands.default_permissions(administrator=True)
+async def remove_monitor(interaction: discord.Interaction, monitor_name: str):
+    """[Admin] Remove a monitor from the system (config + runtime)."""
+    bot = interaction.client
+    
+    # Find in config
+    monitors_cfg = bot.config.get("monitors", [])
+    target_idx = None
+    for i, m_cfg in enumerate(monitors_cfg):
+        if m_cfg.get("name") == monitor_name:
+            target_idx = i
+            break
+    
+    if target_idx is None:
+        await interaction.response.send_message(
+            bot.get_feedback("remove_monitor_not_found", name=monitor_name),
+            ephemeral=True
+        )
+        return
+    
+    # Remove from config list
+    removed_cfg = monitors_cfg.pop(target_idx)
+    
+    # Remove from runtime MonitorManager
+    if bot.monitor_manager:
+        bot.monitor_manager.monitors = [
+            m for m in bot.monitor_manager.monitors if m.name != monitor_name
+        ]
+    
+    # Persist to disk (token-safe)
+    bot.save_config()
+    
+    log.info(f"Monitor removed: {monitor_name} ({removed_cfg.get('type')})")
+    await interaction.response.send_message(
+        bot.get_feedback("remove_monitor_success", name=monitor_name, type=removed_cfg.get('type', '?')),
+        ephemeral=True
+    )
+
+@remove_monitor.autocomplete("monitor_name")
+async def remove_monitor_autocomplete(interaction: discord.Interaction, current: str):
+    bot = interaction.client
+    choices = []
+    monitors_cfg = bot.config.get("monitors", [])
+    for m_cfg in monitors_cfg:
+        name = m_cfg.get("name", "")
+        if current.lower() in name.lower():
+            choices.append(app_commands.Choice(name=name, value=name))
+    return choices[:25]
+
 # --- Main Logic ---
 
 async def main():
@@ -426,6 +529,8 @@ async def main():
             # Add slash commands to the tree
             bot.tree.add_command(check)
             bot.tree.add_command(add_monitor)
+            bot.tree.add_command(list_monitors)
+            bot.tree.add_command(remove_monitor)
             
             await bot.start(token)
             

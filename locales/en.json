@@ -63,5 +63,10 @@
     "add_monitor_channel_label": "Discord Channel ID",
     "add_monitor_role_label": "Ping Role ID (Optional)",
     "add_monitor_success": "Monitor {name} ({type}) added successfully!",
-    "add_monitor_error": "An error occurred while adding the monitor."
+    "add_monitor_error": "An error occurred while adding the monitor.",
+    "list_monitors_title": "📋 Configured Monitors",
+    "list_monitors_empty": "No monitors configured.",
+    "list_monitors_footer": "Total: {count} monitor(s) configured.",
+    "remove_monitor_success": "Monitor {name} ({type}) removed successfully!",
+    "remove_monitor_not_found": "No monitor found with name: {name}"
 }

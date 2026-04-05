@@ -63,5 +63,10 @@
     "add_monitor_channel_label": "Discord csatorna ID",
     "add_monitor_role_label": "Pingelt rang ID (Választható)",
     "add_monitor_success": "A(z) {name} ({type}) monitor sikeresen hozzáadva!",
-    "add_monitor_error": "Hiba történt a monitor hozzáadása közben."
+    "add_monitor_error": "Hiba történt a monitor hozzáadása közben.",
+    "list_monitors_title": "📋 Konfigurált Monitorok",
+    "list_monitors_empty": "Nincs egyetlen monitor sem konfigurálva.",
+    "list_monitors_footer": "Összesen {count} monitor konfigurálva.",
+    "remove_monitor_success": "A(z) {name} ({type}) monitor sikeresen eltávolítva!",
+    "remove_monitor_not_found": "Nem található monitor ezzel a névvel: {name}"
 }
