@@ -64,6 +64,8 @@ class SteamFreeMonitor(BaseMonitor):
             )
             if image_url:
                 embed.set_image(url=image_url)
+            
+            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131413956038656.png")
             if worth and worth != "N/A":
                 embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
             embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
@@ -117,6 +119,8 @@ class SteamFreeMonitor(BaseMonitor):
         )
         if image_url:
             embed.set_image(url=image_url)
+            
+        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131413956038656.png")
         if worth and worth != "N/A":
             embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
         embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
