@@ -79,8 +79,9 @@ class FeedBot(commands.Bot):
             )
             await self.change_presence(activity=activity, status=discord.Status.online)
             
-            # Rotate every 5 minutes
-            await asyncio.sleep(300)
+            # Rotate based on config (default to 60 seconds)
+            interval = self.config.get("presence_interval_seconds", 60)
+            await asyncio.sleep(interval)
 
     async def on_ready(self):
         log.info(f"--- FEED BOT ONLINE ---")
