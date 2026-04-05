@@ -18,7 +18,7 @@ class SteamFreeMonitor(BaseMonitor):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url) as response:
-                    if response.status != 200:
+                    if response.status not in (200, 201):
                         log.error(f"Failed to fetch GamerPower API: {response.status}")
                         return
                     data = await response.json()
@@ -94,7 +94,7 @@ class SteamFreeMonitor(BaseMonitor):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url) as response:
-                    if response.status != 200:
+                    if response.status not in (200, 201):
                         return None
                     data = await response.json()
         except:

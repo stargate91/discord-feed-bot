@@ -17,7 +17,7 @@ class GOGFreeMonitor(BaseMonitor):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url) as response:
-                    if response.status != 200:
+                    if response.status not in (200, 201):
                         log.error(f"Failed to fetch GamerPower API for GOG: {response.status}")
                         return
                     data = await response.json()
@@ -97,17 +97,17 @@ class GOGFreeMonitor(BaseMonitor):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url) as response:
-                    if response.status != 200:
+                    if response.status not in (200, 201):
                         return None
                     data = await response.json()
         except:
             return None
 
         if isinstance(data, dict) and data.get("status") == 0:
-            return None
+            return {"empty": True}
 
         if not isinstance(data, list) or not data:
-            return None
+            return {"empty": True}
 
         game = data[0]
         title = game.get("title", "Unknown Game")

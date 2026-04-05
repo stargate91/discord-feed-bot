@@ -24,8 +24,8 @@ class RSSMonitor(BaseMonitor):
         # Fetch the feed as a blocking operation in an executor
         try:
             loop = asyncio.get_event_loop()
-            # Use agent parameter to specify User-Agent
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url, agent=USER_AGENT))
+            # Do not use fake agent, as some servers block incomplete Chrome profiles but allow default urllib
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Failed to fetch RSS feed for {self.name}: {e}")
             return
@@ -112,7 +112,7 @@ class RSSMonitor(BaseMonitor):
         import re
         try:
             loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url, agent=USER_AGENT))
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Manual check failed for RSS {self.name}: {e}")
             return None
