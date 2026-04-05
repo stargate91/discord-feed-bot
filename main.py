@@ -57,6 +57,30 @@ class FeedBot(commands.Bot):
 
         # Start the background loop as a task
         self.loop.create_task(self.monitor_manager.start_loop())
+        self.loop.create_task(self.status_task())
+
+    async def status_task(self):
+        """Periodically update the bot's rich presence with a dynamic persona."""
+        import random
+        await self.wait_until_ready()
+        
+        while not self.is_closed():
+            monitor_count = len(self.monitor_manager.monitors) if self.monitor_manager else 0
+            
+            # Get dynamic statuses or fallback to static
+            statuses = self.language_data.get("dynamic_status", [self.language_data.get("watching_feeds", "Watching {count} feed(s)")])
+            
+            # Select random status
+            status_text = random.choice(statuses).replace("{count}", str(monitor_count))
+            
+            activity = discord.Activity(
+                type=discord.ActivityType.watching,
+                name=status_text
+            )
+            await self.change_presence(activity=activity, status=discord.Status.online)
+            
+            # Rotate every 5 minutes
+            await asyncio.sleep(300)
 
     async def on_ready(self):
         log.info(f"--- FEED BOT ONLINE ---")
@@ -64,16 +88,8 @@ class FeedBot(commands.Bot):
         log.info(f"Prefix: {self.command_prefix}")
         log.info(f"------------------------")
 
-        # Set Rich Presence
-        monitor_count = len(self.monitor_manager.monitors) if self.monitor_manager else 0
-        presence_text = self.language_data.get("watching_feeds", "Watching {count} feed(s)")
-        presence_text = presence_text.replace("{count}", str(monitor_count))
-        activity = discord.Activity(
-            type=discord.ActivityType.watching,
-            name=presence_text
-        )
-        await self.change_presence(activity=activity, status=discord.Status.online)
-        log.info(f"Rich Presence set: {presence_text}")
+        # Initial Rich Presence is handled by status_task
+        log.info("Dynamic Rich Presence rotating task started.")
 
     async def on_message(self, message):
         """Process commands and filter logs."""

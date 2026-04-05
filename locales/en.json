@@ -12,6 +12,13 @@
     "monitor_started": "Monitoring started: {name}",
     "error_occurred": "An error occurred checking {name}.",
     "watching_feeds": "Watching {count} feed(s)",
+    "dynamic_status": [
+        "Analyzing {count} data streams...",
+        "Scanning for free loot...",
+        "Monitoring the networks...",
+        "Compiling feed updates...",
+        "Running diagnostics..."
+    ],
     "field_worth": "Worth",
     "field_type": "Type",
     "field_expiry": "Expiry",
