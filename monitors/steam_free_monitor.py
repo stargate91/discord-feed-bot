@@ -59,17 +59,16 @@ class SteamFreeMonitor(BaseMonitor):
 
             embed = discord.Embed(
                 title=title,
-                description=description[:2048],
                 url=game_url,
                 color=0x1B2838  # Steam Dark Blue
             )
             if image_url:
                 embed.set_image(url=image_url)
             if worth and worth != "N/A":
-                embed.add_field(name=f"💰 {self.lang.get('field_worth', 'Érték')}", value=worth, inline=True)
-            embed.add_field(name=f"📦 {self.lang.get('field_type', 'Típus')}", value=giveaway_type, inline=True)
+                embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
+            embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
             if end_date and end_date != "N/A":
-                embed.add_field(name=f"⏰ {self.lang.get('field_expiry', 'Lejárat')}", value=end_date, inline=True)
+                embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
             embed.set_footer(text="Steam • GamerPower")
 
             alert_text = self.lang.get("new_steam_free_alert", "Ingyenes Steam loot érkezett!")
@@ -113,17 +112,16 @@ class SteamFreeMonitor(BaseMonitor):
 
         embed = discord.Embed(
             title=title,
-            description=description[:2048],
             url=game_url,
             color=0x1B2838 
         )
         if image_url:
             embed.set_image(url=image_url)
         if worth and worth != "N/A":
-            embed.add_field(name=f"💰 {self.lang.get('field_worth', 'Érték')}", value=worth, inline=True)
-        embed.add_field(name=f"📦 {self.lang.get('field_type', 'Típus')}", value=giveaway_type, inline=True)
+            embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
+        embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
         if end_date and end_date != "N/A":
-            embed.add_field(name=f"⏰ {self.lang.get('field_expiry', 'Lejárat')}", value=end_date, inline=True)
+            embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
         embed.set_footer(text="Steam • GamerPower")
 
         alert_text = self.lang.get("new_steam_free_alert", "Ingyenes Steam loot érkezett!")
