@@ -2,6 +2,7 @@
     "language": "hu",
     "database_path": "data/feed_bot.db",
     "refresh_interval_minutes": 10,
+    "presence_interval_seconds": 60,
     "command_prefix": "!",
     "command_suffix": "_nova",
     "admin_channel_id": 1486516075905417216,
