@@ -4,234 +4,123 @@ from core.base_monitor import BaseMonitor
 from logger import log
 
 class GOGFreeMonitor(BaseMonitor):
-    """Monitor for free GOG game giveaways via GOG catalog API and GamerPower."""
+    """Monitor for free GOG game giveaways via GamerPower API."""
     
     def __init__(self, bot, config, db, language_data):
         super().__init__(bot, config, db)
-        # GOG catalog API for currently free games
-        self.gog_api_url = "https://catalog.gog.com/v1/catalog?limit=50&price=between:0,0&order=desc:trending&productType=in:game,pack"
-        # GamerPower as secondary source (covers temporary giveaways)
-        self.gamerpower_url = "https://www.gamerpower.com/api/giveaways?sort-by=date"
+        self.api_url = "https://www.gamerpower.com/api/giveaways?platform=gog&sort-by=date"
         self.lang = language_data
         self.is_first_run = True
 
     async def check_for_updates(self):
-        """Check both GOG catalog and GamerPower for free GOG games."""
-        await self._check_gog_catalog()
-        await self._check_gamerpower()
+        """Fetch GamerPower API and look for new GOG giveaways."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.api_url) as response:
+                    if response.status != 200:
+                        log.error(f"Failed to fetch GamerPower API for GOG: {response.status}")
+                        return
+                    data = await response.json()
+        except Exception as e:
+            log.error(f"Error fetching GOG free games data: {e}")
+            return
+
+        if isinstance(data, dict) and data.get("status") == 0:
+            # Expected empty response from GamerPower when no giveaways exist
+            return
+
+        if not isinstance(data, list):
+            log.debug(f"Unexpected GamerPower API response for {self.name}")
+            return
+
+        new_entries = []
+        for game in reversed(data):
+            giveaway_id = str(game.get("id"))
+            
+            if not await self.db.is_published(giveaway_id, "gog_free"):
+                if self.is_first_run:
+                    log.debug(f"Seeding database with GOG giveaway: {game.get('title')}")
+                    await self.db.mark_as_published(giveaway_id, "gog_free", self.api_url)
+                else:
+                    new_entries.append(game)
+                    log.info(f"New GOG giveaway detected: {game.get('title')}")
+
+        for game in new_entries:
+            giveaway_id = str(game.get("id"))
+            title = game.get("title", "Unknown Game")
+            game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
+            
+            # Link logic: Avoid Steam links in GOG monitor
+            is_steam_link = "steampowered.com" in game_url.lower() or "steamcommunity.com" in game_url.lower()
+            final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
+
+            image_url = game.get("image") or game.get("thumbnail")
+            worth = game.get("worth", "N/A")
+            giveaway_type = game.get("type", "Game")
+            end_date = game.get("end_date", "N/A")
+
+            embed = discord.Embed(
+                title=title,
+                url=final_url,
+                color=0x86328A  # GOG Purple
+            )
+            if image_url:
+                embed.set_image(url=image_url)
+                
+            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
+            
+            if worth and worth != "N/A":
+                embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
+            embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
+            if end_date and end_date != "N/A":
+                embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
+            embed.set_footer(text="GOG.com • GamerPower")
+
+            alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
+            ping = f"{self.ping_role} " if self.ping_role else ""
+            
+            # Create interactive button
+            view = discord.ui.View()
+            btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
+            view.add_item(discord.ui.Button(label=btn_label, url=final_url, style=discord.ButtonStyle.link))
+            
+            await self.send_update(content=f"{ping}{alert_text}\n{final_url}", embed=embed, view=view)
+            await self.db.mark_as_published(giveaway_id, "gog_free", self.api_url)
 
         if self.is_first_run:
             log.info(f"Initial seed completed for GOG Free Games. Monitoring active.")
             self.is_first_run = False
 
-    async def _check_gog_catalog(self):
-        """Check GOG's own catalog API for free games."""
-        try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.gog_api_url, headers=headers) as response:
-                    if response.status != 200:
-                        log.debug(f"GOG catalog API returned {response.status}")
-                        return
-                    data = await response.json()
-        except Exception as e:
-            log.error(f"Error fetching GOG catalog: {e}")
-            return
-
-        products = data.get("products", [])
-        for product in reversed(products):
-            product_id = str(product.get("id", ""))
-            if not product_id:
-                continue
-
-            db_id = f"gog_catalog_{product_id}"
-            if not await self.db.is_published(db_id, "gog_free"):
-                if self.is_first_run:
-                    log.debug(f"Seeding GOG catalog: {product.get('title')}")
-                    await self.db.mark_as_published(db_id, "gog_free", self.gog_api_url)
-                else:
-                    await self._send_gog_catalog_notification(product)
-                    await self.db.mark_as_published(db_id, "gog_free", self.gog_api_url)
-
-    async def _check_gamerpower(self):
-        """Check GamerPower for GOG giveaways (temporary promotions)."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.gamerpower_url) as response:
-                    if response.status != 200:
-                        log.debug(f"GamerPower API returned {response.status}")
-                        return
-                    data = await response.json()
-        except Exception as e:
-            log.error(f"Error fetching GamerPower data for GOG: {e}")
-            return
-
-        if not isinstance(data, list):
-            return
-
-        for game in reversed(data):
-            platforms = game.get("platforms", "").lower()
-            if "gog" not in platforms:
-                continue
-
-            giveaway_id = str(game.get("id"))
-            db_id = f"gamerpower_gog_{giveaway_id}"
-
-            if not await self.db.is_published(db_id, "gog_free"):
-                if self.is_first_run:
-                    log.debug(f"Seeding GamerPower GOG: {game.get('title')}")
-                    await self.db.mark_as_published(db_id, "gog_free", self.gamerpower_url)
-                else:
-                    await self._send_gamerpower_notification(game)
-                    await self.db.mark_as_published(db_id, "gog_free", self.gamerpower_url)
-
-    async def _send_gog_catalog_notification(self, product):
-        """Send notification for a free game found in GOG's catalog."""
-        title = product.get("title", "Unknown Game")
-        slug = product.get("slug", "")
-        game_url = f"https://www.gog.com/en/game/{slug}" if slug else "https://www.gog.com"
-
-        # Image
-        cover_url = None
-        if product.get("coverHorizontal"):
-            cover_url = f"https:{product['coverHorizontal']}" if product['coverHorizontal'].startswith("//") else product['coverHorizontal']
-
-        embed = discord.Embed(
-            title=title,
-            url=game_url,
-            color=0x86328A  # GOG Purple
-        )
-        if cover_url:
-            embed.set_image(url=cover_url)
-            
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
-        embed.set_footer(text="GOG.com")
-
-        alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
-        ping = f"{self.ping_role} " if self.ping_role else ""
-        
-        # Create interactive button
-        view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
-        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
-        
-        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
-        log.info(f"Sent GOG catalog notification for: {title}")
-
-    async def _send_gamerpower_notification(self, game):
-        """Send notification for a GOG giveaway found via GamerPower."""
-        title = game.get("title", "Unknown Game")
-        description = game.get("description", "")
-        # Link logic: Avoid Steam links in GOG monitor
-        is_steam_link = "steampowered.com" in game_url.lower() or "steamcommunity.com" in game_url.lower()
-        final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
-
-        embed = discord.Embed(
-            title=title,
-            url=final_url,
-            color=0x86328A  # GOG Purple
-        )
-        if image_url:
-            embed.set_image(url=image_url)
-            
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
-        
-        if worth and worth != "N/A":
-            embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
-        if end_date and end_date != "N/A":
-            embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
-        embed.set_footer(text="GOG.com • GamerPower")
-
-        alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
-        ping = f"{self.ping_role} " if self.ping_role else ""
-
-        # Create interactive button
-        view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
-        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
-
-        await self.send_update(content=f"{ping}{alert_text}\n{final_url}", embed=embed, view=view)
-        log.info(f"Sent GOG GamerPower notification for: {title}")
-
     async def get_latest_item(self):
-        """Fetch the most recent GOG giveaway, prioritizing native GOG catalog."""
+        """Fetch the most recent GOG giveaway from GamerPower."""
         import aiohttp
-        
-        # 1. Try GOG Catalog first
-        try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.gog_api_url, headers=headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        products = data.get("products", [])
-                        if products:
-                            product = products[0]
-                            title = product.get("title", "Unknown Game")
-                            slug = product.get("slug", "")
-                            game_url = f"https://www.gog.com/en/game/{slug}" if slug else "https://www.gog.com"
-                            cover_url = None
-                            if product.get("coverHorizontal"):
-                                cover_url = f"https:{product['coverHorizontal']}" if product['coverHorizontal'].startswith("//") else product['coverHorizontal']
-                            
-                            embed = discord.Embed(
-                                title=title,
-                                url=game_url,
-                                color=0x86328A
-                            )
-                            if cover_url:
-                                embed.set_image(url=cover_url)
-                            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
-                            embed.set_footer(text="GOG.com")
-                            
-                            alert_text = self.lang.get("new_gog_free_alert", "Ingyenes GOG játék érkezett!")
-                            ping = f"{self.ping_role} " if self.ping_role else ""
-                            
-                            view = discord.ui.View()
-                            btn_label = self.lang.get("btn_view_gog", "Watch on GOG")
-                            view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
-                            
-                            return {
-                                "content": f"{ping}{alert_text}\n{game_url}",
-                                "embed": embed,
-                                "view": view
-                            }
-        except:
-            pass
-
-        # 2. Fallback to GamerPower
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.gamerpower_url) as response:
+                async with session.get(self.api_url) as response:
                     if response.status != 200:
                         return None
                     data = await response.json()
         except:
             return None
 
+        if isinstance(data, dict) and data.get("status") == 0:
+            return None
+
         if not isinstance(data, list) or not data:
             return None
 
-        # Find the first GOG game in GamerPower results
-        target_game = None
-        for g in data:
-            if "gog" in g.get("platforms", "").lower():
-                target_game = g
-                break
+        game = data[0]
+        title = game.get("title", "Unknown Game")
+        game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
         
-        if not target_game:
-            return None
-
-        title = target_game.get("title", "Unknown Game")
-        game_url = target_game.get("open_giveaway_url") or target_game.get("gamerpower_url", "")
-        # Link logic: Avoid Steam links
+        # Link logic: Avoid Steam links in GOG monitor
         is_steam_link = "steampowered.com" in game_url.lower() or "steamcommunity.com" in game_url.lower()
-        final_url = target_game.get("gamerpower_url", game_url) if is_steam_link else game_url
+        final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
         
-        image_url = target_game.get("image") or target_game.get("thumbnail")
-        worth = target_game.get("worth", "N/A")
-        giveaway_type = target_game.get("type", "Game")
-        end_date = target_game.get("end_date", "N/A")
+        image_url = game.get("image") or game.get("thumbnail")
+        worth = game.get("worth", "N/A")
+        giveaway_type = game.get("type", "Game")
+        end_date = game.get("end_date", "N/A")
 
         embed = discord.Embed(
             title=title,
@@ -240,7 +129,7 @@ class GOGFreeMonitor(BaseMonitor):
         )
         if image_url:
             embed.set_image(url=image_url)
-        
+            
         embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
         
         if worth and worth != "N/A":
