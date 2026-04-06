@@ -51,20 +51,7 @@ class YouTubeMonitor(BaseMonitor):
         for entry in new_entries:
             video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
             video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
-            video_title = entry.get("title", "New Video")
-            author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
             
-            embed = discord.Embed(
-                title=video_title,
-                url=video_link,
-                color=0xFF0000 # YouTube Red
-            )
-            embed.set_author(name=author_name)
-            
-            # Thumbnail handling (YouTube RSS usually has media_thumbnail)
-            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-                embed.set_image(url=entry.media_thumbnail[0]["url"])
-
             alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
             ping = f"{self.ping_role} " if self.ping_role else ""
             
@@ -73,7 +60,8 @@ class YouTubeMonitor(BaseMonitor):
             btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
             view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
             
-            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed, view=view)
+            # Send update without the custom embed to allow Discord's native playable embed to show
+            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=None, view=view)
             await self.db.mark_as_published(video_id, "youtube", self.feed_url)
 
         # After the first successful check, mark as not first run
@@ -96,19 +84,7 @@ class YouTubeMonitor(BaseMonitor):
         entry = feed.entries[0]
         video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
         video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
-        video_title = entry.get("title", "New Video")
-        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         
-        embed = discord.Embed(
-            title=video_title,
-            url=video_link,
-            color=0xFF0000 
-        )
-        embed.set_author(name=author_name)
-        
-        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-            embed.set_image(url=entry.media_thumbnail[0]["url"])
-
         alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
         ping = f"{self.ping_role} " if self.ping_role else ""
         
@@ -118,6 +94,6 @@ class YouTubeMonitor(BaseMonitor):
         
         return {
             "content": f"{ping}{alert_text}\n{video_link}",
-            "embed": embed,
+            "embed": None,
             "view": view
         }
