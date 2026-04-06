@@ -1,5 +1,6 @@
 {
     "new_video_alert": "New video published!",
+    "new_video_alert_format": "**{channel}** just posted a new video!",
     "new_stream_alert": "New stream started!",
     "new_tiktok_alert": "New TikTok video published!",
     "new_instagram_alert": "New Instagram post published!",

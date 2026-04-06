@@ -50,18 +50,23 @@ class YouTubeMonitor(BaseMonitor):
         # Send updates for new entries
         for entry in new_entries:
             video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
-            video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
-            # Clean up: alert text and role ping
-            alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            # Get channel name and format short link
+            author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+            short_link = f"https://youtu.be/{video_id}"
+            
+            # Format localized alert message
+            alert_format = self.lang.get("new_video_alert_format", "**{channel}** just posted a new video!")
+            alert_text = alert_format.replace("{channel}", author_name)
+            
+            ping = f"{self.ping_role}\n" if self.ping_role else ""
             
             # Create interactive button
             view = discord.ui.View()
             btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
-            view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+            view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
             
-            # Send update without the custom embed to allow Discord's native playable embed to show
-            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=None, view=view)
+            # Send update with the new formatting and short link
+            await self.send_update(content=f"{ping}{alert_text}\n{short_link}", embed=None, view=view)
             await self.db.mark_as_published(video_id, "youtube", self.feed_url)
 
         # After the first successful check, mark as not first run
@@ -83,17 +88,23 @@ class YouTubeMonitor(BaseMonitor):
         # Return the most recent entry (first in RSS)
         entry = feed.entries[0]
         video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
-        video_link = entry.get("link", f"https://www.youtube.com/watch?v={video_id}")
-        # Clean up: alert text and role ping
-        alert_text = self.lang.get("new_video_alert", "Új videó érkezett!")
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        
+        # Get channel name and format short link
+        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+        short_link = f"https://youtu.be/{video_id}"
+        
+        # Format localized alert message
+        alert_format = self.lang.get("new_video_alert_format", "**{channel}** just posted a new video!")
+        alert_text = alert_format.replace("{channel}", author_name)
+        
+        ping = f"{self.ping_role}\n" if self.ping_role else ""
         
         view = discord.ui.View()
         btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
-        view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
+        view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{ping}{alert_text}\n{video_link}",
+            "content": f"{ping}{alert_text}\n{short_link}",
             "embed": None,
             "view": view
         }
