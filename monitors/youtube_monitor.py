@@ -65,7 +65,7 @@ class YouTubeMonitor(BaseMonitor):
             btn_label = self.lang.get("btn_view_youtube", "Watch on YouTube")
             view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
             
-            # Send update with the new formatting and short link
+            # Send update with single newlines
             await self.send_update(content=f"{ping}{alert_text}\n{short_link}", embed=None, view=view)
             await self.db.mark_as_published(video_id, "youtube", self.feed_url)
 
@@ -73,6 +73,7 @@ class YouTubeMonitor(BaseMonitor):
         if self.is_first_run:
             log.info(f"Initial seed completed for {self.name}. Monitoring active for next updates.")
             self.is_first_run = False
+
     async def get_latest_item(self):
         """Fetch the most recent YouTube video from the feed."""
         if not self.channel_id:

@@ -12,7 +12,7 @@
             "name": "The Why Files",
             "channel_id": "UCIFk2uvCNcEmZ77g0ESKLcQ",
             "discord_channel_id": 1440280318094479432,
-            "ping_role_id": 1440385086267854849,
+            "ping_role_id": 1491128406128070786,
             "enabled": true
         },
         {
@@ -20,7 +20,7 @@
             "name": "The Critical Drinker",
             "channel_id": "UCSJPFQdZwrOutnmSFYtbstA",
             "discord_channel_id": 1440324855261298738,
-            "ping_role_id": 1442618108098379936,
+            "ping_role_id": 1491128896496865460,
             "enabled": true
         },
         {
@@ -28,7 +28,7 @@
             "name": "The Critical Gamer",
             "channel_id": "UCBdwqWmXhupzV5q8TfD-kNQ",
             "discord_channel_id": 1440324855261298738,
-            "ping_role_id": 1442618108098379936,
+            "ping_role_id": 1491128896496865460,
             "enabled": true
         },
         {
@@ -36,7 +36,7 @@
             "name": "Asmongold TV",
             "channel_id": "UCQeRaTukNYft1_6AZPACnog",
             "discord_channel_id": 1440391356135506040,
-            "ping_role_id": 1442617811363954688,
+            "ping_role_id": 1491129009122312294,
             "enabled": true
         },
         {
@@ -44,7 +44,7 @@
             "name": "TheVR Gaming+",
             "channel_id": "UCSFMCn1xtj_4kOy6KNK_fNg",
             "discord_channel_id": 1439157327755345922,
-            "ping_role_id": 1471017960138215487,
+            "ping_role_id": 1491128547312664616,
             "enabled": true
         },
         {
@@ -52,7 +52,7 @@
             "name": "TheVR Podcast",
             "channel_id": "UCTY9vSAwOVsXw1lE1vBD0Hg",
             "discord_channel_id": 1439157327755345922,
-            "ping_role_id": 1471017960138215487,
+            "ping_role_id": 1491128547312664616,
             "enabled": true
         },
         {
@@ -60,7 +60,7 @@
             "name": "TheVR",
             "channel_id": "UCrpWCVp9FuGA8OnGtA0rgsw",
             "discord_channel_id": 1439157327755345922,
-            "ping_role_id": 1471017960138215487,
+            "ping_role_id": 1491128547312664616,
             "enabled": true
         },
         {
@@ -68,7 +68,7 @@
             "name": "TheVR Tech",
             "channel_id": "UCDeRsDqcB8zdkzErxrdHCOw",
             "discord_channel_id": 1439157327755345922,
-            "ping_role_id": 1471017960138215487,
+            "ping_role_id": 1491128547312664616,
             "enabled": true
         },
         {
@@ -76,7 +76,7 @@
             "name": "TheVR Shortcut",
             "channel_id": "UCnoVsxmXRCq3935G40SdBKA",
             "discord_channel_id": 1439157327755345922,
-            "ping_role_id": 1471017960138215487,
+            "ping_role_id": 1491128547312664616,
             "enabled": true
         },
         {
@@ -110,7 +110,7 @@
             "name": "Epic Games Free Loot",
             "include_upcoming": false,
             "discord_channel_id": 1277219345835229228,
-            "ping_role_id": 0,
+            "ping_role_id": 1491128609451147284,
             "enabled": true
         },
         {
@@ -118,14 +118,14 @@
             "name": "Steam Free Loot",
             "include_dlc": false,
             "discord_channel_id": 1277219345835229228,
-            "ping_role_id": 0,
+            "ping_role_id": 1491128609451147284,
             "enabled": true
         },
         {
             "type": "gog_free",
             "name": "GOG Free Loot",
             "discord_channel_id": 1277219345835229228,
-            "ping_role_id": 0,
+            "ping_role_id": 1491128609451147284,
             "enabled": true
         },
         {
