@@ -1,5 +1,6 @@
 import aiohttp
 import discord
+from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
 
@@ -56,6 +57,13 @@ class SteamFreeMonitor(BaseMonitor):
             worth = game.get("worth", "N/A")
             giveaway_type = game.get("type", "Game")
             end_date = game.get("end_date", "N/A")
+            expiry_ts = None
+            if end_date and end_date != "N/A":
+                try:
+                    dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+                    expiry_ts = int(dt.timestamp())
+                except:
+                    pass
 
             embed = discord.Embed(
                 title=title,
@@ -69,7 +77,9 @@ class SteamFreeMonitor(BaseMonitor):
             if worth and worth != "N/A":
                 embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
             embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
-            if end_date and end_date != "N/A":
+            if expiry_ts:
+                embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=f"<t:{expiry_ts}:R>", inline=True)
+            elif end_date and end_date != "N/A":
                 embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
             embed.set_footer(text="Steam • GamerPower")
 
@@ -114,6 +124,13 @@ class SteamFreeMonitor(BaseMonitor):
         worth = game.get("worth", "N/A")
         giveaway_type = game.get("type", "Game")
         end_date = game.get("end_date", "N/A")
+        expiry_ts = None
+        if end_date and end_date != "N/A":
+            try:
+                dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+                expiry_ts = int(dt.timestamp())
+            except:
+                pass
 
         embed = discord.Embed(
             title=title,
@@ -127,7 +144,9 @@ class SteamFreeMonitor(BaseMonitor):
         if worth and worth != "N/A":
             embed.add_field(name=self.lang.get('field_worth', 'Érték'), value=worth, inline=True)
         embed.add_field(name=self.lang.get('field_type', 'Típus'), value=giveaway_type, inline=True)
-        if end_date and end_date != "N/A":
+        if expiry_ts:
+            embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=f"<t:{expiry_ts}:R>", inline=True)
+        elif end_date and end_date != "N/A":
             embed.add_field(name=self.lang.get('field_expiry', 'Lejárat'), value=end_date, inline=True)
         embed.set_footer(text="Steam • GamerPower")
 
