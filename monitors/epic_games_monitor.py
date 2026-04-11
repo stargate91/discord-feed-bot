@@ -110,10 +110,8 @@ class EpicGamesMonitor(BaseMonitor):
         
         if product_slug:
             game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}"
-            launcher_url = f"com.epicgames.launcher://store/p/{product_slug}"
         else:
             game_url = "https://store.epicgames.com/free-games"
-            launcher_url = None
 
         # Image selection
         image_url = None
@@ -172,10 +170,6 @@ class EpicGamesMonitor(BaseMonitor):
         view = discord.ui.View()
         btn_label = self.lang.get("btn_get_game", "Get Game")
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
-        
-        if launcher_url:
-            btn_launcher_label = self.lang.get("btn_open_launcher", "Open in Launcher")
-            view.add_item(discord.ui.Button(label=btn_launcher_label, url=launcher_url, style=discord.ButtonStyle.link))
         
         await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
         log.info(f"Sent Epic Games notification for: {title} ({'active' if is_active else 'upcoming'})")
@@ -239,7 +233,6 @@ class EpicGamesMonitor(BaseMonitor):
             product_slug = target_game.get("urlSlug")
             
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
-        launcher_url = f"com.epicgames.launcher://store/p/{product_slug}" if product_slug else None
         
         # Image selection
         image_url = None
@@ -297,10 +290,6 @@ class EpicGamesMonitor(BaseMonitor):
         view = discord.ui.View()
         btn_label = self.lang.get("btn_get_game", "Get Game")
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
-
-        if launcher_url:
-            btn_launcher_label = self.lang.get("btn_open_launcher", "Open in Launcher")
-            view.add_item(discord.ui.Button(label=btn_launcher_label, url=launcher_url, style=discord.ButtonStyle.link))
         
         return {
             "content": f"{ping}{alert_text}\n{game_url}",
