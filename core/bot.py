@@ -67,13 +67,13 @@ class FeedBot(commands.Bot):
         master_guilds = self.config.get("master_guild_ids", [])
         for mg_id in master_guilds:
             guild_obj = discord.Object(id=mg_id)
-            master_cog = self.get_cog("MasterCog")
+            master_cog = self.get_cog("master")
             if master_cog:
-                self.tree.add_command(master_cog, guild=guild_obj)
+                self.tree.add_command(master_cog.app_command, guild=guild_obj)
                 
             status_cog = self.get_cog("status")
             if status_cog:
-                self.tree.add_command(status_cog, guild=guild_obj)
+                self.tree.add_command(status_cog.app_command, guild=guild_obj)
 
         # Migration: Load from config.json if DB is empty
         await self._migrate_config_to_db()
