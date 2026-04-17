@@ -1,5 +1,6 @@
 import aiohttp
 import discord
+import textwrap
 from core.base_monitor import BaseMonitor
 from logger import log
 import database
@@ -167,17 +168,24 @@ class MovieMonitor(BaseMonitor):
                 "url": tmdb_url
             })
             
+            # Wrap overview for better readability on narrow views
+            wrapped_overview = textwrap.fill(overview[:1000], width=35)
+            if len(overview) > 1000:
+                wrapped_overview += "..."
+
             embed = discord.Embed(
                 title=title[:256],
                 url=tmdb_url,
-                description=overview[:400] + "..." if len(overview) > 400 else overview,
+                description=wrapped_overview,
                 color=self.get_color(0x01d277)
             )
             if poster_url:
                 embed.set_image(url=poster_url)
             
             if genre_text:
-                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
+                # Wrap genres too if they are long
+                wrapped_genres = textwrap.fill(genre_text, width=60)
+                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
             embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
@@ -228,10 +236,13 @@ class MovieMonitor(BaseMonitor):
                     
                     alert_text = self.get_alert_message({"name": "TMDB Movies", "title": title, "url": tmdb_url})
                     
+                    # Wrap overview for better readability
+                    wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=35)
+                    
                     embed = discord.Embed(
                         title=title[:256],
                         url=tmdb_url,
-                        description=movie.get("overview", "")[:400],
+                        description=wrapped_overview,
                         color=self.get_color(0x01d277)
                     )
                     poster_path = movie.get("poster_path")
@@ -239,7 +250,9 @@ class MovieMonitor(BaseMonitor):
                         embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
                     
                     if genre_text:
-                        embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
+                        wrapped_genres = textwrap.fill(genre_text, width=60)
+                        embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
+                    
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
                     embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
                         
