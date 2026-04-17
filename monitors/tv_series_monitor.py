@@ -20,9 +20,6 @@ class TVSeriesMonitor(BaseMonitor):
         self.api_url = f"https://api.themoviedb.org/3/tv/on_the_air?language={self.tmdb_lang}&page=1"
         self.is_first_run = True
 
-    @property
-    def platform(self):
-        return "tv_series"
 
     def get_headers(self):
         if self.bearer_token:
