@@ -3,6 +3,7 @@ import json
 import re
 from logger import log
 import database
+from core.emojis import STATUS_ERROR
 
 class AddStatusModal(discord.ui.Modal):
     def __init__(self, bot, activity_type, parent_view):
@@ -68,7 +69,7 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
 
         self.name_input = discord.ui.TextInput(
             label=bot.get_feedback("add_monitor_name_label"),
-            placeholder="pl. TheVR YouTube Csatorna", # Let's keep this as an example or localize it if needed
+            placeholder=bot.get_feedback("ui_monitor_add_ph_name"),
             required=True
         )
         self.add_item(self.name_input)
@@ -79,14 +80,14 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
         if self.needs_url:
             self.url_input = discord.ui.TextInput(
                 label=bot.get_feedback("add_monitor_id_label"),
-                placeholder="UC... vagy https://... (platform függő)",
+                placeholder=bot.get_feedback("ui_monitor_add_ph_url"),
                 required=True
             )
             self.add_item(self.url_input)
 
         self.alert_input = discord.ui.TextInput(
-            label="Egyedi Ping Üzenet (Opcionális)",
-            placeholder="Használd a {name} és {title} változókat",
+            label=bot.get_feedback("ui_monitor_add_label_alert"),
+            placeholder=bot.get_feedback("ui_monitor_add_ph_alert"),
             style=discord.TextStyle.paragraph,
             required=False,
             max_length=500
@@ -94,8 +95,8 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
         self.add_item(self.alert_input)
 
         self.color_input = discord.ui.TextInput(
-            label="Embed Szín (opcionális, hex)",
-            placeholder="#FF0000 vagy hagyd üresen",
+            label=bot.get_feedback("ui_monitor_add_label_color"),
+            placeholder=bot.get_feedback("ui_monitor_add_ph_color"),
             required=False,
             max_length=7
         )
@@ -152,7 +153,7 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
 
         except Exception as e:
             log.error(f"Error adding monitor via modal: {e}", exc_info=True)
-            await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+            await interaction.response.send_message(f"{STATUS_ERROR} Error: {e}", ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
     def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color="", steam_patch_only=None):
@@ -184,19 +185,19 @@ class EditMonitorModal(discord.ui.Modal):
                     monitor = create_monitor_instance(self.bot, db_m)
                     if monitor: self.bot.monitor_manager.add_monitor(monitor)
 
-            await interaction.response.send_message(f"✅ Monitor frissítve: **{new_name}**", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_success", name=new_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
             log.error(f"Error editing monitor: {e}", exc_info=True)
-            await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_error", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
 class AlertTemplateModal(discord.ui.Modal):
     def __init__(self, bot, platform, current_val=""):
-        super().__init__(title=f"{platform.capitalize()} Sablon")
+        super().__init__(title=bot.get_feedback("ui_modal_alert_template_title", platform=platform.capitalize()))
         self.bot = bot
         self.platform = platform
         self.template_input = discord.ui.TextInput(
-            label="Üzenet Sablon",
-            placeholder="Használd a {name} és {title} változókat",
+            label=self.bot.get_feedback("ui_modal_alert_template_label"),
+            placeholder=self.bot.get_feedback("ui_modal_alert_template_ph"),
             default=current_val,
             style=discord.TextStyle.paragraph,
             required=False,
@@ -209,15 +210,15 @@ class AlertTemplateModal(discord.ui.Modal):
 
 class NewChannelModal(discord.ui.Modal):
     def __init__(self, bot, parent_view, id_attr="selected_channel_id", display_attr="channel_display_name"):
-        super().__init__(title="Új csatorna létrehozása")
+        super().__init__(title=bot.get_feedback("ui_modal_new_channel_title"))
         self.bot = bot
         self.parent_view = parent_view
         self.id_attr = id_attr
         self.display_attr = display_attr
         
         self.name_input = discord.ui.TextInput(
-            label="Csatorna neve",
-            placeholder="pl. Hétvégi csapatok",
+            label=self.bot.get_feedback("ui_modal_new_channel_label"),
+            placeholder=self.bot.get_feedback("ui_modal_new_channel_ph"),
             required=True,
             max_length=100
         )
@@ -242,15 +243,18 @@ class NewChannelModal(discord.ui.Modal):
             )
             
             setattr(self.parent_view, self.id_attr, new_channel.id)
-            setattr(self.parent_view, self.display_attr, f"#{new_channel.name} (Létrehozva)")
+            setattr(self.parent_view, self.display_attr, f"#{new_channel.name} {self.bot.get_feedback('ui_suffix_created')}")
             
             await self.parent_view.check_readiness(interaction)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Hiba a csatorna létrehozásakor: {e}", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_channel_create_fail", error=str(e)), ephemeral=True)
 
 class ManualInputModal(discord.ui.Modal):
     def __init__(self, bot, parent_view, mode="channel", id_attr=None, display_attr=None):
-        title = "Manuális ID vagy Név megadása" if mode == "channel" else "Manuális Rang ID vagy Név"
+        if mode == "channel":
+            title = bot.get_feedback("ui_modal_manual_input_title_ch")
+        else:
+            title = bot.get_feedback("ui_modal_manual_input_title_role")
         super().__init__(title=title)
         self.bot = bot
         self.parent_view = parent_view
@@ -260,8 +264,8 @@ class ManualInputModal(discord.ui.Modal):
         self.display_attr = display_attr or ("channel_display_name" if mode == "channel" else "role_display_name")
         
         self.input_field = discord.ui.TextInput(
-            label="ID vagy Pontos Név",
-            placeholder="pl. 123456789... vagy hírek",
+            label=self.bot.get_feedback("ui_modal_manual_input_label"),
+            placeholder=self.bot.get_feedback("ui_modal_manual_input_ph"),
             required=True
         )
         self.add_item(self.input_field)
@@ -279,10 +283,10 @@ class ManualInputModal(discord.ui.Modal):
             
             if target:
                 setattr(self.parent_view, self.id_attr, target.id)
-                setattr(self.parent_view, self.display_attr, f"#{target.name} (Manuális)")
+                setattr(self.parent_view, self.display_attr, f"#{target.name} {self.bot.get_feedback('ui_suffix_manual')}")
                 await self.parent_view.check_readiness(interaction)
             else:
-                await interaction.response.send_message("❌ Csatorna nem található ezzel az ID-val vagy névvel.", ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_channel_not_found"), ephemeral=True)
         
         else: # role mode
             target = None
@@ -293,22 +297,22 @@ class ManualInputModal(discord.ui.Modal):
             
             if target:
                 setattr(self.parent_view, self.id_attr, target.id)
-                setattr(self.parent_view, self.display_attr, f"@{target.name} (Manuális)")
+                setattr(self.parent_view, self.display_attr, f"@{target.name} {self.bot.get_feedback('ui_suffix_manual')}")
                 await self.parent_view.check_readiness(interaction)
             else:
-                await interaction.response.send_message("❌ Rang nem található ezzel az ID-val vagy névvel.", ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_role_not_found"), ephemeral=True)
 
 class NewRoleModal(discord.ui.Modal):
     def __init__(self, bot, parent_view, id_attr="selected_role_id", display_attr="role_display_name"):
-        super().__init__(title="Új rang létrehozása")
+        super().__init__(title=bot.get_feedback("ui_modal_new_role_title"))
         self.bot = bot
         self.parent_view = parent_view
         self.id_attr = id_attr
         self.display_attr = display_attr
         
         self.name_input = discord.ui.TextInput(
-            label="Rang neve",
-            placeholder="pl. YouTube Értesítések",
+            label=self.bot.get_feedback("ui_modal_new_role_label"),
+            placeholder=self.bot.get_feedback("ui_modal_new_role_ph"),
             required=True,
             max_length=100
         )
@@ -325,8 +329,8 @@ class NewRoleModal(discord.ui.Modal):
             )
             
             setattr(self.parent_view, self.id_attr, new_role.id)
-            setattr(self.parent_view, self.display_attr, f"@{new_role.name} (Létrehozva)")
+            setattr(self.parent_view, self.display_attr, f"@{new_role.name} {self.bot.get_feedback('ui_suffix_created')}")
             
             await self.parent_view.check_readiness(interaction)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Hiba a rang létrehozásakor: {e}", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_role_create_fail", error=str(e)), ephemeral=True)

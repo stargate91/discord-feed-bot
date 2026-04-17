@@ -4,6 +4,11 @@ from discord import app_commands
 from ui.views.wizard_views import AddMonitorWizardView, EditMonitorWizardView
 from logger import log
 import database
+from core.emojis import (
+    TYPE_YOUTUBE, TYPE_RSS, TYPE_TIKTOK, TYPE_INSTAGRAM, 
+    TYPE_GAME, TYPE_STEAM_FREE, TYPE_GOG_FREE, TYPE_REDDIT, 
+    TYPE_TWITTER, TYPE_STREAM, TYPE_UNKNOWN, STATUS_SUCCESS, STATUS_ERROR
+)
 
 class MonitorCog(commands.GroupCog, name="monitor"):
     def __init__(self, bot):
@@ -52,7 +57,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
         except Exception as e:
             log.error(f"Error in /check command for {monitor_name}: {e}", exc_info=True)
-            await interaction.followup.send(f"Hiba történt: {e}", ephemeral=True)
+            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
 
     @monitor_check.autocomplete("monitor_name")
     async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
@@ -77,12 +82,26 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             return
         
         embed = discord.Embed(title=self.bot.get_feedback("list_monitors_title"), color=0x5865F2)
-        type_emojis = {"youtube": "📺", "rss": "🔗", "tiktok": "🎵", "instagram": "📸", "epic_games": "🎮", "steam_free": "♨️", "gog_free": "💜", "reddit": "🟠", "twitter": "🐦", "stream": "📡"}
+        type_emojis = {
+            "youtube": TYPE_YOUTUBE, 
+            "rss": TYPE_RSS, 
+            "tiktok": TYPE_TIKTOK, 
+            "instagram": TYPE_INSTAGRAM, 
+            "epic_games": TYPE_GAME, 
+            "steam_free": TYPE_STEAM_FREE, 
+            "gog_free": TYPE_GOG_FREE, 
+            "reddit": TYPE_REDDIT, 
+            "twitter": TYPE_TWITTER, 
+            "stream": TYPE_STREAM,
+            "steam_news": TYPE_GAME,
+            "movie": TYPE_GAME,
+            "tv_series": TYPE_GAME
+        }
         
         for m_cfg in monitors_cfg:
             m_type = m_cfg.get("type", "unknown")
-            emoji = type_emojis.get(m_type, "❓")
-            status = "✅" if m_cfg.get("enabled", True) else "❌"
+            emoji = type_emojis.get(m_type, TYPE_UNKNOWN)
+            status = STATUS_SUCCESS if m_cfg.get("enabled", True) else STATUS_ERROR
             embed.add_field(name=f"{emoji} {m_cfg.get('name', '??')}", value=f"{status} `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>", inline=False)
         
         embed.set_footer(text=self.bot.get_feedback("list_monitors_footer", count=len(monitors_cfg)))

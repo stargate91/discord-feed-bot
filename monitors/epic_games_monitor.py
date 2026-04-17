@@ -3,6 +3,7 @@ import discord
 from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
+from core.emojis import THUMBNAIL_EPIC
 import database
 
 class EpicGamesMonitor(BaseMonitor):
@@ -46,7 +47,7 @@ class EpicGamesMonitor(BaseMonitor):
 
         for game in elements:
             game_id = game.get("id")
-            title = game.get("title", "Unknown Game")
+            title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
             
             promotions = game.get("promotions")
             if not promotions:
@@ -98,14 +99,14 @@ class EpicGamesMonitor(BaseMonitor):
             self.is_first_run = False
 
     async def send_game_notification(self, game, is_active):
-        title = game.get("title", "Unknown Game")
+        title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
         description = game.get("description", "")
         
         product_slug = game.get("productSlug") or next((m.get("pageSlug") for m in game.get("catalogNs", {}).get("mappings", [])), None) or game.get("urlSlug")
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
 
         image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
-        original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
+        original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", self.bot.get_feedback("default_na", guild_id=self.guild_id))
         
         end_date_str = None
         offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
@@ -130,14 +131,15 @@ class EpicGamesMonitor(BaseMonitor):
             color=self.get_color(0x000000)
         )
         if image_url: embed.set_image(url=image_url)
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
-        if original_price and original_price != "0" and original_price != "N/A":
+        embed.set_thumbnail(url=THUMBNAIL_EPIC)
+        if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):
             embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
         if expiry_ts:
             embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
         embed.set_footer(text="Epic Games Store")
 
-        alert_text = self.get_alert_message({"name": "Epic Games", "title": title, "url": game_url})
+        alert_key = "new_epic_games_alert" if is_active else "upcoming_free_game_alert"
+        alert_text = self.bot.get_feedback(alert_key, name=title, guild_id=self.guild_id)
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
@@ -176,11 +178,11 @@ class EpicGamesMonitor(BaseMonitor):
 
         if not target_game: return None
 
-        title = target_game.get("title", "Unknown Game")
+        title = target_game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
         product_slug = target_game.get("productSlug") or next((m.get("pageSlug") for m in target_game.get("catalogNs", {}).get("mappings", [])), None) or target_game.get("urlSlug")
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
         image_url = next((img.get("url") for img in target_game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
-        original_price = target_game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
+        original_price = target_game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", self.bot.get_feedback("default_na", guild_id=self.guild_id))
         
         end_date_str = None
         offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
@@ -198,12 +200,12 @@ class EpicGamesMonitor(BaseMonitor):
                 expiry_ts = int(dt.timestamp())
             except: pass
 
-        alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
+        alert_key = "new_epic_games_alert" if is_active else "upcoming_free_game_alert"
         alert_text = self.bot.get_feedback(alert_key, guild_id=self.guild_id)
         embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x000000))
         if image_url: embed.set_image(url=image_url)
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
-        if original_price and original_price != "0" and original_price != "N/A":
+        embed.set_thumbnail(url=THUMBNAIL_EPIC)
+        if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):
             embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
         if expiry_ts:
             embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)

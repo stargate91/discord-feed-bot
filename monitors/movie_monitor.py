@@ -4,6 +4,7 @@ import textwrap
 from core.base_monitor import BaseMonitor
 from logger import log
 import database
+from core.emojis import ICON_STAR
 
 class MovieMonitor(BaseMonitor):
     """Monitor for new movie releases using TMDB API."""
@@ -142,9 +143,9 @@ class MovieMonitor(BaseMonitor):
 
         for movie in new_entries:
             movie_id = str(movie.get("id"))
-            title = movie.get("title", "New Movie")
+            title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
             overview = movie.get("overview", "")
-            release_date = movie.get("release_date", "N/A")
+            release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
             
             # Genres
             genre_ids = movie.get("genre_ids", [])
@@ -154,7 +155,8 @@ class MovieMonitor(BaseMonitor):
             # Ratings
             vote_avg = movie.get("vote_average", 0)
             vote_count = movie.get("vote_count", 0)
-            score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+            na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+            score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
 
             poster_path = movie.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
@@ -163,7 +165,7 @@ class MovieMonitor(BaseMonitor):
             trailer_url = await self._get_trailer_url(movie_id)
             
             alert_text = self.get_alert_message({
-                "name": "TMDB Movies",
+                "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
                 "title": title,
                 "url": tmdb_url
             })
@@ -190,7 +192,7 @@ class MovieMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
             embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
             
-            embed.set_footer(text=f"TMDB • {release_date}")
+            embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=release_date, guild_id=self.guild_id))
             
             view = discord.ui.View()
             btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
@@ -218,14 +220,15 @@ class MovieMonitor(BaseMonitor):
                     
                     movie = results[0]
                     movie_id = movie.get("id")
-                    title = movie.get("title", "New Movie")
+                    title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
                     tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
-                    release_date = movie.get("release_date", "N/A")
+                    release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
                     
                     # Ratings
                     vote_avg = movie.get("vote_average", 0)
                     vote_count = movie.get("vote_count", 0)
-                    score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+                    na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+                    score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
 
                     genre_map = await self._fetch_genres()
                     genre_ids = movie.get("genre_ids", [])
@@ -234,7 +237,7 @@ class MovieMonitor(BaseMonitor):
                     
                     trailer_url = await self._get_trailer_url(movie_id)
                     
-                    alert_text = self.get_alert_message({"name": "TMDB Movies", "title": title, "url": tmdb_url})
+                    alert_text = self.bot.get_feedback("new_movie_alert", name=title, guild_id=self.guild_id)
                     
                     # Wrap overview for better readability
                     wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)

@@ -65,7 +65,7 @@ class RSSMonitor(BaseMonitor):
         for entry in new_entries:
             entry_id = entry.get("id") or entry.get("link")
             entry_link = entry.get("link")
-            entry_title = entry.get("title", "New RSS Update")
+            entry_title = entry.get("title", self.bot.get_feedback("monitor_rss_fallback_title", guild_id=self.guild_id))
             author_name = entry.get("author") or self.name
             
             embed = discord.Embed(
@@ -136,7 +136,7 @@ class RSSMonitor(BaseMonitor):
 
         entry = feed.entries[0]
         entry_link = entry.get("link")
-        entry_title = entry.get("title", "New RSS Update")
+        entry_title = entry.get("title", self.bot.get_feedback("monitor_rss_fallback_title", guild_id=self.guild_id))
         author_name = entry.get("author") or self.name
         
         embed = discord.Embed(

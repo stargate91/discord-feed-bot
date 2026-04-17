@@ -1,5 +1,9 @@
 import discord
 from ui.modals import AlertTemplateModal
+from core.emojis import (
+    TYPE_YOUTUBE, TYPE_RSS, TYPE_TIKTOK, TYPE_INSTAGRAM, 
+    TYPE_GAME, TYPE_STREAM, TYPE_REDDIT, TYPE_TWITTER
+)
 
 class AlertTemplateSelectView(discord.ui.View):
     def __init__(self, bot, guild_id, settings):
@@ -10,17 +14,17 @@ class AlertTemplateSelectView(discord.ui.View):
         self.current_templates = settings.get("alert_templates", {})
 
         options = [
-            discord.SelectOption(label="YouTube", value="youtube", emoji="📺"),
-            discord.SelectOption(label="RSS", value="rss", emoji="🔗"),
-            discord.SelectOption(label="TikTok", value="tiktok", emoji="🎵"),
-            discord.SelectOption(label="Instagram", value="instagram", emoji="📸"),
-            discord.SelectOption(label="Steam Játék", value="steam_news", emoji="🎮"),
-            discord.SelectOption(label="Stream", value="stream", emoji="📡"),
-            discord.SelectOption(label="Reddit", value="reddit", emoji="🟠"),
-            discord.SelectOption(label="Twitter/X", value="twitter", emoji="🐦"),
+            discord.SelectOption(label="YouTube", value="youtube", emoji=TYPE_YOUTUBE),
+            discord.SelectOption(label="RSS", value="rss", emoji=TYPE_RSS),
+            discord.SelectOption(label="TikTok", value="tiktok", emoji=TYPE_TIKTOK),
+            discord.SelectOption(label="Instagram", value="instagram", emoji=TYPE_INSTAGRAM),
+            discord.SelectOption(label="Steam Játék", value="steam_news", emoji=TYPE_GAME),
+            discord.SelectOption(label="Stream", value="stream", emoji=TYPE_STREAM),
+            discord.SelectOption(label="Reddit", value="reddit", emoji=TYPE_REDDIT),
+            discord.SelectOption(label="Twitter/X", value="twitter", emoji=TYPE_TWITTER),
         ]
 
-        self.select = discord.ui.Select(placeholder="Válassz platformot a sablonhoz...", options=options)
+        self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id), options=options)
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
@@ -38,4 +42,5 @@ class AlertTemplateSelectView(discord.ui.View):
 
         # Update in-memory settings for the main SetupWizardView to save later
         self.settings["alert_templates"] = self.current_templates
-        await interaction.followup.send(f"✅ {platform.capitalize()} sablon ideiglenesen mentve. **Ne felejts el a 'Beállítások Mentése' gombra kattintani a főmenüben!**", ephemeral=True)
+        msg = self.bot.get_feedback("ui_setup_template_save_msg", platform=platform.capitalize(), guild_id=self.guild_id)
+        await interaction.followup.send(msg, ephemeral=True)

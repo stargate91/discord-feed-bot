@@ -3,6 +3,7 @@ import discord
 from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
+from core.emojis import THUMBNAIL_GOG
 import database
 
 class GOGFreeMonitor(BaseMonitor):
@@ -59,7 +60,7 @@ class GOGFreeMonitor(BaseMonitor):
 
         for game in new_entries:
             giveaway_id = str(game.get("id"))
-            title = game.get("title", "Unknown Game")
+            title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
             game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
             
             # Link logic: Avoid Steam links in GOG monitor
@@ -67,11 +68,12 @@ class GOGFreeMonitor(BaseMonitor):
             final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
 
             image_url = game.get("image") or game.get("thumbnail")
-            worth = game.get("worth", "N/A")
+            na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+            worth = game.get("worth", na_text)
             giveaway_type = game.get("type", "Game")
-            end_date = game.get("end_date", "N/A")
+            end_date = game.get("end_date", na_text)
             expiry_ts = None
-            if end_date and end_date != "N/A":
+            if end_date and end_date != na_text:
                 try:
                     dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
                     expiry_ts = int(dt.timestamp())
@@ -86,16 +88,16 @@ class GOGFreeMonitor(BaseMonitor):
             if image_url:
                 embed.set_image(url=image_url)
                 
-            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
+            embed.set_thumbnail(url=THUMBNAIL_GOG)
             
-            if worth and worth != "N/A":
+            if worth and worth != na_text:
                 embed.add_field(name=self.bot.get_feedback('field_worth', guild_id=self.guild_id), value=worth, inline=True)
             embed.add_field(name=self.bot.get_feedback('field_type', guild_id=self.guild_id), value=giveaway_type, inline=True)
             if expiry_ts:
                 embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-            elif end_date and end_date != "N/A":
+            elif end_date and end_date != na_text:
                 embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
-            embed.set_footer(text="GOG.com • GamerPower")
+            embed.set_footer(text=f"{self.bot.get_feedback('footer_gog', guild_id=self.guild_id)} • GamerPower")
 
             # Format custom alert message
             alert_text = self.get_alert_message({
@@ -131,7 +133,8 @@ class GOGFreeMonitor(BaseMonitor):
             return {"empty": True}
 
         game = data[0]
-        title = game.get("title", "Unknown Game")
+        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+        title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
         game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
         
         # Link logic: Avoid Steam links in GOG monitor
@@ -139,11 +142,11 @@ class GOGFreeMonitor(BaseMonitor):
         final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
         
         image_url = game.get("image") or game.get("thumbnail")
-        worth = game.get("worth", "N/A")
+        worth = game.get("worth", na_text)
         giveaway_type = game.get("type", "Game")
-        end_date = game.get("end_date", "N/A")
+        end_date = game.get("end_date", na_text)
         expiry_ts = None
-        if end_date and end_date != "N/A":
+        if end_date and end_date != na_text:
             try:
                 dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
                 expiry_ts = int(dt.timestamp())
@@ -158,16 +161,16 @@ class GOGFreeMonitor(BaseMonitor):
         if image_url:
             embed.set_image(url=image_url)
             
-        embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131412043431976.png")
+        embed.set_thumbnail(url=THUMBNAIL_GOG)
         
-        if worth and worth != "N/A":
+        if worth and worth != na_text:
             embed.add_field(name=self.bot.get_feedback('field_worth', guild_id=self.guild_id), value=worth, inline=True)
         embed.add_field(name=self.bot.get_feedback('field_type', guild_id=self.guild_id), value=giveaway_type, inline=True)
         if expiry_ts:
             embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-        elif end_date and end_date != "N/A":
+        elif end_date and end_date != na_text:
             embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
-        embed.set_footer(text="GOG.com • GamerPower")
+        embed.set_footer(text=f"{self.bot.get_feedback('footer_gog', guild_id=self.guild_id)} • GamerPower")
 
         alert_text = self.bot.get_feedback("new_gog_free_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""

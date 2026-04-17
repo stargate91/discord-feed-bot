@@ -67,7 +67,7 @@ class YouTubeMonitor(BaseMonitor):
             video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
             author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
             short_link = f"https://youtu.be/{video_id}"
-            entry_title = entry.get("title", "New Video")
+            entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
             
             # Format custom alert message
             alert_text = self.get_alert_message({

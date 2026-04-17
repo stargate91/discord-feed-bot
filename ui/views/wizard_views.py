@@ -10,6 +10,7 @@ from ui.modals import (
     ManualInputModal
 )
 from ui.views.select_views import AlertTemplateSelectView
+from core.emojis import ICON_LOCATION, ICON_SETTINGS, ICON_ADD, ICON_ID, ICON_MUTE, ICON_DOT, ICON_CLOSE
 
 class StatusWizardView(discord.ui.View):
     def __init__(self, bot):
@@ -111,8 +112,8 @@ class AddMonitorWizardView(discord.ui.View):
         self.selected_type = None
         
         # Display names for the embed/feedback
-        self.channel_display_name = "Nincs kiválasztva"
-        self.role_display_name = "Nincs ping (vagy alapértelmezett)"
+        self.channel_display_name = bot.get_feedback("ui_status_not_selected")
+        self.role_display_name = bot.get_feedback("ui_status_no_ping")
 
         self.update_components()
 
@@ -121,23 +122,23 @@ class AddMonitorWizardView(discord.ui.View):
         
         # 1. Simplified Channel Select
         ch_options = [
-            discord.SelectOption(label=f"Jelenlegi csatorna (#{self.trigger_interaction.channel.name})", value="current", emoji="📍"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji="⚙️"),
-            discord.SelectOption(label="Új csatorna létrehozása...", value="create", emoji="➕"),
-            discord.SelectOption(label="Manuális ID vagy Név...", value="manual", emoji="🆔")
+            discord.SelectOption(label=f"Jelenlegi csatorna (#{self.trigger_interaction.channel.name})", value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID)
         ]
-        self.channel_select = discord.ui.Select(placeholder="1. Válassz célcsatornát (Egyedi opciók)...", options=ch_options, row=0)
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_channel_select"), options=ch_options, row=0)
         self.channel_select.callback = self.channel_callback
         self.add_item(self.channel_select)
 
         # 2. Simplified Role Select
         role_options = [
-            discord.SelectOption(label="Nincs ping", value="none", emoji="🔇"),
-            discord.SelectOption(label="Szerver alapértelmezett rangja", value="default", emoji="⚙️"),
-            discord.SelectOption(label="Új rang létrehozása...", value="create", emoji="➕"),
-            discord.SelectOption(label="Manuális Rang ID vagy Név...", value="manual", emoji="🆔")
+            discord.SelectOption(label="Nincs ping", value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config"), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
         ]
-        self.role_select = discord.ui.Select(placeholder="2. Válassz ping rolt (Egyedi opciók)...", options=role_options, row=1)
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_role_select"), options=role_options, row=1)
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
@@ -163,10 +164,10 @@ class AddMonitorWizardView(discord.ui.View):
         self.add_item(self.next_btn)
 
     async def create_status_embed(self):
-        embed = discord.Embed(title="Monitor Hozzáadása - 1. Lépés", color=discord.Color.blue())
-        embed.add_field(name="Célcsatorna", value=self.channel_display_name, inline=True)
-        embed.add_field(name="Ping Rang", value=self.role_display_name, inline=True)
-        platform_name = self.selected_type.upper() if self.selected_type else "Nincs kiválasztva"
+        embed = discord.Embed(title=self.bot.get_feedback("ui_monitor_add_step_1"), color=discord.Color.blue())
+        embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.channel_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
+        platform_name = self.selected_type.upper() if self.selected_type else self.bot.get_feedback("ui_status_not_selected")
         embed.add_field(name="Platform", value=platform_name, inline=True)
         return embed
 
@@ -185,7 +186,7 @@ class AddMonitorWizardView(discord.ui.View):
         val = self.channel_select.values[0]
         if val == "current":
             self.selected_channel_id = interaction.channel.id
-            self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
@@ -193,7 +194,7 @@ class AddMonitorWizardView(discord.ui.View):
                 await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
                 return
             self.selected_channel_id = 0 # 0 means use global default from settings
-            self.channel_display_name = "Alapértelmezett (Beállítások szerint)"
+            self.channel_display_name = self.bot.get_feedback("ui_status_default_config")
             await self.check_readiness(interaction)
         elif val == "create":
             await interaction.response.send_modal(NewChannelModal(self.bot, self))
@@ -204,7 +205,7 @@ class AddMonitorWizardView(discord.ui.View):
         val = self.role_select.values[0]
         if val == "none":
             self.selected_role_id = 0
-            self.role_display_name = "Nincs ping"
+            self.role_display_name = self.bot.get_feedback("ui_status_no_ping")
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
@@ -212,7 +213,7 @@ class AddMonitorWizardView(discord.ui.View):
                 await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
                 return
             self.selected_role_id = 0 # 0 means we'll use fallback in next_callback
-            self.role_display_name = "Alapértelmezett (Beállítások szerint)"
+            self.role_display_name = self.bot.get_feedback("ui_status_default_config")
             await self.check_readiness(interaction)
         elif val == "create":
             await interaction.response.send_modal(NewRoleModal(self.bot, self))
@@ -247,8 +248,8 @@ class EditMonitorWizardView(discord.ui.View):
         self.selected_channel_id = None
         self.selected_role_id = 0
         
-        self.channel_display_name = "Változatlan"
-        self.role_display_name = "Változatlan"
+        self.channel_display_name = bot.get_feedback("ui_status_unchanged")
+        self.role_display_name = bot.get_feedback("ui_status_unchanged")
         
         self.update_components()
 
@@ -256,23 +257,23 @@ class EditMonitorWizardView(discord.ui.View):
         self.clear_items()
         
         ch_options = [
-            discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
-            discord.SelectOption(label=f"Átállítás jelenlegire (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji="📍"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji="⚙️"),
-            discord.SelectOption(label="Átállítás manuális ID/Névre...", value="manual", emoji="🆔")
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged"), value="keep", emoji=ICON_DOT),
+            discord.SelectOption(label=f"{self.bot.get_feedback('ui_option_current_ch')} (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID)
         ]
-        self.channel_select = discord.ui.Select(placeholder="Módosítsd a célcsatornát...", options=ch_options, row=0)
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_ch_short"), options=ch_options, row=0)
         self.channel_select.callback = self.channel_callback
         self.add_item(self.channel_select)
 
         role_options = [
-            discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
-            discord.SelectOption(label="Nincs ping", value="none", emoji="🔇"),
-            discord.SelectOption(label="Szerver alapértelmezett rangja", value="default", emoji="⚙️"),
-            discord.SelectOption(label="Új rang létrehozása...", value="create", emoji="➕"),
-            discord.SelectOption(label="Manuális Rang ID vagy Név...", value="manual", emoji="🆔")
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged"), value="keep", emoji=ICON_DOT),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config"), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
         ]
-        self.role_select = discord.ui.Select(placeholder="Módosítsd a ping rolt...", options=role_options, row=1)
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_role_short"), options=role_options, row=1)
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
@@ -281,9 +282,9 @@ class EditMonitorWizardView(discord.ui.View):
         self.add_item(self.next_btn)
 
     async def create_edit_embed(self):
-        embed = discord.Embed(title=f"Monitor Szerkesztése: {self.original_name}", color=discord.Color.orange())
-        embed.add_field(name="Új Célcsatorna", value=self.channel_display_name, inline=True)
-        embed.add_field(name="Új Ping Rang", value=self.role_display_name, inline=True)
+        embed = discord.Embed(title=self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name), color=discord.Color.orange())
+        embed.add_field(name=self.bot.get_feedback("ui_label_new_target_ch"), value=self.channel_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_label_new_ping_role"), value=self.role_display_name, inline=True)
         return embed
 
     async def check_readiness(self, interaction: discord.Interaction):
@@ -297,11 +298,11 @@ class EditMonitorWizardView(discord.ui.View):
         val = self.channel_select.values[0]
         if val == "keep":
             self.selected_channel_id = None
-            self.channel_display_name = "Változatlan"
+            self.channel_display_name = self.bot.get_feedback("ui_status_unchanged")
             await self.check_readiness(interaction)
         elif val == "current":
             self.selected_channel_id = interaction.channel.id
-            self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
@@ -309,7 +310,7 @@ class EditMonitorWizardView(discord.ui.View):
                 await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
                 return
             self.selected_channel_id = 0
-            self.channel_display_name = "Alapértelmezett (Beállítások szerint)"
+            self.channel_display_name = self.bot.get_feedback("ui_status_default_config")
             await self.check_readiness(interaction)
         elif val == "manual":
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
@@ -318,11 +319,11 @@ class EditMonitorWizardView(discord.ui.View):
         val = self.role_select.values[0]
         if val == "keep":
             self.selected_role_id = None
-            self.role_display_name = "Változatlan"
+            self.role_display_name = self.bot.get_feedback("ui_status_unchanged")
             await self.check_readiness(interaction)
         elif val == "none":
             self.selected_role_id = 0
-            self.role_display_name = "Nincs ping"
+            self.role_display_name = self.bot.get_feedback("ui_status_no_ping")
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
@@ -330,7 +331,7 @@ class EditMonitorWizardView(discord.ui.View):
                 await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
                 return
             self.selected_role_id = 0
-            self.role_display_name = "Alapértelmezett (Beállítások szerint)"
+            self.role_display_name = self.bot.get_feedback("ui_status_default_config")
             await self.check_readiness(interaction)
         elif val == "create":
             await interaction.response.send_modal(NewRoleModal(self.bot, self))
@@ -388,10 +389,10 @@ class SetupWizardView(discord.ui.View):
 
         # 2. Default Channel
         ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji="📍"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji="➕"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji="🆔"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
         self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_ch"), options=ch_options, row=1)
         self.channel_select.callback = self.channel_callback
@@ -399,9 +400,9 @@ class SetupWizardView(discord.ui.View):
 
         # 3. Default Ping Role
         role_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="🔇"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔")
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
         ]
         self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_role"), options=role_options, row=2)
         self.role_select.callback = self.role_callback
@@ -409,9 +410,9 @@ class SetupWizardView(discord.ui.View):
 
         # 4. Admin Role
         admin_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
         self.admin_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_role_select", guild_id=self.guild_id), options=admin_options, row=3)
         self.admin_role_select.callback = self.admin_role_callback
@@ -435,9 +436,9 @@ class SetupWizardView(discord.ui.View):
     async def create_embed(self):
         embed = discord.Embed(title=self.bot.get_feedback("ui_setup_title"), color=discord.Color.blue())
         embed.add_field(name="Nyelv", value=self.new_lang.upper(), inline=True)
-        embed.add_field(name="Alapértelmezett Csatorna", value=self.ch_display_name, inline=True)
-        embed.add_field(name="Alapértelmezett Ping Rang", value=self.role_display_name, inline=True)
-        embed.add_field(name="Admin Rang", value=self.admin_role_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.ch_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("setup_admin_role_select").split(".")[1].strip(), value=self.admin_role_display_name, inline=True)
         return embed
 
     async def check_readiness(self, interaction: discord.Interaction):
@@ -455,7 +456,7 @@ class SetupWizardView(discord.ui.View):
         val = self.channel_select.values[0]
         if val == "current":
             self.new_ch = interaction.channel.id
-            self.ch_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            self.ch_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
             await self.check_readiness(interaction)
         elif val == "create":
             from ui.modals import NewChannelModal
@@ -496,12 +497,12 @@ class SetupWizardView(discord.ui.View):
 
     async def master_callback(self, interaction: discord.Interaction):
         view = MasterSetupView(self.bot, self.guild_id, self.settings)
-        await interaction.response.send_message("Master szintű beállítások:", view=view, ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("msg_master_settings_prompt"), view=view, ephemeral=True)
 
     async def template_callback(self, interaction: discord.Interaction):
         from ui.views.select_views import AlertTemplateSelectView
         view = AlertTemplateSelectView(self.bot, self.guild_id, self.settings)
-        await interaction.response.send_message("Válaszd ki a platformot:", view=view, ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("ui_setup_platform_select_msg", guild_id=self.guild_id), view=view, ephemeral=True)
 
     async def save_callback(self, interaction: discord.Interaction):
         # We only update the core settings here, master settings are updated in MasterSetupView
@@ -551,9 +552,9 @@ class MasterSetupView(discord.ui.View):
         
         # 1. Master Role
         master_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
         self.master_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_master_role_select", guild_id=self.guild_id), options=master_options, row=0)
         self.master_role_select.callback = self.master_role_callback
@@ -561,10 +562,10 @@ class MasterSetupView(discord.ui.View):
 
         # 2. Admin Channel
         ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji="📍"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji="➕"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji="🆔"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
         self.admin_ch_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_channel_select", guild_id=self.guild_id), options=ch_options, row=1)
         self.admin_ch_select.callback = self.admin_ch_callback
@@ -576,8 +577,8 @@ class MasterSetupView(discord.ui.View):
 
     async def create_embed(self):
         embed = discord.Embed(title=self.bot.get_feedback("ui_master_setup_title"), color=discord.Color.dark_red())
-        embed.add_field(name="Master Admin Rang", value=self.master_role_display_name, inline=True)
-        embed.add_field(name="Admin Log Csatorna", value=self.admin_ch_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_setup_master_role_label", guild_id=self.guild_id), value=self.master_role_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_setup_admin_ch_label", guild_id=self.guild_id), value=self.admin_ch_display_name, inline=True)
         return embed
 
     async def check_readiness(self, interaction: discord.Interaction):
@@ -604,7 +605,7 @@ class MasterSetupView(discord.ui.View):
         val = self.admin_ch_select.values[0]
         if val == "current":
             self.new_admin_ch = interaction.channel.id
-            self.admin_ch_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            self.admin_ch_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
             await self.check_readiness(interaction)
         elif val == "create":
             from ui.modals import NewChannelModal

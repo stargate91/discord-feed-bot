@@ -48,7 +48,7 @@ class BaseMonitor(ABC):
             msg = self.bot.get_feedback(f"new_{self.platform}_alert", guild_id=self.guild_id)
             # If still just the key, use a generic fallback
             if msg == f"new_{self.platform}_alert":
-                msg = "{name} nemrég töltött fel egy új videót!" if self.platform == "youtube" else "Új tartalom érkezett tőle: {name}!"
+                msg = self.bot.get_feedback("default_new_item", name=self.name, guild_id=self.guild_id)
 
         # Apply variables
         for k, v in variables.items():

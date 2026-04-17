@@ -56,7 +56,7 @@ class SteamNewsMonitor(BaseMonitor):
 
         for item in new_entries:
             gid = item.get("gid")
-            title = item.get("title", "Steam Update")
+            title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
             url = item.get("url")
             author = item.get("author", "Steam")
             raw_contents = item.get("contents", "")
@@ -82,7 +82,7 @@ class SteamNewsMonitor(BaseMonitor):
                 color=self.get_color(0x1b2838) # Steam Dark Blue
             )
             embed.set_author(name=author)
-            embed.set_footer(text="Steam News")
+            embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
             
             if image_url:
                 embed.set_image(url=image_url)
@@ -110,7 +110,7 @@ class SteamNewsMonitor(BaseMonitor):
                     if not feed: return None
                     
                     item = feed[0]
-                    title = item.get("title", "Steam Update")
+                    title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
                     url = item.get("url")
                     raw_contents = item.get("contents", "")
                     
