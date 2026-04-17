@@ -127,12 +127,20 @@ class RedditMonitor(BaseMonitor):
 
         try:
             loop = asyncio.get_event_loop()
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FeedBot/1.0"}
+            # Try a very standard browser User-Agent
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
             feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.rss_url, agent=headers["User-Agent"]))
-        except:
+            
+            if hasattr(feed, 'status'):
+                log.debug(f"Reddit RSS status for r/{self.subreddit}: {feed.status}")
+            if feed.bozo:
+                log.warning(f"Reddit RSS bozo bit set for r/{self.subreddit}: {feed.bozo_exception}")
+        except Exception as e:
+            log.error(f"Manual check failed for Reddit RSS {self.name}: {e}")
             return None
 
         if not hasattr(feed, 'entries') or not feed.entries:
+            log.warning(f"No entries found in Reddit RSS for r/{self.subreddit}. URL: {self.rss_url}")
             return {"empty": True}
 
         entry = feed.entries[0]
