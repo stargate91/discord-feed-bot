@@ -132,15 +132,13 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                 m_config["include_dlc"] = False
 
             color_val = self.color_input.value.strip() if self.color_input.value else ""
-            extra_settings = {}
-            if color_val: extra_settings["embed_color"] = color_val
+            if color_val: m_config["embed_color"] = color_val
+
             alert_val = self.alert_input.value.strip() if self.alert_input.value else ""
-            if alert_val: extra_settings["custom_alert"] = alert_val
+            if alert_val: m_config["custom_alert"] = alert_val
             
             if self.monitor_type == "steam_news":
-                extra_settings["steam_patch_only"] = self.steam_patch_only
-
-            m_config["extra_settings"] = extra_settings
+                m_config["steam_patch_only"] = self.steam_patch_only
 
             guild_id = interaction.guild_id or 0
             await database.add_monitor(m_config, guild_id=guild_id)

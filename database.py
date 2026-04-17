@@ -108,7 +108,13 @@ async def get_all_monitors():
             "discord_channel_id": row[4], "ping_role_id": row[5], "enabled": bool(row[6])
         }
         if row[7]:
-            try: m.update(json.loads(row[7]))
+            try: 
+                extra = json.loads(row[7])
+                # Data healing: If it's double nested, flatten it
+                if "extra_settings" in extra and isinstance(extra["extra_settings"], dict):
+                    nested = extra.pop("extra_settings")
+                    extra.update(nested)
+                m.update(extra)
             except: pass
         monitors.append(m)
     return monitors
@@ -124,7 +130,13 @@ async def get_monitors_for_guild(guild_id):
             "discord_channel_id": row[3], "ping_role_id": row[4], "enabled": bool(row[5])
         }
         if row[6]:
-            try: m.update(json.loads(row[6]))
+            try: 
+                extra = json.loads(row[6])
+                # Data healing: If it's double nested, flatten it
+                if "extra_settings" in extra and isinstance(extra["extra_settings"], dict):
+                    nested = extra.pop("extra_settings")
+                    extra.update(nested)
+                m.update(extra)
             except: pass
         monitors.append(m)
     return monitors
