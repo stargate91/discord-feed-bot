@@ -109,6 +109,7 @@ class AddMonitorWizardView(discord.ui.View):
         self.selected_channel_id = None
         self.selected_role_id = 0
         self.selected_type = None
+        self.steam_patch_only = False
         
         # Display names for the embed/feedback
         self.channel_display_name = "Nincs kiválasztva"
@@ -157,7 +158,17 @@ class AddMonitorWizardView(discord.ui.View):
         self.type_select.callback = self.type_callback
         self.add_item(self.type_select)
 
-        # 4. Next Button
+        # 4. Optional Steam Settings (Only if steam_news selected)
+        if self.selected_type == "steam_news":
+            steam_options = [
+                discord.SelectOption(label=self.bot.get_feedback("ui_steam_item_all"), value="all", default=not self.steam_patch_only),
+                discord.SelectOption(label=self.bot.get_feedback("ui_steam_item_patches"), value="patch", default=self.steam_patch_only)
+            ]
+            self.steam_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_steam_news_option_ph"), options=steam_options, row=3)
+            self.steam_select.callback = self.steam_callback
+            self.add_item(self.steam_select)
+
+        # 5. Next Button
         self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_settings"), style=discord.ButtonStyle.success, disabled=True, row=4)
         self.next_btn.callback = self.next_callback
         self.add_item(self.next_btn)
@@ -221,6 +232,11 @@ class AddMonitorWizardView(discord.ui.View):
 
     async def type_callback(self, interaction: discord.Interaction):
         self.selected_type = self.type_select.values[0]
+        self.update_components() # Refresh to show/hide steam select
+        await self.check_readiness(interaction)
+
+    async def steam_callback(self, interaction: discord.Interaction):
+        self.steam_patch_only = (self.steam_select.values[0] == "patch")
         await self.check_readiness(interaction)
 
     async def next_callback(self, interaction: discord.Interaction):
@@ -228,12 +244,12 @@ class AddMonitorWizardView(discord.ui.View):
         ch_id = self.selected_channel_id or settings.get("default_channel_id")
         role_id = self.selected_role_id or settings.get("default_ping_role_id") or 0
         
-        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_id, role_id)
+        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_id, role_id, steam_patch_only=self.steam_patch_only)
         await interaction.response.send_modal(modal)
 
 
 class EditMonitorWizardView(discord.ui.View):
-    def __init__(self, bot, monitor_id, original_name, current_color="", interaction=None):
+    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", steam_patch_only=False, interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.monitor_id = monitor_id
@@ -247,6 +263,8 @@ class EditMonitorWizardView(discord.ui.View):
         
         self.channel_display_name = "Változatlan"
         self.role_display_name = "Változatlan"
+        self.steam_patch_only = steam_patch_only
+        self.monitor_type = monitor_type
         
         self.update_components()
 
@@ -274,7 +292,16 @@ class EditMonitorWizardView(discord.ui.View):
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
-        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name"), style=discord.ButtonStyle.primary, disabled=False, row=2)
+        if self.monitor_type == "steam_news":
+            steam_options = [
+                discord.SelectOption(label=self.bot.get_feedback("ui_steam_item_all"), value="all", default=not self.steam_patch_only),
+                discord.SelectOption(label=self.bot.get_feedback("ui_steam_item_patches"), value="patch", default=self.steam_patch_only)
+            ]
+            self.steam_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_steam_news_option_ph"), options=steam_options, row=2)
+            self.steam_select.callback = self.steam_callback
+            self.add_item(self.steam_select)
+
+        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name"), style=discord.ButtonStyle.primary, disabled=False, row=3)
         self.next_btn.callback = self.next_btn_callback
         self.add_item(self.next_btn)
 
@@ -282,7 +309,14 @@ class EditMonitorWizardView(discord.ui.View):
         embed = discord.Embed(title=f"Monitor Szerkesztése: {self.original_name}", color=discord.Color.orange())
         embed.add_field(name="Új Célcsatorna", value=self.channel_display_name, inline=True)
         embed.add_field(name="Új Ping Rang", value=self.role_display_name, inline=True)
+        if self.monitor_type == "steam_news":
+            type_label = "Csak Patchek" if self.steam_patch_only else "Minden hír"
+            embed.add_field(name="Steam Szűrés", value=type_label, inline=True)
         return embed
+
+    async def steam_callback(self, interaction: discord.Interaction):
+        self.steam_patch_only = (self.steam_select.values[0] == "patch")
+        await self.check_readiness(interaction)
 
     async def check_readiness(self, interaction: discord.Interaction):
         embed = await self.create_edit_embed()
@@ -337,7 +371,7 @@ class EditMonitorWizardView(discord.ui.View):
 
     async def next_btn_callback(self, interaction: discord.Interaction):
         # If None, we pass 0 or original handled in EditMonitorModal
-        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channel_id, self.selected_role_id, current_color=self.current_color)
+        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channel_id, self.selected_role_id, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None)
         await interaction.response.send_modal(modal)
 
 

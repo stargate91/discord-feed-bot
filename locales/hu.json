@@ -120,5 +120,9 @@
     "ui_option_manual_ch": "Manuális ID vagy Név...",
     "ui_option_manual_role": "Manuális ID vagy Név...",
     "ui_setup_title": "Szerver Beállítások",
-    "ui_master_setup_title": "Master Beállítások"
+    "ui_master_setup_title": "Master Beállítások",
+    "ui_steam_news_option_label": "Steam Hírek Típusa",
+    "ui_steam_item_all": "Minden hír és frissítés",
+    "ui_steam_item_patches": "Csak Patch Note-ok / Frissítések",
+    "ui_steam_news_option_ph": "Válaszd ki a Steam szűrést..."
 }

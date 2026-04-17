@@ -58,11 +58,12 @@ class StatusSettingsModal(discord.ui.Modal):
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_status_error_nan"), ephemeral=True)
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id):
+    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id, steam_patch_only=False):
         self.bot = bot
         self.monitor_type = monitor_type
         self.discord_channel_id = discord_channel_id
         self.ping_role_id = ping_role_id
+        self.steam_patch_only = steam_patch_only
         
         super().__init__(title=bot.get_feedback("add_monitor_title"))
 
@@ -135,6 +136,10 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             if color_val: extra_settings["embed_color"] = color_val
             alert_val = self.alert_input.value.strip() if self.alert_input.value else ""
             if alert_val: extra_settings["custom_alert"] = alert_val
+            
+            if self.monitor_type == "steam_news":
+                extra_settings["steam_patch_only"] = self.steam_patch_only
+
             m_config["extra_settings"] = extra_settings
 
             guild_id = interaction.guild_id or 0
@@ -156,13 +161,13 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color=""):
+    def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color="", steam_patch_only=None):
         self.bot = bot
         self.monitor_id = monitor_id
-        self.original_name = original_name
         self.discord_channel_id = discord_channel_id
         self.ping_role_id = ping_role_id
-        super().__init__(title=bot.get_feedback("setup_wizard_edit_title", name=original_name))
+        self.steam_patch_only = steam_patch_only
+        super().__init__(title=bot.get_feedback("ui_monitor_edit_title", name=original_name))
 
         self.name_input = discord.ui.TextInput(label=bot.get_feedback("add_monitor_name_label"), default=original_name, required=True)
         self.add_item(self.name_input)
@@ -174,8 +179,8 @@ class EditMonitorModal(discord.ui.Modal):
             guild_id = interaction.guild_id or 0
             new_name = self.name_input.value
             color_val = self.color_input.value.strip() if self.color_input.value else ""
-
-            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val)
+            guild_id = interaction.guild_id or 0
+            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val, steam_patch_only=self.steam_patch_only)
 
             if self.bot.monitor_manager:
                 from core.monitor_factory import create_monitor_instance
