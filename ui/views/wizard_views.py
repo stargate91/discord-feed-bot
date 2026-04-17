@@ -148,7 +148,6 @@ class AddMonitorWizardView(discord.ui.View):
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games"), value="epic_games"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free"), value="steam_free"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_gog_free"), value="gog_free"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_twitter"), value="twitter"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_stream"), value="stream"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news"), value="steam_news"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie"), value="movie"),

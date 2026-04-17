@@ -114,15 +114,6 @@
             "enabled": true
         },
         {
-            "type": "twitter",
-            "name": "Example Twitter User",
-            "username": "elonmusk",
-            "nitter_instance": "https://nitter.privacydev.net",
-            "discord_channel_id": 0,
-            "ping_role_id": 0,
-            "enabled": false
-        },
-        {
             "type": "stream",
             "name": "Example Twitch Stream",
             "stream_platform": "twitch",

@@ -117,9 +117,6 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                     m_config["channel_id"] = val
                 elif self.monitor_type == "rss":
                     m_config["rss_url"] = val
-                elif self.monitor_type == "twitter":
-                    m_config["username"] = val
-                    m_config["nitter_instance"] = "https://nitter.privacydev.net"
                 elif self.monitor_type == "stream":
                     m_config["stream_platform"] = "twitch"
                     m_config["stream_username"] = val
