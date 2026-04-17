@@ -150,6 +150,11 @@ class MovieMonitor(BaseMonitor):
             genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
             genre_text = ", ".join(genre_names) if genre_names else None
 
+            # Ratings
+            vote_avg = movie.get("vote_average", 0)
+            vote_count = movie.get("vote_count", 0)
+            score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+
             poster_path = movie.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
             tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
@@ -175,6 +180,7 @@ class MovieMonitor(BaseMonitor):
                 embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
+            embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
             
             embed.set_footer(text=f"TMDB • {release_date}")
             
@@ -208,6 +214,11 @@ class MovieMonitor(BaseMonitor):
                     tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
                     release_date = movie.get("release_date", "N/A")
                     
+                    # Ratings
+                    vote_avg = movie.get("vote_average", 0)
+                    vote_count = movie.get("vote_count", 0)
+                    score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+
                     genre_map = await self._fetch_genres()
                     genre_ids = movie.get("genre_ids", [])
                     genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
@@ -230,6 +241,7 @@ class MovieMonitor(BaseMonitor):
                     if genre_text:
                         embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
+                    embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
                         
                     view = discord.ui.View()
                     btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)

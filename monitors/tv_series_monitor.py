@@ -58,6 +58,43 @@ class TVSeriesMonitor(BaseMonitor):
             log.error(f"Error fetching TMDB TV genres: {e}")
         return {}
 
+    async def _get_trailer_url(self, series_id):
+        """Fetch the official YouTube trailer URL for a TV series."""
+        url = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language={self.tmdb_lang}"
+        if not self.bearer_token and self.api_key:
+            url += f"&api_key={self.api_key}"
+            
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        results = data.get("results", [])
+                        for video in results:
+                            if video.get("site") == "YouTube" and video.get("type") in ("Trailer", "Teaser"):
+                                return f"https://www.youtube.com/watch?v={video.get('key')}"
+                        
+                        if self.tmdb_lang != "en-US":
+                            return await self._get_trailer_url_en(series_id)
+        except: pass
+        return None
+
+    async def _get_trailer_url_en(self, series_id):
+        """Fallback to fetch English trailer/teaser."""
+        url = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
+        if not self.bearer_token and self.api_key:
+            url += f"&api_key={self.api_key}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        for video in data.get("results", []):
+                            if video.get("site") == "YouTube" and video.get("type") in ("Trailer", "Teaser"):
+                                return f"https://www.youtube.com/watch?v={video.get('key')}"
+        except: pass
+        return None
+
     async def check_for_updates(self):
         """Fetch ongoing TV series and look for updates."""
         if not self.bearer_token and not self.api_key:
@@ -109,10 +146,17 @@ class TVSeriesMonitor(BaseMonitor):
             genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
             genre_text = ", ".join(genre_names) if genre_names else None
 
+            # Ratings
+            vote_avg = series.get("vote_average", 0)
+            vote_count = series.get("vote_count", 0)
+            score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+
             poster_path = series.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
             tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
             
+            trailer_url = await self._get_trailer_url(series_id)
+
             alert_text = self.get_alert_message({
                 "name": "TMDB TV Series",
                 "title": name,
@@ -132,13 +176,17 @@ class TVSeriesMonitor(BaseMonitor):
                 embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
-            
+            embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
+
             embed.set_footer(text=f"TMDB • {first_air_date}")
             
             view = discord.ui.View()
             btn_label = self.bot.get_feedback("btn_view_tmdb_tv", guild_id=self.guild_id)
             view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
             
+            if trailer_url:
+                view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+
             await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
             await database.mark_as_published(series_id, entry_type, self.api_url)
 
@@ -162,10 +210,17 @@ class TVSeriesMonitor(BaseMonitor):
                     tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
                     first_air_date = series.get("first_air_date", "N/A")
                     
+                    # Ratings
+                    vote_avg = series.get("vote_average", 0)
+                    vote_count = series.get("vote_count", 0)
+                    score_text = f"⭐ {vote_avg:.1f} ({vote_count})" if vote_count > 0 else "N/A"
+
                     genre_map = await self._fetch_genres()
                     genre_ids = series.get("genre_ids", [])
                     genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
                     genre_text = ", ".join(genre_names) if genre_names else None
+                    
+                    trailer_url = await self._get_trailer_url(series_id)
                     
                     alert_text = self.get_alert_message({"name": "TMDB TV Series", "title": name, "url": tmdb_url})
                     
@@ -182,10 +237,14 @@ class TVSeriesMonitor(BaseMonitor):
                     if genre_text:
                         embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
+                    embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
                     
                     view = discord.ui.View()
                     btn_label = self.bot.get_feedback("btn_view_tmdb_tv", guild_id=self.guild_id)
                     view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
+                    
+                    if trailer_url:
+                        view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
                     
                     return {"content": f"{alert_text}\n{tmdb_url}", "embed": embed, "view": view}
         except Exception as e:
