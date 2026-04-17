@@ -1,5 +1,4 @@
 from monitors.youtube_monitor import YouTubeMonitor
-from monitors.instagram_monitor import InstagramMonitor
 from monitors.rss_monitor import RSSMonitor
 from monitors.epic_games_monitor import EpicGamesMonitor
 from monitors.steam_free_monitor import SteamFreeMonitor
@@ -19,8 +18,6 @@ def create_monitor_instance(bot, m_config):
     
     if m_type == "youtube":
         return YouTubeMonitor(bot, m_config)
-    elif m_type == "instagram":
-        return InstagramMonitor(bot, m_config)
     elif m_type == "rss":
         return RSSMonitor(bot, m_config)
     elif m_type == "epic_games":

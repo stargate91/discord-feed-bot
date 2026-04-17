@@ -139,6 +139,7 @@ class RedditMonitor(BaseMonitor):
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url, headers=headers) as response:
                     if response.status != 200:
+                        log.error(f"Reddit get_latest_item failed with status {response.status} for r/{self.subreddit}")
                         return None
                     data = await response.json()
         except:
