@@ -124,5 +124,7 @@
     "ui_steam_news_option_label": "Steam News Type",
     "ui_steam_item_all": "All news and updates",
     "ui_steam_item_patches": "Only Patch Notes / Updates",
-    "ui_steam_news_option_ph": "Select Steam filtering..."
+    "ui_steam_news_option_ph": "Select Steam filtering...",
+    "field_release_date": "Release Date",
+    "btn_watch_trailer": "🎬 Watch Trailer"
 }

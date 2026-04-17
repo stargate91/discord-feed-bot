@@ -15,7 +15,7 @@
     "field_worth": "Érték",
     "field_type": "Típus",
     "field_expiry": "Lejárat",
-    "field_genres": "Kategóriák",
+    "field_genres": "Műfajok",
     "field_score": "⬆ Pontszám",
     "field_game": "Játék",
     "field_viewers": "Nézők",
@@ -124,5 +124,7 @@
     "ui_steam_news_option_label": "Steam Hírek Típusa",
     "ui_steam_item_all": "Minden hír és frissítés",
     "ui_steam_item_patches": "Csak Patch Note-ok / Frissítések",
-    "ui_steam_news_option_ph": "Válaszd ki a Steam szűrést..."
+    "ui_steam_news_option_ph": "Válaszd ki a Steam szűrést...",
+    "field_release_date": "Megjelenés",
+    "btn_watch_trailer": "🎬 Trailer megtekintése"
 }

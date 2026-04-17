@@ -9,6 +9,7 @@ class MonitorManager:
         self.refresh_interval = config.get("refresh_interval_minutes", 10) * 60
         self.is_running = False
         self._shared_cache = {} # Key: source_id, Value: (timestamp, data)
+        self.tmdb_genres_cache = {} # Key: lang_code, Value: {id: name}
 
     def get_shared_data(self, key):
         """Get shared data from cache if it's still fresh."""
