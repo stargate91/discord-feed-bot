@@ -74,7 +74,7 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
         )
         self.add_item(self.name_input)
 
-        types_without_url = ["epic_games", "steam_free", "gog_free", "movie"]
+        types_without_url = ["epic_games", "steam_free", "gog_free", "movie", "tv_series"]
         self.needs_url = self.monitor_type not in types_without_url
 
         if self.needs_url:
