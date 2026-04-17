@@ -49,7 +49,7 @@ class StatusSettingsModal(discord.ui.Modal):
             val = int(self.interval_input.value)
             if val < 15: val = 15
             self.bot.config["presence_interval_seconds"] = val
-            self.bot.save_config()
+            await database.set_bot_setting("presence_interval_seconds", val) # Save to DB
             self.bot.restart_status_task()
             
             embed = await self.parent_view.create_embed()
@@ -122,6 +122,7 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                     m_config["stream_username"] = val
                     m_config["cooldown_seconds"] = 7200
                 elif self.monitor_type == "steam_news":
+                    match = re.search(r"app/(\d+)", val)
                     m_config["appid"] = match.group(1) if match else val
 
             if self.monitor_type == "epic_games":

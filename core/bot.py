@@ -58,6 +58,21 @@ class FeedBot(commands.Bot):
 
         # Initialize Monitor Manager (Lazy import to avoid circular dependency)
         from core.monitor_manager import MonitorManager
+        
+        # Load Global Settings from DB
+        # We override config values if they exist in the DB
+        p_interval = await database.get_bot_setting("presence_interval_seconds")
+        if p_interval:
+            self.config["presence_interval_seconds"] = int(p_interval)
+            
+        r_interval = await database.get_bot_setting("refresh_interval_minutes")
+        if r_interval:
+            self.config["refresh_interval_minutes"] = int(r_interval)
+            
+        a_channel = await database.get_bot_setting("admin_channel_id")
+        if a_channel:
+            self.config["admin_channel_id"] = int(a_channel)
+
         self.monitor_manager = MonitorManager(self, self.config)
         
         # Load Cogs
@@ -263,7 +278,7 @@ class FeedBot(commands.Bot):
     def save_config(self):
         """Persist config.json to disk."""
         save_config = self.config.copy()
-        for key in ("token",):
+        for key in ("token", "database_path", "refresh_interval_minutes", "presence_interval_seconds", "monitors", "admin_channel_id"):
             save_config.pop(key, None)
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(save_config, f, indent=4, ensure_ascii=False)

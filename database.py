@@ -63,6 +63,11 @@ async def init_db():
             id SERIAL PRIMARY KEY,
             type TEXT NOT NULL DEFAULT 'watching',
             status_text TEXT NOT NULL
+        )''',
+        # 6. Global Bot Settings
+        '''CREATE TABLE IF NOT EXISTS bot_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
         )'''
     ]
 
@@ -240,6 +245,24 @@ async def remove_bot_status(status_id):
     q = "DELETE FROM bot_statuses WHERE id = $1"
     pool = await get_pool()
     await pool.execute(q, status_id)
+
+# --- Global Bot Settings ---
+
+async def get_bot_setting(key, default=None):
+    """Retrieve a global bot setting from the database."""
+    q = "SELECT value FROM bot_settings WHERE key = $1"
+    pool = await get_pool()
+    row = await pool.fetchrow(q, key)
+    if row:
+        return row[0]
+    return default
+
+async def set_bot_setting(key, value):
+    """Upsert a global bot setting into the database."""
+    q = '''INSERT INTO bot_settings (key, value) VALUES ($1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value'''
+    pool = await get_pool()
+    await pool.execute(q, key, str(value))
 
 async def increment_post_stat(guild_id, platform):
     """Increment the post count for a guild/platform for the current date."""

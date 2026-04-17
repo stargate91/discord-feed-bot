@@ -71,6 +71,7 @@ class MasterCog(commands.GroupCog, name="master"):
         
         if admin_channel:
             self.bot.config["admin_channel_id"] = admin_channel.id
+            await database.set_bot_setting("admin_channel_id", admin_channel.id) # Save to DB
             config_changed = True
             details.append(f"- Admin csatorna: <#{admin_channel.id}>")
             
@@ -78,11 +79,11 @@ class MasterCog(commands.GroupCog, name="master"):
             self.bot.config["refresh_interval_minutes"] = refresh_interval
             self.bot.monitor_manager.refresh_interval = refresh_interval * 60
             self.bot.restart_monitor_task()
+            await database.set_bot_setting("refresh_interval_minutes", refresh_interval) # Save to DB
             config_changed = True
             details.append(f"- Monitor frissítés: **{refresh_interval} perc**")
             
         if config_changed:
-            self.bot.save_config()
             msg = self.bot.get_feedback("master_settings_success", guild_id=interaction.guild_id) + "\n" + "\n".join(details)
         else:
             ac_id = self.bot.config.get('admin_channel_id', 0)
