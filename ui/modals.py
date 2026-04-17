@@ -117,11 +117,6 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                     m_config["channel_id"] = val
                 elif self.monitor_type == "rss":
                     m_config["rss_url"] = val
-                elif self.monitor_type == "tiktok":
-                    # Extract username from full URL if provided (e.g., https://www.tiktok.com/@username)
-                    tiktok_match = re.search(r"tiktok\.com/@([a-zA-Z0-9._]+)", val)
-                    m_config["username"] = tiktok_match.group(1) if tiktok_match else val.replace("@", "")
-                    m_config["instance_url"] = "https://proxitok.pussthecat.org"
                 elif self.monitor_type == "instagram":
                     m_config["username"] = val
                     m_config["rss_url"] = f"https://rss.app/feeds/{val}.xml"

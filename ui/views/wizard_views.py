@@ -145,7 +145,6 @@ class AddMonitorWizardView(discord.ui.View):
         platform_options = [
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube"), value="youtube"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss"), value="rss"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tiktok"), value="tiktok"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_instagram"), value="instagram"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games"), value="epic_games"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free"), value="steam_free"),
