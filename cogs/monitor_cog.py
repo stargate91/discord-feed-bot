@@ -170,13 +170,21 @@ class MonitorCog(commands.GroupCog, name="monitor"):
 
     @monitor_remove.autocomplete("monitor_name")
     async def remove_autocomplete(self, interaction: discord.Interaction, current: str):
-        choices = []
-        guild_id = interaction.guild_id or 0
-        monitors_cfg = await database.get_monitors_for_guild(guild_id)
-        for m_cfg in monitors_cfg:
-            if current.lower() in m_cfg.get("name", "").lower():
-                choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
-        return choices[:25]
+        try:
+            choices = []
+            guild_id = interaction.guild_id or 0
+            if guild_id == 0:
+                return []
+                
+            monitors_cfg = await database.get_monitors_for_guild(guild_id)
+            for m_cfg in monitors_cfg:
+                name = m_cfg.get("name", "")
+                if current.lower() in name.lower():
+                    choices.append(app_commands.Choice(name=name, value=name))
+            return choices[:25]
+        except Exception as e:
+            log.error(f"Error in remove_autocomplete: {e}")
+            return []
 
     @app_commands.command(name="edit", description="Létező monitor szerkesztése")
     async def monitor_edit(self, interaction: discord.Interaction, monitor_name: str):

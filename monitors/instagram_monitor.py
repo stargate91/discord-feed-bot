@@ -10,6 +10,7 @@ class InstagramMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
         self.username = config.get("username", "Unknown")
+        self.feed_url = config.get("rss_url")
         self.is_first_run = True
 
     def get_shared_key(self):
