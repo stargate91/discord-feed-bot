@@ -59,6 +59,12 @@ class SteamNewsMonitor(BaseMonitor):
             title = item.get("title", "Steam Update")
             url = item.get("url")
             author = item.get("author", "Steam")
+            raw_contents = item.get("contents", "")
+            
+            # Clean content and extract image
+            from core.utils import clean_html, extract_image_url
+            description = clean_html(raw_contents)
+            image_url = extract_image_url(raw_contents)
             
             # Formulate message using template hierarchy
             alert_text = self.get_alert_message({
@@ -72,11 +78,14 @@ class SteamNewsMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=title[:256],
                 url=url,
-                description=item.get("contents", "")[:300] + "...",
+                description=description[:300] + "..." if len(description) > 300 else description,
                 color=self.get_color(0x1b2838) # Steam Dark Blue
             )
             embed.set_author(name=author)
             embed.set_footer(text="Steam News")
+            
+            if image_url:
+                embed.set_image(url=image_url)
             
             view = discord.ui.View()
             btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
@@ -103,15 +112,23 @@ class SteamNewsMonitor(BaseMonitor):
                     item = feed[0]
                     title = item.get("title", "Steam Update")
                     url = item.get("url")
+                    raw_contents = item.get("contents", "")
+                    
+                    from core.utils import clean_html, extract_image_url
+                    description = clean_html(raw_contents)
+                    image_url = extract_image_url(raw_contents)
                     
                     alert_text = self.get_alert_message({"name": self.name, "title": title, "url": url})
                     
                     embed = discord.Embed(
                         title=title[:256],
                         url=url,
-                        description=item.get("contents", "")[:300] + "...",
+                        description=description[:300] + "..." if len(description) > 300 else description,
                         color=self.get_color(0x1b2838)
                     )
+                    
+                    if image_url:
+                        embed.set_image(url=image_url)
                     
                     view = discord.ui.View()
                     btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
