@@ -13,8 +13,8 @@ class RedditMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.subreddit = config.get("subreddit", "")
         self.sort = config.get("sort", "new")  # new, hot, top
-        # RSS uses a slightly different URL structure
-        self.rss_url = f"https://www.reddit.com/r/{self.subreddit}/{self.sort}/.rss"
+        # Simplified RSS URL structure
+        self.rss_url = f"https://www.reddit.com/r/{self.subreddit}/.rss?sort={self.sort}"
         self.is_first_run = True
 
     def get_shared_key(self):
