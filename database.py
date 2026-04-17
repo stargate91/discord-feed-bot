@@ -269,7 +269,12 @@ async def add_bot_status(activity_type, text):
 async def remove_bot_status(status_id):
     q = "DELETE FROM bot_statuses WHERE id = $1"
     pool = await get_pool()
-    await pool.execute(q, status_id)
+    await pool.execute(q, int(status_id))
+
+async def update_bot_status(status_id, activity_type, text):
+    q = "UPDATE bot_statuses SET type = $1, status_text = $2 WHERE id = $3"
+    pool = await get_pool()
+    await pool.execute(q, activity_type, text, int(status_id))
 
 # --- Global Bot Settings ---
 

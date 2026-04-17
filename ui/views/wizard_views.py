@@ -1,8 +1,6 @@
 import discord
 import database
 from ui.modals import (
-    AddStatusModal, 
-    StatusSettingsModal, 
     AddMonitorWizardStepTwoModal,
     EditMonitorModal,
     NewChannelModal,
@@ -11,94 +9,6 @@ from ui.modals import (
 )
 from ui.views.select_views import AlertTemplateSelectView
 from core.emojis import ICON_LOCATION, ICON_SETTINGS, ICON_ADD, ICON_ID, ICON_MUTE, ICON_DOT, ICON_CLOSE
-
-class StatusWizardView(discord.ui.View):
-    def __init__(self, bot):
-        super().__init__(timeout=300)
-        self.bot = bot
-        self.selected_type = "watching"
-        
-    async def create_embed(self):
-        statuses = await database.get_bot_statuses()
-        interval = self.bot.config.get("presence_interval_seconds", 60)
-        
-        embed = discord.Embed(
-            title=self.bot.get_feedback("ui_status_wizard_title"),
-            description=self.bot.get_feedback("ui_status_wizard_desc"),
-            color=discord.Color.purple()
-        )
-        
-        if statuses:
-            status_list = ""
-            for s in statuses:
-                status_list += f"`ID: {s['id']}` | **[{s['type'].upper()}]** {s['text']}\n"
-            embed.add_field(name=self.bot.get_feedback("ui_status_wizard_active"), value=status_list, inline=False)
-        else:
-            embed.add_field(name=self.bot.get_feedback("ui_status_wizard_active"), value=self.bot.get_feedback("ui_status_wizard_empty"), inline=False)
-            
-        embed.add_field(name=self.bot.get_feedback("ui_status_wizard_settings"), value=self.bot.get_feedback("ui_status_wizard_interval", val=interval), inline=False)
-        embed.set_footer(text=self.bot.get_feedback("ui_status_wizard_footer"))
-        return embed
-
-    def update_components(self, statuses):
-        self.clear_items()
-        type_select = discord.ui.Select(
-            placeholder=self.bot.get_feedback("ui_status_ph_type"),
-            options=[
-                discord.SelectOption(label=self.bot.get_feedback("ui_status_type_watching"), value="watching", default=(self.selected_type == "watching")),
-                discord.SelectOption(label=self.bot.get_feedback("ui_status_type_playing"), value="playing", default=(self.selected_type == "playing")),
-                discord.SelectOption(label=self.bot.get_feedback("ui_status_type_listening"), value="listening", default=(self.selected_type == "listening")),
-                discord.SelectOption(label=self.bot.get_feedback("ui_status_type_competing"), value="competing", default=(self.selected_type == "competing")),
-            ],
-            row=0
-        )
-        type_select.callback = self.type_callback
-        self.add_item(type_select)
-        
-        add_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_add_status"), style=discord.ButtonStyle.primary, row=1)
-        add_btn.callback = self.add_callback
-        self.add_item(add_btn)
-        
-        set_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_set_interval"), style=discord.ButtonStyle.secondary, row=1)
-        set_btn.callback = self.settings_callback
-        self.add_item(set_btn)
-        
-        if statuses:
-            del_options = []
-            for s in statuses[:25]:
-                label = f"[{s['type'].upper()}] {s['text']}"[:100]
-                del_options.append(discord.SelectOption(label=label, value=str(s['id'])))
-            
-            del_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_status_ph_delete"), options=del_options, row=2)
-            del_select.callback = self.delete_callback
-            self.add_item(del_select)
-
-    async def type_callback(self, interaction: discord.Interaction):
-        self.selected_type = interaction.data['values'][0]
-        statuses = await database.get_bot_statuses()
-        self.update_components(statuses)
-        await interaction.response.edit_message(view=self)
-
-    async def add_callback(self, interaction: discord.Interaction):
-        modal = AddStatusModal(self.bot, self.selected_type, self)
-        await interaction.response.send_modal(modal)
-
-    async def settings_callback(self, interaction: discord.Interaction):
-        modal = StatusSettingsModal(self.bot, self)
-        await interaction.response.send_modal(modal)
-
-    async def delete_callback(self, interaction: discord.Interaction):
-        status_id = int(interaction.data['values'][0])
-        await database.remove_bot_status(status_id)
-        self.bot.restart_status_task()
-        statuses = await database.get_bot_statuses()
-        self.update_components(statuses)
-        embed = await self.create_embed()
-        await interaction.response.edit_message(embed=embed, view=self)
-
-
-
-
 
 class AddMonitorWizardView(discord.ui.View):
     def __init__(self, bot, interaction):
@@ -418,12 +328,7 @@ class SetupWizardView(discord.ui.View):
         self.admin_role_select.callback = self.admin_role_callback
         self.add_item(self.admin_role_select)
 
-        # 5. Master/Templates/Save footer
-        master_guilds = self.bot.config.get("master_guild_ids", [])
-        if self.guild_id in master_guilds:
-            master_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_master_settings"), style=discord.ButtonStyle.secondary, row=4)
-            master_btn.callback = self.master_callback
-            self.add_item(master_btn)
+        # 5. Templates/Save footer
 
         template_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_templates"), style=discord.ButtonStyle.secondary, row=4)
         template_btn.callback = self.template_callback
@@ -495,9 +400,7 @@ class SetupWizardView(discord.ui.View):
             from ui.modals import ManualInputModal
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role", id_attr="new_admin_role", display_attr="admin_role_display_name"))
 
-    async def master_callback(self, interaction: discord.Interaction):
-        view = MasterSetupView(self.bot, self.guild_id, self.settings)
-        await interaction.response.send_message(self.bot.get_feedback("msg_master_settings_prompt"), view=view, ephemeral=True)
+
 
     async def template_callback(self, interaction: discord.Interaction):
         from ui.views.select_views import AlertTemplateSelectView
@@ -525,110 +428,4 @@ class SetupWizardView(discord.ui.View):
         self.bot.guild_settings_cache[self.guild_id] = current
         await interaction.response.edit_message(content=self.bot.get_feedback("setup_save_success", guild_id=self.guild_id), view=None)
 
-class MasterSetupView(discord.ui.View):
-    def __init__(self, bot, guild_id, settings):
-        super().__init__(timeout=300)
-        self.bot = bot
-        self.guild_id = guild_id
-        self.settings = settings
-        self.new_master_role = settings.get("master_role_id", 0)
-        self.new_admin_ch = settings.get("admin_channel_id", 0)
-        
-        # Display Names for Embed
-        self.master_role_display_name = bot.get_feedback("ui_option_none")
-        if self.new_master_role:
-            r = discord.utils.get(bot.guilds, id=self.guild_id).get_role(self.new_master_role) if bot.guilds else None
-            self.master_role_display_name = f"@{r.name}" if r else f"ID: {self.new_master_role}"
-            
-        self.admin_ch_display_name = bot.get_feedback("ui_option_none")
-        if self.new_admin_ch:
-            ch = bot.get_channel(self.new_admin_ch)
-            self.admin_ch_display_name = f"#{ch.name}" if ch else f"ID: {self.new_admin_ch}"
 
-        self.update_components()
-
-    def update_components(self):
-        self.clear_items()
-        
-        # 1. Master Role
-        master_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
-        ]
-        self.master_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_master_role_select", guild_id=self.guild_id), options=master_options, row=0)
-        self.master_role_select.callback = self.master_role_callback
-        self.add_item(self.master_role_select)
-
-        # 2. Admin Channel
-        ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji=ICON_LOCATION),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
-        ]
-        self.admin_ch_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_channel_select", guild_id=self.guild_id), options=ch_options, row=1)
-        self.admin_ch_select.callback = self.admin_ch_callback
-        self.add_item(self.admin_ch_select)
-
-        save_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_save"), style=discord.ButtonStyle.success, row=2)
-        save_btn.callback = self.save_callback
-        self.add_item(save_btn)
-
-    async def create_embed(self):
-        embed = discord.Embed(title=self.bot.get_feedback("ui_master_setup_title"), color=discord.Color.dark_red())
-        embed.add_field(name=self.bot.get_feedback("ui_setup_master_role_label", guild_id=self.guild_id), value=self.master_role_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_setup_admin_ch_label", guild_id=self.guild_id), value=self.admin_ch_display_name, inline=True)
-        return embed
-
-    async def check_readiness(self, interaction: discord.Interaction):
-        embed = await self.create_embed()
-        if interaction.response.is_done():
-            await interaction.edit_original_response(embed=embed, view=self)
-        else:
-            await interaction.response.edit_message(embed=embed, view=self)
-
-    async def master_role_callback(self, interaction: discord.Interaction):
-        val = self.master_role_select.values[0]
-        if val == "none":
-            self.new_master_role = 0
-            self.master_role_display_name = self.bot.get_feedback("ui_option_none")
-            await self.check_readiness(interaction)
-        elif val == "create":
-            from ui.modals import NewRoleModal
-            await interaction.response.send_modal(NewRoleModal(self.bot, self, id_attr="new_master_role", display_attr="master_role_display_name"))
-        elif val == "manual":
-            from ui.modals import ManualInputModal
-            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role", id_attr="new_master_role", display_attr="master_role_display_name"))
-
-    async def admin_ch_callback(self, interaction: discord.Interaction):
-        val = self.admin_ch_select.values[0]
-        if val == "current":
-            self.new_admin_ch = interaction.channel.id
-            self.admin_ch_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
-            await self.check_readiness(interaction)
-        elif val == "create":
-            from ui.modals import NewChannelModal
-            await interaction.response.send_modal(NewChannelModal(self.bot, self, id_attr="new_admin_ch", display_attr="admin_ch_display_name"))
-        elif val == "manual":
-            from ui.modals import ManualInputModal
-            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel", id_attr="new_admin_ch", display_attr="admin_ch_display_name"))
-        elif val == "none":
-            self.new_admin_ch = 0
-            self.admin_ch_display_name = self.bot.get_feedback("ui_option_none")
-            await self.check_readiness(interaction)
-
-    async def save_callback(self, interaction: discord.Interaction):
-        await database.update_guild_settings(
-            self.guild_id, 
-            master_role_id=self.new_master_role,
-            admin_channel_id=self.new_admin_ch
-        )
-        # Update cache
-        current = self.bot.guild_settings_cache.get(self.guild_id, {})
-        current.update({
-            "master_role_id": self.new_master_role,
-            "admin_channel_id": self.new_admin_ch
-        })
-        self.bot.guild_settings_cache[self.guild_id] = current
-        await interaction.response.edit_message(content=self.bot.get_feedback("ui_modal_master_save_success"), view=None)

@@ -36,9 +36,16 @@ class FeedBot(commands.Bot):
                     except Exception as e:
                         log.error(f"Failed to load language file {filename}: {e}")
         
-        default_lang_code = self.config.get("master_language", "hu")
+        default_lang_code = self.config.get("master_language", "en")
+        
+        # Override with DB language if possible
+        db_lang = await database.get_bot_setting("master_language")
+        if db_lang:
+            default_lang_code = db_lang
+            self.config["master_language"] = default_lang_code
+            
         self.language_data = self.locales.get(default_lang_code, {})
-        log.info(f"Loaded {len(self.locales)} language packs.")
+        log.info(f"Loaded {len(self.locales)} language packs (Master: {default_lang_code}).")
 
         # Load all guild settings into memory
         try:

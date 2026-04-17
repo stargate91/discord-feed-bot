@@ -5,58 +5,6 @@ from logger import log
 import database
 from core.emojis import STATUS_ERROR
 
-class AddStatusModal(discord.ui.Modal):
-    def __init__(self, bot, activity_type, parent_view):
-        super().__init__(title=self.bot.get_feedback("ui_modal_status_add_title", type=activity_type.upper()))
-        self.bot = bot
-        self.activity_type = activity_type
-        self.parent_view = parent_view
-        
-        self.text_input = discord.ui.TextInput(
-            label=self.bot.get_feedback("ui_modal_status_text_label"),
-            placeholder=self.bot.get_feedback("ui_modal_status_text_ph"),
-            required=True,
-            max_length=100
-        )
-        self.add_item(self.text_input)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        await database.add_bot_status(self.activity_type, self.text_input.value)
-        self.bot.restart_status_task()
-        
-        # Update parent view
-        statuses = await database.get_bot_statuses()
-        self.parent_view.update_components(statuses)
-        embed = await self.parent_view.create_embed()
-        await interaction.response.edit_message(embed=embed, view=self.parent_view)
-
-class StatusSettingsModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view):
-        super().__init__(title=self.bot.get_feedback("ui_modal_status_settings_title"))
-        self.bot = bot
-        self.parent_view = parent_view
-        
-        self.interval_input = discord.ui.TextInput(
-            label=self.bot.get_feedback("ui_modal_status_interval_label"),
-            placeholder=self.bot.get_feedback("ui_modal_status_interval_ph"),
-            default=str(bot.config.get("presence_interval_seconds", 60)),
-            required=True,
-            max_length=4
-        )
-        self.add_item(self.interval_input)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            val = int(self.interval_input.value)
-            if val < 15: val = 15
-            self.bot.config["presence_interval_seconds"] = val
-            await database.set_bot_setting("presence_interval_seconds", val) # Save to DB
-            self.bot.restart_status_task()
-            
-            embed = await self.parent_view.create_embed()
-            await interaction.response.edit_message(embed=embed, view=self.parent_view)
-        except ValueError:
-            await interaction.response.send_message(self.bot.get_feedback("ui_modal_status_error_nan"), ephemeral=True)
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
     def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id):

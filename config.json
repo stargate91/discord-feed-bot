@@ -1,5 +1,4 @@
 {
-    "master_language": "hu",
     "command_prefix": "!",
     "command_suffix": "_nova",
     "master_guild_ids": [
