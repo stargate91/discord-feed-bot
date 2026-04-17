@@ -1,30 +1,27 @@
 import aiohttp
 import discord
+import asyncio
+import re
 from core.base_monitor import BaseMonitor
 from logger import log
-
-# Reddit needs a unique, descriptive User-Agent or it will return 429
-REDDIT_USER_AGENT = "Nova-FeedBot/1.0 (Discord Feed Monitor)"
-
-
 import database
 
 class RedditMonitor(BaseMonitor):
-    """Monitor for new posts in a given subreddit via Reddit's public JSON API."""
+    """Monitor for new posts in a given subreddit via Reddit's public RSS feed."""
 
     def __init__(self, bot, config):
         super().__init__(bot, config)
         self.subreddit = config.get("subreddit", "")
         self.sort = config.get("sort", "new")  # new, hot, top
-        self.limit = config.get("limit", 10)
-        self.api_url = f"https://www.reddit.com/r/{self.subreddit}/{self.sort}.json?limit={self.limit}"
+        # RSS uses a slightly different URL structure
+        self.rss_url = f"https://www.reddit.com/r/{self.subreddit}/{self.sort}/.rss"
         self.is_first_run = True
 
     def get_shared_key(self):
-        return f"reddit:{self.subreddit}:{self.sort}"
+        return f"reddit_rss:{self.subreddit}:{self.sort}"
 
     async def check_for_updates(self):
-        """Fetch Reddit JSON API and look for new posts."""
+        """Fetch Reddit RSS feed and look for new posts."""
         if not self.subreddit:
             log.warning(f"No subreddit configured for monitor: {self.name}")
             return
@@ -32,83 +29,77 @@ class RedditMonitor(BaseMonitor):
         # Check for shared data
         shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
         if shared_data:
-            data = shared_data
+            feed = shared_data
         else:
             try:
-                headers = {"User-Agent": REDDIT_USER_AGENT}
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url, headers=headers) as response:
-                        if response.status != 200:
-                            log.error(f"Reddit API returned {response.status} for r/{self.subreddit}")
-                            return
-                        data = await response.json()
-                        if data:
-                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
+                loop = asyncio.get_event_loop()
+                # Reddit might still block without a proper User-Agent even for RSS
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FeedBot/1.0"}
+                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.rss_url, agent=headers["User-Agent"]))
+                
+                if hasattr(feed, 'entries') and feed.entries:
+                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
             except Exception as e:
-                log.error(f"Error fetching Reddit data for r/{self.subreddit}: {e}")
+                log.error(f"Error fetching Reddit RSS for r/{self.subreddit}: {e}")
                 return
 
-        posts = data.get("data", {}).get("children", [])
-        if not posts:
+        if not feed or not hasattr(feed, 'entries'):
             return
 
         new_entries = []
-        for post_wrapper in reversed(posts):
-            post = post_wrapper.get("data", {})
-            post_id = post.get("id", "")
-            if not post_id:
+        for entry in reversed(feed.entries):
+            # entry.id is usually the full URL or a unique ID like t3_xxxxx
+            entry_id = entry.get("id", "")
+            if not entry_id:
                 continue
 
-            db_id = f"reddit_{post_id}"
+            db_id = f"reddit_{entry_id.split('/')[-1]}" if "/" in entry_id else f"reddit_{entry_id}"
+            
             if not await database.is_published(db_id, "reddit"):
                 if self.is_first_run:
-                    log.debug(f"Seeding Reddit post: {post.get('title', '')[:60]}")
-                    await database.mark_as_published(db_id, "reddit", self.api_url)
+                    log.debug(f"Seeding Reddit RSS post: {entry.get('title', '')[:60]}")
+                    await database.mark_as_published(db_id, "reddit", self.rss_url)
                 else:
-                    new_entries.append(post)
-                    log.info(f"New Reddit post detected: {post.get('title', '')[:60]}")
+                    new_entries.append(entry)
+                    log.info(f"New Reddit post detected (RSS): {entry.get('title', '')[:60]}")
 
-        for post in new_entries:
-            post_id = post.get("id", "")
-            db_id = f"reddit_{post_id}"
+        for entry in new_entries:
+            entry_id = entry.get("id", "")
+            db_id = f"reddit_{entry_id.split('/')[-1]}" if "/" in entry_id else f"reddit_{entry_id}"
 
-            title = post.get("title", "New Reddit Post")[:256]
-            permalink = f"https://www.reddit.com{post.get('permalink', '')}"
-            author = post.get("author", "Unknown")
-            subreddit_name = post.get("subreddit_name_prefixed", f"r/{self.subreddit}")
-            score = post.get("score", 0)
-            thumbnail = post.get("thumbnail", "")
-            # Get a proper image if available
-            image_url = None
-            if post.get("post_hint") == "image":
-                image_url = post.get("url")
-            elif thumbnail and thumbnail.startswith("http"):
-                image_url = thumbnail
-
+            title = entry.get("title", "New Reddit Post")[:256]
+            link = entry.get("link", "")
+            author = entry.get("author", "Unknown")
+            subreddit_name = f"r/{self.subreddit}"
+            
             embed = discord.Embed(
                 title=title,
-                url=permalink,
+                url=link,
                 color=self.get_color(0xFF4500)  # Reddit Orange
             )
             embed.set_author(name=subreddit_name)
 
+            # RSS Thumbnail handling
+            image_url = None
+            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+                image_url = entry.media_thumbnail[0]["url"]
+            elif hasattr(entry, 'content'):
+                # Reddit puts an <img> tag in the content summary
+                content_value = entry.content[0].get('value', '')
+                img_match = re.search(r'<img [^>]*src="([^"]+)"', content_value)
+                if img_match:
+                    image_url = img_match.group(1)
+
             if image_url:
                 embed.set_image(url=image_url)
 
-            if score:
-                embed.add_field(
-                    name=self.bot.get_feedback("field_score", guild_id=self.guild_id),
-                    value=str(score),
-                    inline=True,
-                )
-
-            embed.set_footer(text=f"u/{author} • Reddit")
+            embed.set_footer(text=f"{author} • Reddit")
 
             # Format alert
             alert_text = self.get_alert_message({
                 "name": subreddit_name,
                 "title": title,
-                "url": permalink,
+                "url": link,
                 "author": author
             })
 
@@ -116,67 +107,59 @@ class RedditMonitor(BaseMonitor):
             btn_label = self.bot.get_feedback("btn_view_reddit", guild_id=self.guild_id)
             view.add_item(
                 discord.ui.Button(
-                    label=btn_label, url=permalink, style=discord.ButtonStyle.link
+                    label=btn_label, url=link, style=discord.ButtonStyle.link
                 )
             )
 
             await self.send_update(
-                content=f"{alert_text}\n{permalink}", embed=embed, view=view
+                content=f"{alert_text}\n{link}", embed=embed, view=view
             )
-            await database.mark_as_published(db_id, "reddit", self.api_url)
+            await database.mark_as_published(db_id, "reddit", self.rss_url)
 
         if self.is_first_run:
-            log.info(f"Initial seed completed for Reddit r/{self.subreddit}. Monitoring active.")
+            log.info(f"Initial seed completed for Reddit RSS r/{self.subreddit}. Monitoring active.")
             self.is_first_run = False
 
     async def get_latest_item(self):
-        """Fetch the most recent post from the subreddit."""
+        """Fetch the most recent post from the subreddit via RSS."""
         if not self.subreddit:
             return None
 
         try:
-            headers = {"User-Agent": REDDIT_USER_AGENT}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url, headers=headers) as response:
-                    if response.status != 200:
-                        log.error(f"Reddit get_latest_item failed with status {response.status} for r/{self.subreddit}")
-                        return None
-                    data = await response.json()
+            loop = asyncio.get_event_loop()
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FeedBot/1.0"}
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.rss_url, agent=headers["User-Agent"]))
         except:
             return None
 
-        posts = data.get("data", {}).get("children", [])
-        if not posts:
+        if not hasattr(feed, 'entries') or not feed.entries:
             return {"empty": True}
 
-        post = posts[0].get("data", {})
-        title = post.get("title", "New Reddit Post")[:256]
-        permalink = f"https://www.reddit.com{post.get('permalink', '')}"
-        author = post.get("author", "Unknown")
-        subreddit_name = post.get("subreddit_name_prefixed", f"r/{self.subreddit}")
-        score = post.get("score", 0)
-
-        image_url = None
-        if post.get("post_hint") == "image":
-            image_url = post.get("url")
-        elif post.get("thumbnail", "").startswith("http"):
-            image_url = post.get("thumbnail")
+        entry = feed.entries[0]
+        title = entry.get("title", "New Reddit Post")[:256]
+        link = entry.get("link", "")
+        author = entry.get("author", "Unknown")
+        subreddit_name = f"r/{self.subreddit}"
 
         embed = discord.Embed(
             title=title,
-            url=permalink,
+            url=link,
             color=self.get_color(0xFF4500),
         )
         embed.set_author(name=subreddit_name)
+        
+        image_url = None
+        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            image_url = entry.media_thumbnail[0]["url"]
+        elif hasattr(entry, 'content'):
+            img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.content[0].get('value', ''))
+            if img_match:
+                image_url = img_match.group(1)
+
         if image_url:
             embed.set_image(url=image_url)
-        if score:
-            embed.add_field(
-                name=self.bot.get_feedback("field_score", guild_id=self.guild_id),
-                value=str(score),
-                inline=True,
-            )
-        embed.set_footer(text=f"u/{author} • Reddit")
+            
+        embed.set_footer(text=f"{author} • Reddit")
 
         alert_text = self.bot.get_feedback("new_reddit_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
@@ -185,12 +168,12 @@ class RedditMonitor(BaseMonitor):
         btn_label = self.bot.get_feedback("btn_view_reddit", guild_id=self.guild_id)
         view.add_item(
             discord.ui.Button(
-                label=btn_label, url=permalink, style=discord.ButtonStyle.link
+                label=btn_label, url=link, style=discord.ButtonStyle.link
             )
         )
 
         return {
-            "content": f"{ping}{alert_text}\n{permalink}",
+            "content": f"{ping}{alert_text}\n{link}",
             "embed": embed,
             "view": view,
         }
