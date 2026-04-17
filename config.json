@@ -5,7 +5,10 @@
     "presence_interval_seconds": 60,
     "command_prefix": "!",
     "command_suffix": "_nova",
-    "admin_channel_id": 1486516075905417216,
+    "master_guild_ids": [
+        1083433370815582240
+    ],
+    "premium_guild_ids": [],
     "monitors": [
         {
             "type": "youtube",

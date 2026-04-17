@@ -13,8 +13,9 @@ def load_config(config_file: str = "config.json"):
         config = json.load(f)
     
     # Overwrite with environment variables if present
-    config["token"] = os.getenv("DISCORD_TOKEN") or config.get("token")
-    # Use database_path from config, falling back to environment variable or default
-    config["database_path"] = config.get("database_path") or os.getenv("DATABASE_PATH") or "data/feed_bot.db"
+    config["token"] = os.getenv("BOT_TOKEN") or config.get("token")
+    config["tmdb_api_key"] = os.getenv("TMDB_API_KEY") or config.get("tmdb_api_key")
+    config["tmdb_bearer_token"] = os.getenv("TMDB_BEARER_TOKEN") or config.get("tmdb_bearer_token")
+    config["database_url"] = os.getenv("DATABASE_URL") or config.get("database_url")
     
     return config

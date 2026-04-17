@@ -6,18 +6,22 @@ from core.base_monitor import BaseMonitor
 from logger import log
 
 
+import database
+
 class TwitterMonitor(BaseMonitor):
     """Monitor for tweets from a Twitter/X user via a Nitter RSS proxy."""
 
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.username = config.get("username", "")
         self.nitter_instance = config.get(
             "nitter_instance", "https://nitter.privacydev.net"
         )
         self.feed_url = f"{self.nitter_instance.rstrip('/')}/{self.username}/rss"
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return f"twitter:{self.username}"
 
     async def check_for_updates(self):
         """Fetch the Nitter RSS feed and look for new tweets."""
@@ -25,16 +29,23 @@ class TwitterMonitor(BaseMonitor):
             log.warning(f"No Twitter username configured for monitor: {self.name}")
             return
 
-        try:
-            loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(
-                None, lambda: feedparser.parse(self.feed_url)
-            )
-        except Exception as e:
-            log.error(f"Failed to fetch Nitter RSS for @{self.username}: {e}")
-            return
-
-        if not hasattr(feed, "entries") or not feed.entries:
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            feed = shared_data
+        else:
+            try:
+                loop = asyncio.get_event_loop()
+                feed = await loop.run_in_executor(
+                    None, lambda: feedparser.parse(self.feed_url)
+                )
+                if hasattr(feed, 'entries'):
+                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+            except Exception as e:
+                log.error(f"Failed to fetch Nitter RSS for @{self.username}: {e}")
+                return
+        
+        if not feed or not hasattr(feed, "entries") or not feed.entries:
             log.debug(f"No entries found in Nitter feed for @{self.username}")
             return
 
@@ -45,10 +56,10 @@ class TwitterMonitor(BaseMonitor):
                 continue
 
             db_id = f"twitter_{entry_id}"
-            if not await self.db.is_published(db_id, "twitter"):
+            if not await database.is_published(db_id, "twitter"):
                 if self.is_first_run:
                     log.debug(f"Seeding Twitter post from @{self.username}")
-                    await self.db.mark_as_published(db_id, "twitter", self.feed_url)
+                    await database.mark_as_published(db_id, "twitter", self.feed_url)
                 else:
                     new_entries.append(entry)
                     log.info(
@@ -73,7 +84,7 @@ class TwitterMonitor(BaseMonitor):
             embed = discord.Embed(
                 description=tweet_text,
                 url=twitter_link,
-                color=0x1DA1F2,  # Twitter Blue
+                color=self.get_color(0x1DA1F2),  # Twitter Blue
             )
             embed.set_author(
                 name=f"@{self.username}",
@@ -85,11 +96,15 @@ class TwitterMonitor(BaseMonitor):
 
             embed.set_footer(text="X (Twitter)")
 
-            alert_text = self.lang.get("new_twitter_alert", "Új tweet érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            # Format alert
+            alert_text = self.get_alert_message({
+                "name": f"@{self.username}",
+                "title": tweet_text[:50] + "..." if len(tweet_text) > 50 else tweet_text,
+                "url": twitter_link
+            })
 
             view = discord.ui.View()
-            btn_label = self.lang.get("btn_view_twitter", "Megtekintés X-en")
+            btn_label = self.bot.get_feedback("btn_view_twitter", guild_id=self.guild_id)
             view.add_item(
                 discord.ui.Button(
                     label=btn_label, url=twitter_link, style=discord.ButtonStyle.link
@@ -97,11 +112,11 @@ class TwitterMonitor(BaseMonitor):
             )
 
             await self.send_update(
-                content=f"{ping}{alert_text}\n{twitter_link}",
+                content=f"{alert_text}\n{twitter_link}",
                 embed=embed,
                 view=view,
             )
-            await self.db.mark_as_published(db_id, "twitter", self.feed_url)
+            await database.mark_as_published(db_id, "twitter", self.feed_url)
 
         if self.is_first_run:
             log.info(
@@ -136,7 +151,7 @@ class TwitterMonitor(BaseMonitor):
         embed = discord.Embed(
             description=tweet_text,
             url=twitter_link,
-            color=0x1DA1F2,
+            color=self.get_color(0x1DA1F2),
         )
         embed.set_author(
             name=f"@{self.username}",
@@ -146,11 +161,11 @@ class TwitterMonitor(BaseMonitor):
             embed.set_image(url=image_url)
         embed.set_footer(text="X (Twitter)")
 
-        alert_text = self.lang.get("new_twitter_alert", "Új tweet érkezett!")
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        alert_text = self.bot.get_feedback("new_twitter_alert", guild_id=self.guild_id)
+        ping = f"{self.ping_role}" if self.ping_role else ""
 
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_twitter", "Megtekintés X-en")
+        btn_label = self.bot.get_feedback("btn_view_twitter", guild_id=self.guild_id)
         view.add_item(
             discord.ui.Button(
                 label=btn_label, url=twitter_link, style=discord.ButtonStyle.link

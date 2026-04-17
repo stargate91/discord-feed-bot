@@ -2,13 +2,28 @@ import asyncio
 from logger import log
 
 class MonitorManager:
-    def __init__(self, bot, config, db):
+    def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.db = db
         self.monitors = []
         self.refresh_interval = config.get("refresh_interval_minutes", 10) * 60
         self.is_running = False
+        self._shared_cache = {} # Key: source_id, Value: (timestamp, data)
+
+    def get_shared_data(self, key):
+        """Get shared data from cache if it's still fresh."""
+        import time
+        if key in self._shared_cache:
+            ts, data = self._shared_cache[key]
+            # Consider data fresh for half of the refresh interval
+            if time.time() - ts < (self.refresh_interval / 2):
+                return data
+        return None
+
+    def set_shared_data(self, key, data):
+        """Store data in the shared cache."""
+        import time
+        self._shared_cache[key] = (time.time(), data)
 
     def add_monitor(self, monitor_instance):
         """Add an already instantiated monitor."""
@@ -32,13 +47,16 @@ class MonitorManager:
         while self.is_running and not self.bot.is_closed():
             for monitor in self.monitors:
                 try:
-                    log.debug(f"Checking monitor: {monitor.name}")
+                    log.debug(f"Checking monitor: {monitor.name}", extra={'guild_id': monitor.guild_id})
                     await monitor.check_for_updates()
                 except Exception as e:
-                    log.error(f"Error checking monitor {monitor.name}: {e}")
+                    log.error(f"Error checking monitor {monitor.name}: {e}", exc_info=True, extra={'guild_id': monitor.guild_id})
             
             # Wait for next check cycle
-            await asyncio.sleep(self.refresh_interval)
+            try:
+                await asyncio.sleep(self.refresh_interval)
+            except asyncio.CancelledError:
+                break
 
     def stop_loop(self):
         """Stop the background monitoring loop."""

@@ -1,24 +1,78 @@
 from abc import ABC, abstractmethod
 import discord
 from logger import log
+import database
 
 class BaseMonitor(ABC):
-    def __init__(self, bot, config, db):
+    def __init__(self, bot, config):
         self.bot = bot
         self.config = config
-        self.db = db
         self.name = config.get("name", "Unknown Monitor")
         self.platform = config.get("type", "unknown")
         self.enabled = config.get("enabled", True)
         self.discord_channel_id = config.get("discord_channel_id")
         self.ping_role_id = config.get("ping_role_id", 0)
+        self.guild_id = config.get("guild_id", 0)
 
     @property
     def ping_role(self):
         """Return the formatted ping string if a role is configured."""
         if self.ping_role_id and self.ping_role_id != 0:
-            return f"<@&{self.ping_role_id}>"
+            return f"<@&{self.ping_role_id}> " # Note the trailing space
         return ""
+
+    def get_alert_message(self, variables=None):
+        """
+        Get the alert message based on priority:
+        1. Monitor-specific custom alert
+        2. Guild-specific default alert for this platform
+        3. System default from language files
+        """
+        variables = variables or {}
+        # Ensure {name} is always available as a variable
+        if "name" not in variables:
+            variables["name"] = self.name
+
+        # 1. Monitor-specific
+        extra = self.config.get("extra_settings", {})
+        msg = extra.get("custom_alert")
+        
+        # 2. Guild-default
+        if not msg:
+            guild_settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            templates = guild_settings.get("alert_templates", {})
+            msg = templates.get(self.platform)
+            
+        # 3. System fallback
+        if not msg:
+            msg = self.bot.get_feedback(f"new_{self.platform}_alert", guild_id=self.guild_id)
+            # If still just the key, use a generic fallback
+            if msg == f"new_{self.platform}_alert":
+                msg = "{name} nemrég töltött fel egy új videót!" if self.platform == "youtube" else "Új tartalom érkezett tőle: {name}!"
+
+        # Apply variables
+        for k, v in variables.items():
+            msg = msg.replace(f"{{{k}}}", str(v))
+            
+        return f"{self.ping_role}{msg}"
+
+    def get_shared_key(self):
+        """Return a key for the shared poll registry. Subclasses should override if pollable."""
+        return None
+        
+    def get_color(self, default_hex):
+        """Get the localized/custom embed color, falling back to platform default."""
+        # Config uses extra_settings which contains embed_color if configured
+        extra = self.config.get("extra_settings", {})
+        if extra and isinstance(extra, dict):
+            c = extra.get("embed_color")
+            if c:
+                try:
+                    c = c.replace("#", "").replace("0x", "")
+                    return int(c, 16)
+                except ValueError:
+                    pass
+        return default_hex
 
     @abstractmethod
     async def check_for_updates(self):
@@ -47,8 +101,10 @@ class BaseMonitor(ABC):
         if channel:
             try:
                 await channel.send(content=content, embed=embed, view=view)
-                log.info(f"Published update for {self.name} on channel {channel.name}")
+                log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
+                # Analytics: Increment daily post count for this guild/platform
+                await database.increment_post_stat(self.guild_id, self.platform)
             except Exception as e:
-                log.error(f"Failed to send update for {self.name}: {e}")
+                log.error(f"Failed to send update for {self.name}: {e}", extra={'guild_id': self.guild_id})
         else:
-            log.warning(f"Could not find channel {self.discord_channel_id} for {self.name}")
+            log.warning(f"Could not find channel {self.discord_channel_id} for {self.name}", extra={'guild_id': self.guild_id})

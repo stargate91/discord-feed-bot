@@ -1,6 +1,7 @@
 discord.py
 feedparser
-aiosqlite
+
 python-dotenv
 aiohttp
 colorama
+asyncpg

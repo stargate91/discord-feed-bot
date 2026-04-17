@@ -8,12 +8,16 @@ from logger import log
 # Standard User-Agent to avoid being blocked by WordPress/Cloudflare
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
+import database
+
 class RSSMonitor(BaseMonitor):
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.feed_url = config.get("rss_url")
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return f"rss:{self.feed_url}"
 
     async def check_for_updates(self):
         """Fetch a generic RSS feed and look for new entries."""
@@ -21,16 +25,22 @@ class RSSMonitor(BaseMonitor):
             log.warning(f"No RSS URL for monitor: {self.name}")
             return
 
-        # Fetch the feed as a blocking operation in an executor
-        try:
-            loop = asyncio.get_event_loop()
-            # Do not use fake agent, as some servers block incomplete Chrome profiles but allow default urllib
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
-        except Exception as e:
-            log.error(f"Failed to fetch RSS feed for {self.name}: {e}")
-            return
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            feed = shared_data
+        else:
+            # Fetch the feed as a blocking operation in an executor
+            try:
+                loop = asyncio.get_event_loop()
+                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+                if hasattr(feed, 'entries'):
+                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+            except Exception as e:
+                log.error(f"Failed to fetch RSS feed for {self.name}: {e}")
+                return
         
-        if not hasattr(feed, 'entries') or not feed.entries:
+        if not feed or not hasattr(feed, 'entries'):
             log.debug(f"No feed entries found for RSS monitor {self.name} at {self.feed_url}")
             return
 
@@ -42,11 +52,11 @@ class RSSMonitor(BaseMonitor):
             if not entry_id:
                 continue
 
-            if not await self.db.is_published(entry_id, "rss"):
+            if not await database.is_published(entry_id, "rss"):
                 if self.is_first_run:
                     # On first run, we just mark existing entries as published
                     log.debug(f"Seeding database with existing RSS entry: {entry_id}")
-                    await self.db.mark_as_published(entry_id, "rss", self.feed_url)
+                    await database.mark_as_published(entry_id, "rss", self.feed_url)
                 else:
                     new_entries.append(entry)
                     log.info(f"New RSS entry detected: {entry.get('title', 'Unknown')} ({entry_id})")
@@ -61,7 +71,7 @@ class RSSMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=entry_title[:256],
                 url=entry_link,
-                color=0x00FF00 # Generic Green
+                color=self.get_color(0x00FF00) # Generic Green
             )
             embed.set_author(name=author_name)
             
@@ -87,16 +97,20 @@ class RSSMonitor(BaseMonitor):
             if img_url:
                 embed.set_image(url=img_url)
 
-            alert_text = self.lang.get("new_rss_alert", "Új bejegyzés érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            # Format custom alert message
+            alert_text = self.get_alert_message({
+                "name": author_name,
+                "title": entry_title,
+                "url": entry_link
+            })
 
             # Create interactive button
             view = discord.ui.View()
-            btn_label = self.lang.get("btn_read_more", "Read More")
+            btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
             view.add_item(discord.ui.Button(label=btn_label, url=entry_link, style=discord.ButtonStyle.link))
 
-            await self.send_update(content=f"{ping}{alert_text}\n{entry_link}", embed=embed, view=view)
-            await self.db.mark_as_published(entry_id, "rss", self.feed_url)
+            await self.send_update(content=f"{alert_text}\n{entry_link}", embed=embed, view=view)
+            await database.mark_as_published(entry_id, "rss", self.feed_url)
 
         # After the first successful check, mark as not first run
         if self.is_first_run:
@@ -128,7 +142,7 @@ class RSSMonitor(BaseMonitor):
         embed = discord.Embed(
             title=entry_title[:256],
             url=entry_link,
-            color=0x00FF00 
+            color=self.get_color(0x00FF00) 
         )
         embed.set_author(name=author_name)
         
@@ -151,11 +165,11 @@ class RSSMonitor(BaseMonitor):
         if img_url:
             embed.set_image(url=img_url)
 
-        alert_text = self.lang.get("new_rss_alert", "Új bejegyzés érkezett!")
+        alert_text = self.bot.get_feedback("new_rss_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
         
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_read_more", "Read More")
+        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=entry_link, style=discord.ButtonStyle.link))
         
         return {

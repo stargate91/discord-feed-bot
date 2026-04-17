@@ -1,0 +1,220 @@
+import discord
+import json
+import re
+from logger import log
+import database
+
+class AddStatusModal(discord.ui.Modal):
+    def __init__(self, bot, activity_type, parent_view):
+        super().__init__(title=self.bot.get_feedback("ui_modal_status_add_title", type=activity_type.upper()))
+        self.bot = bot
+        self.activity_type = activity_type
+        self.parent_view = parent_view
+        
+        self.text_input = discord.ui.TextInput(
+            label=self.bot.get_feedback("ui_modal_status_text_label"),
+            placeholder=self.bot.get_feedback("ui_modal_status_text_ph"),
+            required=True,
+            max_length=100
+        )
+        self.add_item(self.text_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await database.add_bot_status(self.activity_type, self.text_input.value)
+        self.bot.restart_status_task()
+        
+        # Update parent view
+        statuses = await database.get_bot_statuses()
+        self.parent_view.update_components(statuses)
+        embed = await self.parent_view.create_embed()
+        await interaction.response.edit_message(embed=embed, view=self.parent_view)
+
+class StatusSettingsModal(discord.ui.Modal):
+    def __init__(self, bot, parent_view):
+        super().__init__(title=self.bot.get_feedback("ui_modal_status_settings_title"))
+        self.bot = bot
+        self.parent_view = parent_view
+        
+        self.interval_input = discord.ui.TextInput(
+            label=self.bot.get_feedback("ui_modal_status_interval_label"),
+            placeholder=self.bot.get_feedback("ui_modal_status_interval_ph"),
+            default=str(bot.config.get("presence_interval_seconds", 60)),
+            required=True,
+            max_length=4
+        )
+        self.add_item(self.interval_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            val = int(self.interval_input.value)
+            if val < 15: val = 15
+            self.bot.config["presence_interval_seconds"] = val
+            self.bot.save_config()
+            self.bot.restart_status_task()
+            
+            embed = await self.parent_view.create_embed()
+            await interaction.response.edit_message(embed=embed, view=self.parent_view)
+        except ValueError:
+            await interaction.response.send_message(self.bot.get_feedback("ui_modal_status_error_nan"), ephemeral=True)
+
+class AddMonitorWizardStepTwoModal(discord.ui.Modal):
+    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id):
+        self.bot = bot
+        self.monitor_type = monitor_type
+        self.discord_channel_id = discord_channel_id
+        self.ping_role_id = ping_role_id
+        
+        super().__init__(title=bot.get_feedback("add_monitor_title"))
+
+        self.name_input = discord.ui.TextInput(
+            label=bot.get_feedback("add_monitor_name_label"),
+            placeholder="pl. TheVR YouTube Csatorna", # Let's keep this as an example or localize it if needed
+            required=True
+        )
+        self.add_item(self.name_input)
+
+        types_without_url = ["epic_games", "steam_free", "gog_free", "movie"]
+        self.needs_url = self.monitor_type not in types_without_url
+
+        if self.needs_url:
+            self.url_input = discord.ui.TextInput(
+                label=bot.get_feedback("add_monitor_id_label"),
+                placeholder="UC... vagy https://... (platform függő)",
+                required=True
+            )
+            self.add_item(self.url_input)
+
+        self.alert_input = discord.ui.TextInput(
+            label="Egyedi Ping Üzenet (Opcionális)",
+            placeholder="Használd a {name} és {title} változókat",
+            style=discord.TextStyle.paragraph,
+            required=False,
+            max_length=500
+        )
+        self.add_item(self.alert_input)
+
+        self.color_input = discord.ui.TextInput(
+            label="Embed Szín (opcionális, hex)",
+            placeholder="#FF0000 vagy hagyd üresen",
+            required=False,
+            max_length=7
+        )
+        self.add_item(self.color_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            m_config = {
+                "type": self.monitor_type,
+                "name": self.name_input.value,
+                "discord_channel_id": self.discord_channel_id,
+                "ping_role_id": self.ping_role_id,
+                "enabled": True
+            }
+
+            if self.needs_url:
+                val = self.url_input.value
+                if self.monitor_type == "youtube":
+                    m_config["channel_id"] = val
+                elif self.monitor_type == "rss":
+                    m_config["rss_url"] = val
+                elif self.monitor_type == "tiktok":
+                    m_config["username"] = val
+                    m_config["instance_url"] = "https://proxitok.pabloferreiro.es"
+                elif self.monitor_type == "instagram":
+                    m_config["username"] = val
+                    m_config["rss_url"] = f"https://rss.app/feeds/{val}.xml"
+                elif self.monitor_type == "reddit":
+                    m_config["subreddit"] = val
+                    m_config["sort"] = "new"
+                elif self.monitor_type == "twitter":
+                    m_config["username"] = val
+                    m_config["nitter_instance"] = "https://nitter.privacydev.net"
+                elif self.monitor_type == "stream":
+                    m_config["stream_platform"] = "twitch"
+                    m_config["stream_username"] = val
+                    m_config["cooldown_seconds"] = 7200
+                elif self.monitor_type == "steam_news":
+                    m_config["appid"] = match.group(1) if match else val
+
+            if self.monitor_type == "epic_games":
+                m_config["include_upcoming"] = True
+            elif self.monitor_type == "steam_free":
+                m_config["include_dlc"] = False
+
+            color_val = self.color_input.value.strip() if self.color_input.value else ""
+            extra_settings = {}
+            if color_val: extra_settings["embed_color"] = color_val
+            alert_val = self.alert_input.value.strip() if self.alert_input.value else ""
+            if alert_val: extra_settings["custom_alert"] = alert_val
+            m_config["extra_settings"] = extra_settings
+
+            guild_id = interaction.guild_id or 0
+            await database.add_monitor(m_config, guild_id=guild_id)
+
+            if self.bot.monitor_manager:
+                from core.monitor_factory import create_monitor_instance
+                db_monitors = await database.get_all_monitors()
+                self.bot.monitor_manager.monitors = []
+                for db_m in db_monitors:
+                    monitor = create_monitor_instance(self.bot, db_m)
+                    if monitor: self.bot.monitor_manager.add_monitor(monitor)
+            
+            success_msg = self.bot.get_feedback("add_monitor_success", name=self.name_input.value, type=self.monitor_type)
+            await interaction.response.send_message(success_msg, ephemeral=True)
+
+        except Exception as e:
+            log.error(f"Error adding monitor via modal: {e}", exc_info=True)
+            await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+
+class EditMonitorModal(discord.ui.Modal):
+    def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color=""):
+        self.bot = bot
+        self.monitor_id = monitor_id
+        self.original_name = original_name
+        self.discord_channel_id = discord_channel_id
+        self.ping_role_id = ping_role_id
+        super().__init__(title=bot.get_feedback("setup_wizard_edit_title", name=original_name))
+
+        self.name_input = discord.ui.TextInput(label=bot.get_feedback("add_monitor_name_label"), default=original_name, required=True)
+        self.add_item(self.name_input)
+        self.color_input = discord.ui.TextInput(label="Embed Color (hex)", default=current_color or "", required=False, max_length=7)
+        self.add_item(self.color_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            guild_id = interaction.guild_id or 0
+            new_name = self.name_input.value
+            color_val = self.color_input.value.strip() if self.color_input.value else ""
+
+            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val)
+
+            if self.bot.monitor_manager:
+                from core.monitor_factory import create_monitor_instance
+                db_monitors = await database.get_all_monitors()
+                self.bot.monitor_manager.monitors = []
+                for db_m in db_monitors:
+                    monitor = create_monitor_instance(self.bot, db_m)
+                    if monitor: self.bot.monitor_manager.add_monitor(monitor)
+
+            await interaction.response.send_message(f"✅ Monitor frissítve: **{new_name}**", ephemeral=True)
+        except Exception as e:
+            log.error(f"Error editing monitor: {e}", exc_info=True)
+            await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
+
+class AlertTemplateModal(discord.ui.Modal):
+    def __init__(self, bot, platform, current_val=""):
+        super().__init__(title=f"{platform.capitalize()} Sablon")
+        self.bot = bot
+        self.platform = platform
+        self.template_input = discord.ui.TextInput(
+            label="Üzenet Sablon",
+            placeholder="Használd a {name} és {title} változókat",
+            default=current_val,
+            style=discord.TextStyle.paragraph,
+            required=False,
+            max_length=500
+        )
+        self.add_item(self.template_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()

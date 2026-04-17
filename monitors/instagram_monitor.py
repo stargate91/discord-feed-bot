@@ -4,15 +4,16 @@ import re
 import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
+import database
 
 class InstagramMonitor(BaseMonitor):
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
-        # For Instagram, since there's no single standard bridge, we'll take the full RSS URL
-        self.feed_url = config.get("rss_url")
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.username = config.get("username", "Unknown")
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return f"instagram:{self.username}"
 
     async def check_for_updates(self):
         """Fetch Instagram via provided RSS feed and look for new posts."""
@@ -20,15 +21,22 @@ class InstagramMonitor(BaseMonitor):
             log.warning(f"No RSS URL for Instagram monitor: {self.name}")
             return
 
-        # Fetch the feed as a blocking operation in an executor
-        try:
-            loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
-        except Exception as e:
-            log.error(f"Failed to fetch Instagram feed for {self.name}: {e}")
-            return
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            feed = shared_data
+        else:
+            # Fetch the feed as a blocking operation in an executor
+            try:
+                loop = asyncio.get_event_loop()
+                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+                if hasattr(feed, 'entries'):
+                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+            except Exception as e:
+                log.error(f"Failed to fetch Instagram feed for {self.name}: {e}")
+                return
         
-        if not hasattr(feed, 'entries') or not feed.entries:
+        if not feed or not hasattr(feed, 'entries') or not feed.entries:
             log.debug(f"No feed entries found for Instagram monitor {self.name} at {self.feed_url}")
             return
 
@@ -40,11 +48,11 @@ class InstagramMonitor(BaseMonitor):
             if not post_id:
                 continue
 
-            if not await self.db.is_published(post_id, "instagram"):
+            if not await database.is_published(post_id, "instagram"):
                 if self.is_first_run:
                     # On first run, we just mark existing posts as published
                     log.debug(f"Seeding database with existing Instagram post: {post_id}")
-                    await self.db.mark_as_published(post_id, "instagram", self.feed_url)
+                    await database.mark_as_published(post_id, "instagram", self.feed_url)
                 else:
                     new_entries.append(entry)
                     log.info(f"New Instagram post detected: {entry.get('title', 'Unknown')} ({post_id})")
@@ -60,7 +68,7 @@ class InstagramMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=post_title[:256],
                 url=post_link,
-                color=0xE1306C # Instagram Pink/Purple
+                color=self.get_color(0xE1306C) # Instagram Pink/Purple
             )
             embed.set_author(name=author_name)
             
@@ -75,16 +83,20 @@ class InstagramMonitor(BaseMonitor):
                 if img_match:
                     embed.set_image(url=img_match.group(1))
 
-            alert_text = self.lang.get("new_instagram_alert", "Új Instagram poszt érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            # Format alert
+            alert_text = self.get_alert_message({
+                "name": author_name,
+                "title": post_title,
+                "url": post_link
+            })
 
             # Create interactive button
             view = discord.ui.View()
-            btn_label = self.lang.get("btn_view_instagram", "Watch on Instagram")
+            btn_label = self.bot.get_feedback("btn_view_instagram", guild_id=self.guild_id)
             view.add_item(discord.ui.Button(label=btn_label, url=post_link, style=discord.ButtonStyle.link))
 
-            await self.send_update(content=f"{ping}{alert_text}\n{post_link}", embed=embed, view=view)
-            await self.db.mark_as_published(post_id, "instagram", self.feed_url)
+            await self.send_update(content=f"{alert_text}\n{post_link}", embed=embed, view=view)
+            await database.mark_as_published(post_id, "instagram", self.feed_url)
 
         # After the first successful check, mark as not first run
         if self.is_first_run:
@@ -115,7 +127,7 @@ class InstagramMonitor(BaseMonitor):
         embed = discord.Embed(
             title=post_title[:256],
             url=post_link,
-            color=0xE1306C 
+            color=self.get_color(0xE1306C) 
         )
         embed.set_author(name=author_name)
         
@@ -128,11 +140,11 @@ class InstagramMonitor(BaseMonitor):
             if img_match:
                 embed.set_image(url=img_match.group(1))
 
-        alert_text = self.lang.get("new_instagram_alert", "Új Instagram poszt érkezett!")
+        alert_text = self.bot.get_feedback("new_instagram_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
         
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_instagram", "Watch on Instagram")
+        btn_label = self.bot.get_feedback("btn_view_instagram", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=post_link, style=discord.ButtonStyle.link))
         
         return {

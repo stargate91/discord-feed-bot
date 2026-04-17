@@ -7,17 +7,21 @@ from logger import log
 REDDIT_USER_AGENT = "Nova-FeedBot/1.0 (Discord Feed Monitor)"
 
 
+import database
+
 class RedditMonitor(BaseMonitor):
     """Monitor for new posts in a given subreddit via Reddit's public JSON API."""
 
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.subreddit = config.get("subreddit", "")
         self.sort = config.get("sort", "new")  # new, hot, top
         self.limit = config.get("limit", 10)
         self.api_url = f"https://www.reddit.com/r/{self.subreddit}/{self.sort}.json?limit={self.limit}"
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return f"reddit:{self.subreddit}:{self.sort}"
 
     async def check_for_updates(self):
         """Fetch Reddit JSON API and look for new posts."""
@@ -25,17 +29,24 @@ class RedditMonitor(BaseMonitor):
             log.warning(f"No subreddit configured for monitor: {self.name}")
             return
 
-        try:
-            headers = {"User-Agent": REDDIT_USER_AGENT}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url, headers=headers) as response:
-                    if response.status != 200:
-                        log.error(f"Reddit API returned {response.status} for r/{self.subreddit}")
-                        return
-                    data = await response.json()
-        except Exception as e:
-            log.error(f"Error fetching Reddit data for r/{self.subreddit}: {e}")
-            return
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            data = shared_data
+        else:
+            try:
+                headers = {"User-Agent": REDDIT_USER_AGENT}
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(self.api_url, headers=headers) as response:
+                        if response.status != 200:
+                            log.error(f"Reddit API returned {response.status} for r/{self.subreddit}")
+                            return
+                        data = await response.json()
+                        if data:
+                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
+            except Exception as e:
+                log.error(f"Error fetching Reddit data for r/{self.subreddit}: {e}")
+                return
 
         posts = data.get("data", {}).get("children", [])
         if not posts:
@@ -49,10 +60,10 @@ class RedditMonitor(BaseMonitor):
                 continue
 
             db_id = f"reddit_{post_id}"
-            if not await self.db.is_published(db_id, "reddit"):
+            if not await database.is_published(db_id, "reddit"):
                 if self.is_first_run:
                     log.debug(f"Seeding Reddit post: {post.get('title', '')[:60]}")
-                    await self.db.mark_as_published(db_id, "reddit", self.api_url)
+                    await database.mark_as_published(db_id, "reddit", self.api_url)
                 else:
                     new_entries.append(post)
                     log.info(f"New Reddit post detected: {post.get('title', '')[:60]}")
@@ -77,7 +88,7 @@ class RedditMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=title,
                 url=permalink,
-                color=0xFF4500  # Reddit Orange
+                color=self.get_color(0xFF4500)  # Reddit Orange
             )
             embed.set_author(name=subreddit_name)
 
@@ -86,18 +97,23 @@ class RedditMonitor(BaseMonitor):
 
             if score:
                 embed.add_field(
-                    name=self.lang.get("field_score", "⬆ Score"),
+                    name=self.bot.get_feedback("field_score", guild_id=self.guild_id),
                     value=str(score),
                     inline=True,
                 )
 
             embed.set_footer(text=f"u/{author} • Reddit")
 
-            alert_text = self.lang.get("new_reddit_alert", "Új Reddit poszt érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            # Format alert
+            alert_text = self.get_alert_message({
+                "name": subreddit_name,
+                "title": title,
+                "url": permalink,
+                "author": author
+            })
 
             view = discord.ui.View()
-            btn_label = self.lang.get("btn_view_reddit", "Megtekintés Reddit-en")
+            btn_label = self.bot.get_feedback("btn_view_reddit", guild_id=self.guild_id)
             view.add_item(
                 discord.ui.Button(
                     label=btn_label, url=permalink, style=discord.ButtonStyle.link
@@ -105,9 +121,9 @@ class RedditMonitor(BaseMonitor):
             )
 
             await self.send_update(
-                content=f"{ping}{alert_text}\n{permalink}", embed=embed, view=view
+                content=f"{alert_text}\n{permalink}", embed=embed, view=view
             )
-            await self.db.mark_as_published(db_id, "reddit", self.api_url)
+            await database.mark_as_published(db_id, "reddit", self.api_url)
 
         if self.is_first_run:
             log.info(f"Initial seed completed for Reddit r/{self.subreddit}. Monitoring active.")
@@ -148,24 +164,24 @@ class RedditMonitor(BaseMonitor):
         embed = discord.Embed(
             title=title,
             url=permalink,
-            color=0xFF4500,
+            color=self.get_color(0xFF4500),
         )
         embed.set_author(name=subreddit_name)
         if image_url:
             embed.set_image(url=image_url)
         if score:
             embed.add_field(
-                name=self.lang.get("field_score", "⬆ Score"),
+                name=self.bot.get_feedback("field_score", guild_id=self.guild_id),
                 value=str(score),
                 inline=True,
             )
         embed.set_footer(text=f"u/{author} • Reddit")
 
-        alert_text = self.lang.get("new_reddit_alert", "Új Reddit poszt érkezett!")
+        alert_text = self.bot.get_feedback("new_reddit_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
-
+        
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_reddit", "Megtekintés Reddit-en")
+        btn_label = self.bot.get_feedback("btn_view_reddit", guild_id=self.guild_id)
         view.add_item(
             discord.ui.Button(
                 label=btn_label, url=permalink, style=discord.ButtonStyle.link

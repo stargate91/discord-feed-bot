@@ -3,31 +3,41 @@ import discord
 from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
+import database
 
 class EpicGamesMonitor(BaseMonitor):
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.lang_code = bot.config.get("language", "hu")
         self.locale = "hu-HU" if self.lang_code == "hu" else "en-US"
         self.country = "HU" if self.lang_code == "hu" else "US"
         self.include_upcoming = config.get("include_upcoming", False)
         self.api_url = f"https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale={self.locale}&country={self.country}&allowCountries={self.country}"
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return "epic_games_free"
 
     async def check_for_updates(self):
         """Fetch Epic Games free promotions JSON and look for new items."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url) as response:
-                    if response.status != 200:
-                        log.error(f"Failed to fetch Epic Games API: {response.status}")
-                        return
-                    data = await response.json()
-        except Exception as e:
-            log.error(f"Error fetching Epic Games data: {e}")
-            return
-
+        
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            data = shared_data
+        else:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(self.api_url) as response:
+                        if response.status != 200:
+                            log.error(f"Failed to fetch Epic Games API: {response.status}")
+                            return
+                        data = await response.json()
+                        if data:
+                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
+            except Exception as e:
+                log.error(f"Error fetching Epic Games data: {e}")
+                return
+        
         try:
             elements = data["data"]["Catalog"]["searchStore"]["elements"]
         except (KeyError, TypeError) as e:
@@ -37,9 +47,7 @@ class EpicGamesMonitor(BaseMonitor):
         for game in elements:
             game_id = game.get("id")
             title = game.get("title", "Unknown Game")
-            description = game.get("description", "")
             
-            # Identify promotions
             promotions = game.get("promotions")
             if not promotions:
                 continue
@@ -50,14 +58,12 @@ class EpicGamesMonitor(BaseMonitor):
             is_active = False
             is_upcoming = False
 
-            # Check for current active free offer (100% discount)
             for offer_wrap in active_offers:
                 for offer in offer_wrap.get("promotionalOffers", []):
                     if offer.get("discountSetting", {}).get("discountPercentage") == 0:
                         is_active = True
                         break
 
-            # Check for upcoming free offer
             if self.include_upcoming:
                 for offer_wrap in upcoming_offers:
                     for offer in offer_wrap.get("promotionalOffers", []):
@@ -68,26 +74,24 @@ class EpicGamesMonitor(BaseMonitor):
             if not is_active and not is_upcoming:
                 continue
 
-            # Check price as secondary verification for active games
             if is_active:
                 price = game.get("price", {}).get("totalPrice", {})
                 if price.get("discountPrice") != 0:
-                    is_active = False # Not actually free right now
+                    is_active = False
 
             if not is_active and not is_upcoming:
                 continue
 
             status_type = "active" if is_active else "upcoming"
-            # Unique ID for DB (combine game_id and status to allow notifying both when upcoming and when active)
             db_id = f"{game_id}_{status_type}"
 
-            if not await self.db.is_published(db_id, "epic_games"):
+            if not await database.is_published(db_id, "epic_games"):
                 if self.is_first_run:
                     log.debug(f"Seeding database with Epic Game: {title} ({status_type})")
-                    await self.db.mark_as_published(db_id, "epic_games", self.api_url)
+                    await database.mark_as_published(db_id, "epic_games", self.api_url)
                 else:
                     await self.send_game_notification(game, is_active)
-                    await self.db.mark_as_published(db_id, "epic_games", self.api_url)
+                    await database.mark_as_published(db_id, "epic_games", self.api_url)
 
         if self.is_first_run:
             log.info(f"Initial seed completed for Epic Games Store. Monitoring active.")
@@ -97,36 +101,15 @@ class EpicGamesMonitor(BaseMonitor):
         title = game.get("title", "Unknown Game")
         description = game.get("description", "")
         
-        # Link construction priority: productSlug > pageSlug from mappings > urlSlug
-        product_slug = game.get("productSlug")
-        if not product_slug:
-            mappings = game.get("catalogNs", {}).get("mappings", [])
-            if mappings:
-                product_slug = mappings[0].get("pageSlug")
-        
-        # Fallback to urlSlug if still None
-        if not product_slug:
-            product_slug = game.get("urlSlug")
-        
-        if product_slug:
-            game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}"
-        else:
-            game_url = "https://store.epicgames.com/free-games"
+        product_slug = game.get("productSlug") or next((m.get("pageSlug") for m in game.get("catalogNs", {}).get("mappings", [])), None) or game.get("urlSlug")
+        game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
 
-        # Image selection
-        image_url = None
-        for img in game.get("keyImages", []):
-            if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]:
-                image_url = img.get("url")
-                break
-
-        # Extraction logic for Price, Expiry and Tags
+        image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
         original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
         
         end_date_str = None
-        promotions = game.get("promotions", {})
         offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
-        for offer_wrap in promotions.get(offer_key, []):
+        for offer_wrap in game.get("promotions", {}).get(offer_key, []):
             for offer in offer_wrap.get("promotionalOffers", []):
                 if offer.get("discountSetting", {}).get("discountPercentage") == 0:
                     end_date_str = offer.get("endDate")
@@ -138,116 +121,70 @@ class EpicGamesMonitor(BaseMonitor):
             try:
                 dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 expiry_ts = int(dt.timestamp())
-            except:
-                pass
+            except: pass
 
-
-        alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
-        alert_text = self.lang.get(alert_key, "Ingyenes játék!")
-        
         embed = discord.Embed(
             title=title,
             url=game_url,
-            color=0x000000 
+            description=description[:300] + "..." if len(description) > 300 else description,
+            color=self.get_color(0x000000)
         )
-        if image_url:
-            embed.set_image(url=image_url)
-            
+        if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
-            
-        # Add Fields
         if original_price and original_price != "0" and original_price != "N/A":
-            embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
-            
+            embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
         if expiry_ts:
-            embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
-        
-        
+            embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
         embed.set_footer(text="Epic Games Store")
-        
-        ping = f"{self.ping_role} " if self.ping_role else ""
-        
+
+        alert_text = self.get_alert_message({"name": "Epic Games", "title": title, "url": game_url})
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_get_game", "Get Game")
+        btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
-        await self.send_update(content=f"{ping}{alert_text}\n{game_url}", embed=embed, view=view)
-        log.info(f"Sent Epic Games notification for: {title} ({'active' if is_active else 'upcoming'})")
+        await self.send_update(content=f"{alert_text}\n{game_url}", embed=embed, view=view)
+        log.info(f"Sent Epic Games notification for: {title}")
 
     async def get_latest_item(self):
         """Fetch the most recent free game from Epic Games Store."""
-        import aiohttp
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url) as response:
-                    if response.status != 200:
-                        return None
+                    if response.status != 200: return None
                     data = await response.json()
             elements = data["data"]["Catalog"]["searchStore"]["elements"]
-        except:
-            return None
+        except: return None
 
-        # Find the first active or upcoming free game
-        target_game = None
-        is_active = False
-        
+        target_game, is_active = None, False
         for game in elements:
             promotions = game.get("promotions")
             if not promotions: continue
-            
-            # Check active
             for offer_wrap in promotions.get("promotionalOffers", []):
                 for offer in offer_wrap.get("promotionalOffers", []):
                     if offer.get("discountSetting", {}).get("discountPercentage") == 0:
-                        target_game = game
-                        is_active = True
+                        target_game, is_active = game, True
                         break
                 if target_game: break
-            
             if target_game: break
-            
-            # Check upcoming if active not found
             for offer_wrap in promotions.get("upcomingPromotionalOffers", []):
                 for offer in offer_wrap.get("promotionalOffers", []):
                     if offer.get("discountSetting", {}).get("discountPercentage") == 0:
-                        target_game = game
-                        is_active = False
+                        target_game, is_active = game, False
                         break
                 if target_game: break
-            
             if target_game: break
 
-        if not target_game:
-            return None
+        if not target_game: return None
 
         title = target_game.get("title", "Unknown Game")
-        # Link construction priority: productSlug > pageSlug from mappings > urlSlug
-        product_slug = target_game.get("productSlug")
-        if not product_slug:
-            mappings = target_game.get("catalogNs", {}).get("mappings", [])
-            if mappings:
-                product_slug = mappings[0].get("pageSlug")
-        
-        # Fallback to urlSlug if still None
-        if not product_slug:
-            product_slug = target_game.get("urlSlug")
-            
+        product_slug = target_game.get("productSlug") or next((m.get("pageSlug") for m in target_game.get("catalogNs", {}).get("mappings", [])), None) or target_game.get("urlSlug")
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
-        
-        # Image selection
-        image_url = None
-        for img in target_game.get("keyImages", []):
-            if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]:
-                image_url = img.get("url")
-                break
-        
-        # Extraction logic
+        image_url = next((img.get("url") for img in target_game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
         original_price = target_game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "N/A")
         
         end_date_str = None
-        promotions = target_game.get("promotions", {})
         offer_key = "promotionalOffers" if is_active else "upcomingPromotionalOffers"
-        for offer_wrap in promotions.get(offer_key, []):
+        for offer_wrap in target_game.get("promotions", {}).get(offer_key, []):
             for offer in offer_wrap.get("promotionalOffers", []):
                 if offer.get("discountSetting", {}).get("discountPercentage") == 0:
                     end_date_str = offer.get("endDate")
@@ -259,40 +196,22 @@ class EpicGamesMonitor(BaseMonitor):
             try:
                 dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 expiry_ts = int(dt.timestamp())
-            except:
-                pass
-
+            except: pass
 
         alert_key = "new_free_game_alert" if is_active else "upcoming_free_game_alert"
-        alert_text = self.lang.get(alert_key, "Ingyenes játék!")
-        
-        embed = discord.Embed(
-            title=title,
-            url=game_url,
-            color=0x000000 
-        )
-        if image_url:
-            embed.set_image(url=image_url)
-            
+        alert_text = self.bot.get_feedback(alert_key, guild_id=self.guild_id)
+        embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x000000))
+        if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1490131410852253716.png")
-            
-        # Add Fields
         if original_price and original_price != "0" and original_price != "N/A":
-            embed.add_field(name=self.lang.get("field_worth", "Price"), value=original_price, inline=True)
-            
+            embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
         if expiry_ts:
-            embed.add_field(name=self.lang.get("field_expiry", "Expiry"), value=f"<t:{expiry_ts}:R>", inline=True)
-            
-            
+            embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
         embed.set_footer(text="Epic Games Store")
         
         ping = f"{self.ping_role} " if self.ping_role else ""
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_get_game", "Get Game")
+        btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
-        return {
-            "content": f"{ping}{alert_text}\n{game_url}",
-            "embed": embed,
-            "view": view
-        }
+        return {"content": f"{ping}{alert_text}\n{game_url}", "embed": embed, "view": view}

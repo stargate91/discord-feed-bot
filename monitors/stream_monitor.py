@@ -8,16 +8,17 @@ from logger import log
 class StreamMonitor(BaseMonitor):
     """Monitor for live streams on Twitch and Kick platforms."""
 
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.stream_platform = config.get("stream_platform", "twitch")  # "twitch" or "kick"
         self.stream_username = config.get("stream_username", "")
         self.cooldown_seconds = config.get("cooldown_seconds", 7200)  # 2 hours default
-        self.lang = language_data
         self.is_first_run = True
-        # In-memory state to track live status and prevent spam
         self._was_live = False
         self._last_notified = 0
+
+    def get_shared_key(self):
+        return f"stream:{self.stream_platform}:{self.stream_username}"
 
     async def check_for_updates(self):
         """Check if the streamer went live."""
@@ -25,7 +26,14 @@ class StreamMonitor(BaseMonitor):
             log.warning(f"No stream username configured for monitor: {self.name}")
             return
 
-        stream_data = await self._fetch_stream_status()
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            stream_data = shared_data
+        else:
+            stream_data = await self._fetch_stream_status()
+            if stream_data and stream_data.get("is_live"):
+                self.bot.monitor_manager.set_shared_data(self.get_shared_key(), stream_data)
 
         if stream_data is None:
             # API error, skip this cycle
@@ -170,7 +178,7 @@ class StreamMonitor(BaseMonitor):
         stream_url = stream_data.get("url", "")
 
         platform_name = "Twitch" if self.stream_platform == "twitch" else "Kick"
-        platform_color = 0x9146FF if self.stream_platform == "twitch" else 0x53FC18
+        platform_color=self.get_color(0x9146FF) if self.stream_platform == "twitch" else 0x53FC18
 
         embed = discord.Embed(
             title=title[:256],
@@ -185,30 +193,31 @@ class StreamMonitor(BaseMonitor):
 
         if game and game != "Unknown":
             embed.add_field(
-                name=self.lang.get("field_game", "Játék"),
+                name=self.bot.get_feedback("field_game", guild_id=self.guild_id),
                 value=game,
                 inline=True,
             )
         if viewers:
             embed.add_field(
-                name=self.lang.get("field_viewers", "Nézők"),
+                name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id),
                 value=f"{viewers:,}",
                 inline=True,
             )
 
         embed.set_footer(text=platform_name)
 
-        alert_key = (
-            "new_twitch_alert"
-            if self.stream_platform == "twitch"
-            else "new_kick_alert"
-        )
-        alert_text = self.lang.get(alert_key, f"{display_name} élőben van!")
-        alert_text = alert_text.replace("{name}", display_name)
+        # Format alert
+        alert_text = self.get_alert_message({
+            "name": display_name,
+            "title": title,
+            "url": stream_url,
+            "game": game,
+            "platform": platform_name
+        })
         ping = f"{self.ping_role} " if self.ping_role else ""
 
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_stream", "Megtekintés")
+        btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
         view.add_item(
             discord.ui.Button(
                 label=btn_label, url=stream_url, style=discord.ButtonStyle.link
@@ -242,7 +251,7 @@ class StreamMonitor(BaseMonitor):
         stream_url = stream_data.get("url", "")
 
         platform_name = "Twitch" if self.stream_platform == "twitch" else "Kick"
-        platform_color = 0x9146FF if self.stream_platform == "twitch" else 0x53FC18
+        platform_color=self.get_color(0x9146FF) if self.stream_platform == "twitch" else 0x53FC18
 
         embed = discord.Embed(title=title[:256], url=stream_url, color=platform_color)
         embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)
@@ -250,27 +259,22 @@ class StreamMonitor(BaseMonitor):
             embed.set_image(url=f"{thumbnail}?t={int(time.time())}")
         if game and game != "Unknown":
             embed.add_field(
-                name=self.lang.get("field_game", "Játék"), value=game, inline=True
+                name=self.bot.get_feedback("field_game", guild_id=self.guild_id), value=game, inline=True
             )
         if viewers:
             embed.add_field(
-                name=self.lang.get("field_viewers", "Nézők"),
+                name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id),
                 value=f"{viewers:,}",
                 inline=True,
             )
         embed.set_footer(text=platform_name)
 
-        alert_key = (
-            "new_twitch_alert"
-            if self.stream_platform == "twitch"
-            else "new_kick_alert"
-        )
-        alert_text = self.lang.get(alert_key, f"{display_name} élőben van!")
-        alert_text = alert_text.replace("{name}", display_name)
+        alert_key = "new_twitch_alert" if self.stream_platform == "twitch" else "new_kick_alert"
+        alert_text = self.bot.get_feedback(alert_key, name=display_name, guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
 
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_stream", "Megtekintés")
+        btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
         view.add_item(
             discord.ui.Button(
                 label=btn_label, url=stream_url, style=discord.ButtonStyle.link

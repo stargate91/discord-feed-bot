@@ -4,15 +4,18 @@ import re
 import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
+import database
 
 class TikTokMonitor(BaseMonitor):
-    def __init__(self, bot, config, db, language_data):
-        super().__init__(bot, config, db)
+    def __init__(self, bot, config):
+        super().__init__(bot, config)
         self.username = config.get("username", "").replace("@", "")
         self.instance_url = config.get("instance_url", "https://proxitok.pabloferreiro.es").rstrip("/")
         self.feed_url = f"{self.instance_url}/api/rss/@{self.username}"
-        self.lang = language_data
         self.is_first_run = True
+
+    def get_shared_key(self):
+        return f"tiktok:{self.username}"
 
     async def check_for_updates(self):
         """Fetch TikTok via ProxiTok RSS and look for new videos."""
@@ -20,15 +23,22 @@ class TikTokMonitor(BaseMonitor):
             log.warning(f"No username for TikTok monitor: {self.name}")
             return
 
-        # Fetch the feed as a blocking operation in an executor
-        try:
-            loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
-        except Exception as e:
-            log.error(f"Failed to fetch TikTok feed for {self.name}: {e}")
-            return
+        # Check for shared data
+        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        if shared_data:
+            feed = shared_data
+        else:
+            # Fetch the feed as a blocking operation in an executor
+            try:
+                loop = asyncio.get_event_loop()
+                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+                if hasattr(feed, 'entries'):
+                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+            except Exception as e:
+                log.error(f"Failed to fetch TikTok feed for {self.name}: {e}")
+                return
         
-        if not hasattr(feed, 'entries') or not feed.entries:
+        if not feed or not hasattr(feed, 'entries') or not feed.entries:
             log.debug(f"No feed entries found for TikTok monitor {self.name} at {self.feed_url}")
             return
 
@@ -40,11 +50,11 @@ class TikTokMonitor(BaseMonitor):
             if not video_id:
                 continue
 
-            if not await self.db.is_published(video_id, "tiktok"):
+            if not await database.is_published(video_id, "tiktok"):
                 if self.is_first_run:
                     # On first run, we just mark existing videos as published
                     log.debug(f"Seeding database with existing TikTok: {video_id}")
-                    await self.db.mark_as_published(video_id, "tiktok", self.feed_url)
+                    await database.mark_as_published(video_id, "tiktok", self.feed_url)
                 else:
                     new_entries.append(entry)
                     log.info(f"New TikTok detected: {entry.get('title', 'Unknown')} ({video_id})")
@@ -59,7 +69,7 @@ class TikTokMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=video_title[:256], # Discord title limit
                 url=video_link,
-                color=0xEE1D52 # TikTok Pink/Red
+                color=self.get_color(0xEE1D52) # TikTok Pink/Red
             )
             embed.set_author(name=author_name)
             
@@ -71,17 +81,21 @@ class TikTokMonitor(BaseMonitor):
                 img_match = re.search(r'<img src="([^"]+)"', entry.description)
                 if img_match:
                     embed.set_image(url=img_match.group(1))
-
-            alert_text = self.lang.get("new_tiktok_alert", "Új TikTok érkezett!")
-            ping = f"{self.ping_role} " if self.ping_role else ""
+            
+            # Format alert
+            alert_text = self.get_alert_message({
+                "name": author_name,
+                "title": video_title,
+                "url": video_link
+            })
 
             # Create interactive button
             view = discord.ui.View()
-            btn_label = self.lang.get("btn_view_tiktok", "Watch on TikTok")
+            btn_label = self.bot.get_feedback("btn_view_tiktok", guild_id=self.guild_id)
             view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
 
-            await self.send_update(content=f"{ping}{alert_text}\n{video_link}", embed=embed, view=view)
-            await self.db.mark_as_published(video_id, "tiktok", self.feed_url)
+            await self.send_update(content=f"{alert_text}\n{video_link}", embed=embed, view=view)
+            await database.mark_as_published(video_id, "tiktok", self.feed_url)
 
         # After the first successful check, mark as not first run
         if self.is_first_run:
@@ -113,7 +127,7 @@ class TikTokMonitor(BaseMonitor):
         embed = discord.Embed(
             title=video_title[:256],
             url=video_link,
-            color=0xEE1D52 
+            color=self.get_color(0xEE1D52) 
         )
         embed.set_author(name=author_name)
         
@@ -124,11 +138,11 @@ class TikTokMonitor(BaseMonitor):
             if img_match:
                 embed.set_image(url=img_match.group(1))
 
-        alert_text = self.lang.get("new_tiktok_alert", "Új TikTok érkezett!")
+        alert_text = self.bot.get_feedback("new_tiktok_alert", guild_id=self.guild_id)
         ping = f"{self.ping_role} " if self.ping_role else ""
         
         view = discord.ui.View()
-        btn_label = self.lang.get("btn_view_tiktok", "Watch on TikTok")
+        btn_label = self.bot.get_feedback("btn_view_tiktok", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=video_link, style=discord.ButtonStyle.link))
         
         return {
