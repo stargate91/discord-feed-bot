@@ -191,7 +191,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
             return
             
-        view = EditMonitorWizardView(self.bot, target["id"], monitor_name, current_color=target.get("embed_color", ""))
+        view = EditMonitorWizardView(self.bot, target["id"], monitor_name, current_color=target.get("embed_color", ""), interaction=interaction)
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name), view=view, ephemeral=True)
 
     @monitor_edit.autocomplete("monitor_name")

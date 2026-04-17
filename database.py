@@ -130,13 +130,24 @@ async def update_monitor_status(monitor_id, guild_id, is_enabled):
     await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
 async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None):
-    q_sel = "SELECT extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
+    q_sel = "SELECT discord_channel_id, ping_role_id, extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
     pool = await get_pool()
     row = await pool.fetchrow(q_sel, monitor_id, guild_id)
     
+    if not row:
+        return # Should not happen if monitor exists
+        
+    curr_ch = row[0]
+    curr_role = row[1]
+    extra_settings_json = row[2]
+    
+    # Use current if new value is None
+    final_ch = discord_channel_id if discord_channel_id is not None else curr_ch
+    final_role = ping_role_id if ping_role_id is not None else curr_role
+    
     extra_settings = {}
-    if row and row[0]:
-        try: extra_settings = json.loads(row[0])
+    if extra_settings_json:
+        try: extra_settings = json.loads(extra_settings_json)
         except: pass
         
     if embed_color is not None:
@@ -147,7 +158,7 @@ async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id,
                ping_role_id = $3, extra_settings = $4 
                WHERE id = $5 AND guild_id = $6'''
     
-    await pool.execute(q_upd, name, discord_channel_id, ping_role_id, json.dumps(extra_settings), monitor_id, guild_id)
+    await pool.execute(q_upd, name, final_ch, final_role, json.dumps(extra_settings), monitor_id, guild_id)
 
 async def remove_monitor(monitor_id, guild_id):
     q = "DELETE FROM monitors WHERE id = $1 AND guild_id = $2"

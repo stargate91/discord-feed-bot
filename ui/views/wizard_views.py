@@ -4,7 +4,10 @@ from ui.modals import (
     AddStatusModal, 
     StatusSettingsModal, 
     AddMonitorWizardStepTwoModal,
-    EditMonitorModal
+    EditMonitorModal,
+    NewChannelModal,
+    NewRoleModal,
+    ManualInputModal
 )
 from ui.views.select_views import AlertTemplateSelectView
 
@@ -101,66 +104,112 @@ class AddMonitorWizardView(discord.ui.View):
         super().__init__(timeout=300)
         self.bot = bot
         self.guild_id = interaction.guild_id or 0
+        self.trigger_interaction = interaction
+        
         self.selected_channel_id = None
         self.selected_role_id = 0
         self.selected_type = None
+        
+        # Display names for the embed/feedback
+        self.channel_display_name = "Nincs kiválasztva"
+        self.role_display_name = "Nincs ping (vagy alapértelmezett)"
 
-        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-        has_default_ch = settings.get("default_channel_id")
+        self.update_components()
 
-        ph_channel = bot.get_feedback("add_monitor_channel_select", guild_id=self.guild_id)
-        if ph_channel == "add_monitor_channel_select": 
-            ph_channel = "1. Válassz célcsatornát..." if not has_default_ch else "1. Célcsatorna (Vagy hagyd üresen az alaphoz)"
-            
-        self.channel_select = discord.ui.ChannelSelect(
-            placeholder=ph_channel, channel_types=[discord.ChannelType.text, discord.ChannelType.news],
-            min_values=0, max_values=1
-        )
+    def update_components(self):
+        self.clear_items()
+        
+        # 1. Simplified Channel Select
+        ch_options = [
+            discord.SelectOption(label=f"Jelenlegi csatorna (#{self.trigger_interaction.channel.name})", value="current", emoji="📍"),
+            discord.SelectOption(label="Új csatorna létrehozása...", value="create", emoji="➕"),
+            discord.SelectOption(label="Manuális ID vagy Név...", value="manual", emoji="🆔")
+        ]
+        self.channel_select = discord.ui.Select(placeholder="1. Válassz célcsatornát (Egyedi opciók)...", options=ch_options, row=0)
         self.channel_select.callback = self.channel_callback
         self.add_item(self.channel_select)
 
-        ph_role = bot.get_feedback("add_monitor_role_select", guild_id=self.guild_id)
-        if ph_role == "add_monitor_role_select": ph_role = "2. Válassz ping rolt (opcionális)..."
-        self.role_select = discord.ui.RoleSelect(placeholder=ph_role, min_values=0, max_values=1)
+        # 2. Simplified Role Select
+        role_options = [
+            discord.SelectOption(label="Nincs ping", value="none", emoji="🔇"),
+            discord.SelectOption(label="Szerver alapértelmezett rangja", value="default", emoji="⚙️"),
+            discord.SelectOption(label="Új rang létrehozása...", value="create", emoji="➕"),
+            discord.SelectOption(label="Manuális Rang ID vagy Név...", value="manual", emoji="🆔")
+        ]
+        self.role_select = discord.ui.Select(placeholder="2. Válassz ping rolt (Egyedi opciók)...", options=role_options, row=1)
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
-        options = [
-            discord.SelectOption(label=bot.get_feedback("ui_platform_youtube"), value="youtube"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_rss"), value="rss"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_tiktok"), value="tiktok"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_instagram"), value="instagram"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_epic_games"), value="epic_games"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_steam_free"), value="steam_free"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_gog_free"), value="gog_free"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_reddit"), value="reddit"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_twitter"), value="twitter"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_stream"), value="stream"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_steam_news"), value="steam_news"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_movie"), value="movie"),
-            discord.SelectOption(label=bot.get_feedback("ui_platform_tv_series"), value="tv_series"),
+        # 3. Platform Select (Original options preserved)
+        platform_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube"), value="youtube"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss"), value="rss"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tiktok"), value="tiktok"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_instagram"), value="instagram"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games"), value="epic_games"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free"), value="steam_free"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_gog_free"), value="gog_free"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_reddit"), value="reddit"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_twitter"), value="twitter"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_stream"), value="stream"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news"), value="steam_news"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie"), value="movie"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series"), value="tv_series"),
         ]
-        self.type_select = discord.ui.Select(placeholder=bot.get_feedback("ui_ph_platform"), options=options, min_values=1, max_values=1)
+        self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform"), options=platform_options, row=2)
         self.type_select.callback = self.type_callback
         self.add_item(self.type_select)
 
-        self.next_btn = discord.ui.Button(label=bot.get_feedback("ui_btn_monitor_next_settings"), style=discord.ButtonStyle.success, disabled=True, row=4)
+        # 4. Next Button
+        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_settings"), style=discord.ButtonStyle.success, disabled=True, row=4)
         self.next_btn.callback = self.next_callback
         self.add_item(self.next_btn)
+
+    async def create_status_embed(self):
+        embed = discord.Embed(title="Monitor Hozzáadása - 1. Lépés", color=discord.Color.blue())
+        embed.add_field(name="Célcsatorna", value=self.channel_display_name, inline=True)
+        embed.add_field(name="Ping Rang", value=self.role_display_name, inline=True)
+        platform_name = self.selected_type.upper() if self.selected_type else "Nincs kiválasztva"
+        embed.add_field(name="Platform", value=platform_name, inline=True)
+        return embed
 
     async def check_readiness(self, interaction: discord.Interaction):
         settings = self.bot.guild_settings_cache.get(self.guild_id, {})
         has_channel = self.selected_channel_id or settings.get("default_channel_id")
         self.next_btn.disabled = not (has_channel and self.selected_type)
-        await interaction.response.edit_message(view=self)
+        
+        embed = await self.create_status_embed()
+        if interaction.response.is_done():
+            await interaction.edit_original_response(embed=embed, view=self)
+        else:
+            await interaction.response.edit_message(embed=embed, view=self)
 
     async def channel_callback(self, interaction: discord.Interaction):
-        self.selected_channel_id = self.channel_select.values[0].id if self.channel_select.values else None
-        await self.check_readiness(interaction)
+        val = self.channel_select.values[0]
+        if val == "current":
+            self.selected_channel_id = interaction.channel.id
+            self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            await self.check_readiness(interaction)
+        elif val == "create":
+            await interaction.response.send_modal(NewChannelModal(self.bot, self))
+        elif val == "manual":
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
 
     async def role_callback(self, interaction: discord.Interaction):
-        self.selected_role_id = self.role_select.values[0].id if self.role_select.values else 0
-        await self.check_readiness(interaction)
+        val = self.role_select.values[0]
+        if val == "none":
+            self.selected_role_id = 0
+            self.role_display_name = "Nincs ping"
+            await self.check_readiness(interaction)
+        elif val == "default":
+            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            self.selected_role_id = 0 # 0 means we'll use fallback in next_callback
+            self.role_display_name = "Alapértelmezett (Beállítások szerint)"
+            await self.check_readiness(interaction)
+        elif val == "create":
+            await interaction.response.send_modal(NewRoleModal(self.bot, self))
+        elif val == "manual":
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role"))
 
     async def type_callback(self, interaction: discord.Interaction):
         self.selected_type = self.type_select.values[0]
@@ -170,48 +219,98 @@ class AddMonitorWizardView(discord.ui.View):
         settings = self.bot.guild_settings_cache.get(self.guild_id, {})
         ch_id = self.selected_channel_id or settings.get("default_channel_id")
         role_id = self.selected_role_id or settings.get("default_ping_role_id") or 0
-
-
-
+        
         modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_id, role_id)
         await interaction.response.send_modal(modal)
 
 
 class EditMonitorWizardView(discord.ui.View):
-    def __init__(self, bot, monitor_id, original_name, current_color=""):
+    def __init__(self, bot, monitor_id, original_name, current_color="", interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.monitor_id = monitor_id
         self.original_name = original_name
         self.current_color = current_color
+        self.guild_id = interaction.guild_id if interaction else 0
+        self.trigger_interaction = interaction
+        
         self.selected_channel_id = None
         self.selected_role_id = 0
+        
+        self.channel_display_name = "Változatlan"
+        self.role_display_name = "Változatlan"
+        
+        self.update_components()
 
-        self.channel_select = discord.ui.ChannelSelect(
-            placeholder=bot.get_feedback("ui_ph_edit_ch"), channel_types=[discord.ChannelType.text, discord.ChannelType.news],
-            min_values=1, max_values=1
-        )
+    def update_components(self):
+        self.clear_items()
+        
+        ch_options = [
+            discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
+            discord.SelectOption(label=f"Átállítás jelenlegire (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji="📍"),
+            discord.SelectOption(label="Átállítás manuális ID/Névre...", value="manual", emoji="🆔")
+        ]
+        self.channel_select = discord.ui.Select(placeholder="Módosítsd a célcsatornát...", options=ch_options, row=0)
         self.channel_select.callback = self.channel_callback
         self.add_item(self.channel_select)
 
-        self.role_select = discord.ui.RoleSelect(placeholder=bot.get_feedback("ui_ph_edit_role"), min_values=0, max_values=1)
+        role_options = [
+            discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
+            discord.SelectOption(label="Nincs ping", value="none", emoji="🔇"),
+            discord.SelectOption(label="Új rang létrehozása...", value="create", emoji="➕"),
+            discord.SelectOption(label="Manuális Rang ID vagy Név...", value="manual", emoji="🆔")
+        ]
+        self.role_select = discord.ui.Select(placeholder="Módosítsd a ping rolt...", options=role_options, row=1)
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
-        self.next_btn = discord.ui.Button(label=bot.get_feedback("ui_btn_monitor_next_name"), style=discord.ButtonStyle.primary, disabled=True, row=2)
+        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name"), style=discord.ButtonStyle.primary, disabled=False, row=2)
         self.next_btn.callback = self.next_btn_callback
         self.add_item(self.next_btn)
 
+    async def create_edit_embed(self):
+        embed = discord.Embed(title=f"Monitor Szerkesztése: {self.original_name}", color=discord.Color.orange())
+        embed.add_field(name="Új Célcsatorna", value=self.channel_display_name, inline=True)
+        embed.add_field(name="Új Ping Rang", value=self.role_display_name, inline=True)
+        return embed
+
+    async def check_readiness(self, interaction: discord.Interaction):
+        embed = await self.create_edit_embed()
+        if interaction.response.is_done():
+            await interaction.edit_original_response(embed=embed, view=self)
+        else:
+            await interaction.response.edit_message(embed=embed, view=self)
+
     async def channel_callback(self, interaction: discord.Interaction):
-        self.selected_channel_id = self.channel_select.values[0].id
-        self.next_btn.disabled = False
-        await interaction.response.edit_message(view=self)
+        val = self.channel_select.values[0]
+        if val == "keep":
+            self.selected_channel_id = None
+            self.channel_display_name = "Változatlan"
+            await self.check_readiness(interaction)
+        elif val == "current":
+            self.selected_channel_id = interaction.channel.id
+            self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            await self.check_readiness(interaction)
+        elif val == "manual":
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
 
     async def role_callback(self, interaction: discord.Interaction):
-        self.selected_role_id = self.role_select.values[0].id if self.role_select.values else 0
-        await interaction.response.edit_message(view=self)
+        val = self.role_select.values[0]
+        if val == "keep":
+            self.selected_role_id = None
+            self.role_display_name = "Változatlan"
+            await self.check_readiness(interaction)
+        elif val == "none":
+            self.selected_role_id = 0
+            self.role_display_name = "Nincs ping"
+            await self.check_readiness(interaction)
+        elif val == "create":
+            await interaction.response.send_modal(NewRoleModal(self.bot, self))
+        elif val == "manual":
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role"))
 
     async def next_btn_callback(self, interaction: discord.Interaction):
+        # If None, we pass 0 or original handled in EditMonitorModal
         modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channel_id, self.selected_role_id, current_color=self.current_color)
         await interaction.response.send_modal(modal)
 

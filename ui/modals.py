@@ -218,3 +218,120 @@ class AlertTemplateModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer()
+
+class NewChannelModal(discord.ui.Modal):
+    def __init__(self, bot, parent_view):
+        super().__init__(title="Új csatorna létrehozása")
+        self.bot = bot
+        self.parent_view = parent_view
+        
+        self.name_input = discord.ui.TextInput(
+            label="Csatorna neve",
+            placeholder="pl. Hétvégi csapatok",
+            required=True,
+            max_length=100
+        )
+        self.add_item(self.name_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        from core.utils import slugify
+        raw_name = self.name_input.value
+        clean_name = slugify(raw_name)
+        
+        try:
+            # Create the channel in the same category as the current channel if possible
+            overwrites = {
+                interaction.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False)
+            }
+            category = interaction.channel.category if hasattr(interaction.channel, 'category') else None
+            
+            new_channel = await interaction.guild.create_text_channel(
+                name=clean_name,
+                category=category,
+                reason=f"Feed Bot monitor creation (Original: {raw_name})"
+            )
+            
+            self.parent_view.selected_channel_id = new_channel.id
+            self.parent_view.channel_display_name = f"#{new_channel.name} (Létrehozva)"
+            
+            await self.parent_view.check_readiness(interaction)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Hiba a csatorna létrehozásakor: {e}", ephemeral=True)
+
+class ManualInputModal(discord.ui.Modal):
+    def __init__(self, bot, parent_view, mode="channel"):
+        title = "Manuális ID vagy Név megadása" if mode == "channel" else "Manuális Rang ID vagy Név"
+        super().__init__(title=title)
+        self.bot = bot
+        self.parent_view = parent_view
+        self.mode = mode
+        
+        self.input_field = discord.ui.TextInput(
+            label="ID vagy Pontos Név",
+            placeholder="pl. 123456789... vagy hírek",
+            required=True
+        )
+        self.add_item(self.input_field)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        val = self.input_field.value.strip()
+        guild = interaction.guild
+        
+        if self.mode == "channel":
+            target = None
+            if val.isdigit():
+                target = guild.get_channel(int(val))
+            else:
+                target = discord.utils.get(guild.text_channels, name=val.lower())
+            
+            if target:
+                self.parent_view.selected_channel_id = target.id
+                self.parent_view.channel_display_name = f"#{target.name} (Manuális)"
+                await self.parent_view.check_readiness(interaction)
+            else:
+                await interaction.response.send_message("❌ Csatorna nem található ezzel az ID-val vagy névvel.", ephemeral=True)
+        
+        else: # role mode
+            target = None
+            if val.isdigit():
+                target = guild.get_role(int(val))
+            else:
+                target = discord.utils.get(guild.roles, name=val)
+            
+            if target:
+                self.parent_view.selected_role_id = target.id
+                self.parent_view.role_display_name = f"@{target.name} (Manuális)"
+                await self.parent_view.check_readiness(interaction)
+            else:
+                await interaction.response.send_message("❌ Rang nem található ezzel az ID-val vagy névvel.", ephemeral=True)
+
+class NewRoleModal(discord.ui.Modal):
+    def __init__(self, bot, parent_view):
+        super().__init__(title="Új rang létrehozása")
+        self.bot = bot
+        self.parent_view = parent_view
+        
+        self.name_input = discord.ui.TextInput(
+            label="Rang neve",
+            placeholder="pl. YouTube Értesítések",
+            required=True,
+            max_length=100
+        )
+        self.add_item(self.name_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        name = self.name_input.value
+        try:
+            # Create a standard role, mentionable usually wanted for ping feeds
+            new_role = await interaction.guild.create_role(
+                name=name,
+                mentionable=True,
+                reason=f"Feed Bot monitor role creation"
+            )
+            
+            self.parent_view.selected_role_id = new_role.id
+            self.parent_view.role_display_name = f"@{new_role.name} (Létrehozva)"
+            
+            await self.parent_view.check_readiness(interaction)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Hiba a rang létrehozásakor: {e}", ephemeral=True)
