@@ -31,7 +31,8 @@ class RedditMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.subreddit = config.get("subreddit", "")
         self.sort = config.get("sort", "new")  # new, hot, top
-        self.rss_url = f"https://www.reddit.com/r/{self.subreddit}/.rss?sort={self.sort}"
+        # old.reddit.com is far less aggressive with IP blocking than www.reddit.com
+        self.rss_url = f"https://old.reddit.com/r/{self.subreddit}/.rss?sort={self.sort}"
         self.is_first_run = True
 
     def get_shared_key(self):
