@@ -1,4 +1,4 @@
-import aiohttp
+import feedparser
 import discord
 import asyncio
 import re
