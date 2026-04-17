@@ -122,6 +122,7 @@ class AddMonitorWizardView(discord.ui.View):
         # 1. Simplified Channel Select
         ch_options = [
             discord.SelectOption(label=f"Jelenlegi csatorna (#{self.trigger_interaction.channel.name})", value="current", emoji="📍"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji="⚙️"),
             discord.SelectOption(label="Új csatorna létrehozása...", value="create", emoji="➕"),
             discord.SelectOption(label="Manuális ID vagy Név...", value="manual", emoji="🆔")
         ]
@@ -190,6 +191,14 @@ class AddMonitorWizardView(discord.ui.View):
             self.selected_channel_id = interaction.channel.id
             self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
             await self.check_readiness(interaction)
+        elif val == "default":
+            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            if not settings.get("default_channel_id"):
+                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
+                return
+            self.selected_channel_id = 0 # 0 means use global default from settings
+            self.channel_display_name = "Alapértelmezett (Beállítások szerint)"
+            await self.check_readiness(interaction)
         elif val == "create":
             await interaction.response.send_modal(NewChannelModal(self.bot, self))
         elif val == "manual":
@@ -203,6 +212,9 @@ class AddMonitorWizardView(discord.ui.View):
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            if not settings.get("default_ping_role_id"):
+                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
+                return
             self.selected_role_id = 0 # 0 means we'll use fallback in next_callback
             self.role_display_name = "Alapértelmezett (Beállítások szerint)"
             await self.check_readiness(interaction)
@@ -248,6 +260,7 @@ class EditMonitorWizardView(discord.ui.View):
         ch_options = [
             discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
             discord.SelectOption(label=f"Átállítás jelenlegire (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji="📍"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji="⚙️"),
             discord.SelectOption(label="Átállítás manuális ID/Névre...", value="manual", emoji="🆔")
         ]
         self.channel_select = discord.ui.Select(placeholder="Módosítsd a célcsatornát...", options=ch_options, row=0)
@@ -257,6 +270,7 @@ class EditMonitorWizardView(discord.ui.View):
         role_options = [
             discord.SelectOption(label="Változatlan marad", value="keep", emoji="⏺️"),
             discord.SelectOption(label="Nincs ping", value="none", emoji="🔇"),
+            discord.SelectOption(label="Szerver alapértelmezett rangja", value="default", emoji="⚙️"),
             discord.SelectOption(label="Új rang létrehozása...", value="create", emoji="➕"),
             discord.SelectOption(label="Manuális Rang ID vagy Név...", value="manual", emoji="🆔")
         ]
@@ -291,6 +305,14 @@ class EditMonitorWizardView(discord.ui.View):
             self.selected_channel_id = interaction.channel.id
             self.channel_display_name = f"#{interaction.channel.name} (Jelenlegi)"
             await self.check_readiness(interaction)
+        elif val == "default":
+            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            if not settings.get("default_channel_id"):
+                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
+                return
+            self.selected_channel_id = 0
+            self.channel_display_name = "Alapértelmezett (Beállítások szerint)"
+            await self.check_readiness(interaction)
         elif val == "manual":
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
 
@@ -303,6 +325,14 @@ class EditMonitorWizardView(discord.ui.View):
         elif val == "none":
             self.selected_role_id = 0
             self.role_display_name = "Nincs ping"
+            await self.check_readiness(interaction)
+        elif val == "default":
+            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+            if not settings.get("default_ping_role_id"):
+                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
+                return
+            self.selected_role_id = 0
+            self.role_display_name = "Alapértelmezett (Beállítások szerint)"
             await self.check_readiness(interaction)
         elif val == "create":
             await interaction.response.send_modal(NewRoleModal(self.bot, self))

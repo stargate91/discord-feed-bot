@@ -121,5 +121,8 @@
     "ui_platform_movie": "TMDB Mozi 🎬",
     "ui_platform_tv_series": "TMDB Sorozat 📺",
     "btn_view_tmdb_tv": "Sorozat megtekintése",
-    "new_tv_series_alert": "Új sorozat / epizód várható!"
+    "new_tv_series_alert": "Új sorozat / epizód várható!",
+    "ui_option_default_ch": "Szerver alapértelmezett csatornája",
+    "error_default_ch_not_set": "❌ Nincs beállítva alapértelmezett csatorna! Használd a `/setup` parancsot.",
+    "error_default_role_not_set": "❌ Nincs beállítva alapértelmezett ping rang! Használd a `/setup` parancsot."
 }

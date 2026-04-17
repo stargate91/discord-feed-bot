@@ -121,5 +121,8 @@
     "ui_platform_movie": "TMDB Movie 🎬",
     "ui_platform_tv_series": "TMDB Series 📺",
     "btn_view_tmdb_tv": "View Series",
-    "new_tv_series_alert": "New series / episode expected!"
+    "new_tv_series_alert": "New series / episode expected!",
+    "ui_option_default_ch": "Server default channel",
+    "error_default_ch_not_set": "❌ No default channel set! Use the `/setup` command.",
+    "error_default_role_not_set": "❌ No default ping role set! Use the `/setup` command."
 }
