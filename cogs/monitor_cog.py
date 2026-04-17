@@ -200,11 +200,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             return
             
         m_type = target.get("type", "unknown")
-        # Since database.py now flattens the data, it should be at top level, 
-        # but we also check extra_settings for safety against un-healed in-memory data.
-        patch_only = target.get("steam_patch_only", target.get("extra_settings", {}).get("steam_patch_only", False))
         
-        view = EditMonitorWizardView(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), steam_patch_only=patch_only, interaction=interaction)
+        view = EditMonitorWizardView(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), interaction=interaction)
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name), view=view, ephemeral=True)
 
     @monitor_edit.autocomplete("monitor_name")

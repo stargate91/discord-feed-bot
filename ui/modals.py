@@ -58,12 +58,11 @@ class StatusSettingsModal(discord.ui.Modal):
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_status_error_nan"), ephemeral=True)
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id, steam_patch_only=False):
+    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id):
         self.bot = bot
         self.monitor_type = monitor_type
         self.discord_channel_id = discord_channel_id
         self.ping_role_id = ping_role_id
-        self.steam_patch_only = steam_patch_only
         
         super().__init__(title=bot.get_feedback("add_monitor_title"))
 
@@ -137,9 +136,6 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             alert_val = self.alert_input.value.strip() if self.alert_input.value else ""
             if alert_val: m_config["custom_alert"] = alert_val
             
-            if self.monitor_type == "steam_news":
-                m_config["steam_patch_only"] = self.steam_patch_only
-
             guild_id = interaction.guild_id or 0
             await database.add_monitor(m_config, guild_id=guild_id)
 

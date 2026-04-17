@@ -10,7 +10,6 @@ class SteamNewsMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
         self.appid = config.get("appid")
-        self.patch_only = bool(config.get("steam_patch_only", False))
         self.api_url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=5"
         self.is_first_run = True
 
@@ -47,16 +46,6 @@ class SteamNewsMonitor(BaseMonitor):
         for item in reversed(feed):
             gid = item.get("gid")
             if not gid: continue
-
-            # Filter if Patch Only is enabled
-            if self.patch_only:
-                title = item.get("title", "").lower()
-                feed_name = item.get("feedname", "").lower()
-                # Heuristic: Official announcements or keywords in title
-                is_official = feed_name == "steam_community_announcements"
-                has_keywords = any(kw in title for kw in ["patch", "update", "javítás", "frissítés"])
-                if not (is_official or has_keywords):
-                    continue
 
             if not await database.is_published(gid, "steam_news"):
                 if self.is_first_run:

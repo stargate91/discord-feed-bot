@@ -146,7 +146,7 @@ async def update_monitor_status(monitor_id, guild_id, is_enabled):
     pool = await get_pool()
     await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
-async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None, steam_patch_only=None):
+async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None):
     q_sel = "SELECT discord_channel_id, ping_role_id, extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
     pool = await get_pool()
     row = await pool.fetchrow(q_sel, monitor_id, guild_id)
@@ -170,9 +170,6 @@ async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id,
     if embed_color is not None:
         if embed_color.strip(): extra_settings["embed_color"] = embed_color.strip()
         else: extra_settings.pop("embed_color", None)
-
-    if steam_patch_only is not None:
-        extra_settings["steam_patch_only"] = bool(steam_patch_only)
         
     q_upd = '''UPDATE monitors SET name = $1, discord_channel_id = $2, 
                ping_role_id = $3, extra_settings = $4 
