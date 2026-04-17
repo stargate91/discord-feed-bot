@@ -85,7 +85,7 @@ async def add_monitor(m_config, guild_id):
     args = (
         guild_id, m_config.get('type'), m_config.get('name'),
         m_config.get('discord_channel_id'), m_config.get('ping_role_id', 0),
-        1 if m_config.get('enabled', True) else 0,
+        bool(m_config.get('enabled', True)),
         json.dumps(extra_settings)
     )
     
@@ -127,7 +127,7 @@ async def get_monitors_for_guild(guild_id):
 async def update_monitor_status(monitor_id, guild_id, is_enabled):
     q = "UPDATE monitors SET enabled = $1 WHERE id = $2 AND guild_id = $3"
     pool = await get_pool()
-    await pool.execute(q, 1 if is_enabled else 0, monitor_id, guild_id)
+    await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
 async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None):
     q_sel = "SELECT extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
