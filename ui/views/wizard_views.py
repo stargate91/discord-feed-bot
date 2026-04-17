@@ -237,6 +237,7 @@ class AddMonitorWizardView(discord.ui.View):
 
     async def steam_callback(self, interaction: discord.Interaction):
         self.steam_patch_only = (self.steam_select.values[0] == "patch")
+        self.update_components()
         await self.check_readiness(interaction)
 
     async def next_callback(self, interaction: discord.Interaction):
@@ -316,6 +317,7 @@ class EditMonitorWizardView(discord.ui.View):
 
     async def steam_callback(self, interaction: discord.Interaction):
         self.steam_patch_only = (self.steam_select.values[0] == "patch")
+        self.update_components()
         await self.check_readiness(interaction)
 
     async def check_readiness(self, interaction: discord.Interaction):
@@ -538,8 +540,12 @@ class SetupWizardView(discord.ui.View):
     async def save_callback(self, interaction: discord.Interaction):
         # We only update the core settings here, master settings are updated in MasterSetupView
         await database.update_guild_settings(
-            self.guild_id, self.new_lang, self.new_ch, self.new_role, 
-            admin_role_id=self.new_admin_role
+            self.guild_id, 
+            language=self.new_lang,
+            default_channel_id=self.new_ch,
+            default_ping_role_id=self.new_role,
+            admin_role_id=self.new_admin_role,
+            bot=self.bot
         )
         # Update cache
         current = self.bot.guild_settings_cache.get(self.guild_id, {})

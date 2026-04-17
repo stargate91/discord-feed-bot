@@ -224,7 +224,7 @@ async def get_guild_settings(guild_id):
         "admin_role_id": 0, "admin_channel_id": 0, "master_role_id": 0, "alert_templates": {}
     }
 
-async def update_guild_settings(guild_id, language=None, default_channel_id=None, default_ping_role_id=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None):
+async def update_guild_settings(guild_id, language=None, default_channel_id=None, default_ping_role_id=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, bot=None):
     current = await get_guild_settings(guild_id)
     lang = language if language is not None else current["language"]
     ch_id = default_channel_id if default_channel_id is not None else current["default_channel_id"]
@@ -244,6 +244,19 @@ async def update_guild_settings(guild_id, language=None, default_channel_id=None
 
     pool = await get_pool()
     await pool.execute(q, guild_id, lang, ch_id, role_id, a_role, a_chan, m_role, json.dumps(templates))
+    
+    # Update cache if bot instance provided
+    if bot:
+        bot.guild_settings_cache[guild_id] = {
+            "language": lang,
+            "default_channel_id": ch_id,
+            "default_ping_role_id": role_id,
+            "admin_role_id": a_role,
+            "admin_channel_id": a_chan,
+            "master_role_id": m_role,
+            "alert_templates": templates
+        }
+        log.info(f"Updated guild settings cache for {guild_id}")
 
 async def get_bot_statuses():
     q = "SELECT id, type, status_text FROM bot_statuses"

@@ -36,7 +36,7 @@ class FeedBot(commands.Bot):
                     except Exception as e:
                         log.error(f"Failed to load language file {filename}: {e}")
         
-        default_lang_code = self.config.get("language", "hu")
+        default_lang_code = self.config.get("master_language", "hu")
         self.language_data = self.locales.get(default_lang_code, {})
         log.info(f"Loaded {len(self.locales)} language packs.")
 
@@ -258,12 +258,18 @@ class FeedBot(commands.Bot):
         
         # Determine language
         master_guilds = self.config.get("master_guild_ids", [])
-        if guild_id == 0 or guild_id in master_guilds:
-            # For Master/Global: Use config.json's language (default hu)
-            lang_code = settings.get("language", self.config.get("language", "hu"))
-        else:
-            # For New Servers: Fallback to 'en' instead of system default
-            lang_code = settings.get("language", "en")
+        master_lang = self.config.get("master_language", "hu")
+        
+        # 1. Guild specific
+        lang_code = settings.get("language")
+        
+        # 2. Master/Global Fallback
+        if not lang_code:
+            if guild_id == 0 or guild_id in master_guilds:
+                lang_code = master_lang
+            else:
+                # Normal guilds default to EN if nothing else is set
+                lang_code = "en"
 
         lang_data = self.locales.get(lang_code, self.locales.get("en", self.language_data))
 
