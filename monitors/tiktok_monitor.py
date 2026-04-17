@@ -10,7 +10,7 @@ class TikTokMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
         self.username = config.get("username", "").replace("@", "")
-        self.instance_url = config.get("instance_url", "https://proxitok.pabloferreiro.es").rstrip("/")
+        self.instance_url = config.get("instance_url", "https://proxitok.pussthecat.org").rstrip("/")
         self.feed_url = f"{self.instance_url}/api/rss/@{self.username}"
         self.is_first_run = True
 
