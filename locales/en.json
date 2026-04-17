@@ -124,5 +124,13 @@
     "new_tv_series_alert": "New series / episode expected!",
     "ui_option_default_ch": "Server default channel",
     "error_default_ch_not_set": "❌ No default channel set! Use the `/setup` command.",
-    "error_default_role_not_set": "❌ No default ping role set! Use the `/setup` command."
+    "error_default_role_not_set": "❌ No default ping role set! Use the `/setup` command.",
+    "ui_option_current_ch": "Current channel",
+    "ui_option_none": "None / Disable",
+    "ui_option_create_ch": "Create new channel...",
+    "ui_option_create_role": "Create new role...",
+    "ui_option_manual_ch": "Manual ID or Name...",
+    "ui_option_manual_role": "Manual ID or Name...",
+    "ui_setup_title": "Server Settings",
+    "ui_master_setup_title": "Master Settings"
 }

@@ -351,34 +351,77 @@ class SetupWizardView(discord.ui.View):
         self.bot = bot
         self.guild_id = guild_id
         self.settings = bot.guild_settings_cache.get(guild_id, {"language": "hu", "default_channel_id": None, "default_ping_role_id": None, "alert_templates": {}})
+        
+        # Internal State
         self.new_lang = self.settings.get("language", "hu")
         self.new_ch = self.settings.get("default_channel_id")
         self.new_role = self.settings.get("default_ping_role_id")
         self.new_admin_role = self.settings.get("admin_role_id")
-        self.new_admin_ch = self.settings.get("admin_channel_id")
+        
+        # Display Names for Embed
+        self.ch_display_name = bot.get_feedback("ui_option_none")
+        if self.new_ch:
+            ch = bot.get_channel(self.new_ch)
+            self.ch_display_name = f"#{ch.name}" if ch else f"ID: {self.new_ch}"
+            
+        self.role_display_name = bot.get_feedback("ui_option_none")
+        if self.new_role:
+            r = discord.utils.get(bot.guilds, id=self.guild_id).get_role(self.new_role) if bot.guilds else None
+            self.role_display_name = f"@{r.name}" if r else f"ID: {self.new_role}"
+            
+        self.admin_role_display_name = bot.get_feedback("ui_option_none")
+        if self.new_admin_role:
+            r = discord.utils.get(bot.guilds, id=self.guild_id).get_role(self.new_admin_role) if bot.guilds else None
+            self.admin_role_display_name = f"@{r.name}" if r else f"ID: {self.new_admin_role}"
 
+        self.update_components()
+
+    def update_components(self):
+        self.clear_items()
+        
+        # 1. Language
         lang_options = []
-        for code, data in bot.locales.items():
+        for code, data in self.bot.locales.items():
             lang_options.append(discord.SelectOption(label=data.get("language_name", code.upper()), value=code, default=(code == self.new_lang)))
         
         self.lang_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_lang"), options=lang_options, row=0)
         self.lang_select.callback = self.lang_callback
         self.add_item(self.lang_select)
 
-        self.channel_select = discord.ui.ChannelSelect(placeholder=self.bot.get_feedback("ui_ph_default_ch"), channel_types=[discord.ChannelType.text, discord.ChannelType.news], row=1)
+        # 2. Default Channel
+        ch_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji="📍"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji="➕"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji="🆔"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+        ]
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_ch"), options=ch_options, row=1)
         self.channel_select.callback = self.channel_callback
         self.add_item(self.channel_select)
 
-        self.role_select = discord.ui.RoleSelect(placeholder=self.bot.get_feedback("ui_ph_default_role"), row=2)
+        # 3. Default Ping Role
+        role_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="🔇"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔")
+        ]
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_role"), options=role_options, row=2)
         self.role_select.callback = self.role_callback
         self.add_item(self.role_select)
 
-        self.admin_role_select = discord.ui.RoleSelect(placeholder=self.bot.get_feedback("setup_admin_role_select", guild_id=self.guild_id), row=3)
+        # 4. Admin Role
+        admin_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+        ]
+        self.admin_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_role_select", guild_id=self.guild_id), options=admin_options, row=3)
         self.admin_role_select.callback = self.admin_role_callback
         self.add_item(self.admin_role_select)
 
+        # 5. Master/Templates/Save footer
         master_guilds = self.bot.config.get("master_guild_ids", [])
-        if guild_id in master_guilds:
+        if self.guild_id in master_guilds:
             master_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_master_settings"), style=discord.ButtonStyle.secondary, row=4)
             master_btn.callback = self.master_callback
             self.add_item(master_btn)
@@ -391,21 +434,67 @@ class SetupWizardView(discord.ui.View):
         save_btn.callback = self.save_callback
         self.add_item(save_btn)
 
+    async def create_embed(self):
+        embed = discord.Embed(title=self.bot.get_feedback("ui_setup_title"), color=discord.Color.blue())
+        embed.add_field(name="Nyelv", value=self.new_lang.upper(), inline=True)
+        embed.add_field(name="Alapértelmezett Csatorna", value=self.ch_display_name, inline=True)
+        embed.add_field(name="Alapértelmezett Ping Rang", value=self.role_display_name, inline=True)
+        embed.add_field(name="Admin Rang", value=self.admin_role_display_name, inline=True)
+        return embed
+
+    async def check_readiness(self, interaction: discord.Interaction):
+        embed = await self.create_embed()
+        if interaction.response.is_done():
+            await interaction.edit_original_response(embed=embed, view=self)
+        else:
+            await interaction.response.edit_message(embed=embed, view=self)
+
     async def lang_callback(self, interaction: discord.Interaction):
         self.new_lang = self.lang_select.values[0]
-        await interaction.response.defer()
+        await self.check_readiness(interaction)
 
     async def channel_callback(self, interaction: discord.Interaction):
-        self.new_ch = self.channel_select.values[0].id if self.channel_select.values else None
-        await interaction.response.defer()
+        val = self.channel_select.values[0]
+        if val == "current":
+            self.new_ch = interaction.channel.id
+            self.ch_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            await self.check_readiness(interaction)
+        elif val == "create":
+            from ui.modals import NewChannelModal
+            await interaction.response.send_modal(NewChannelModal(self.bot, self, id_attr="new_ch", display_attr="ch_display_name"))
+        elif val == "manual":
+            from ui.modals import ManualInputModal
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel", id_attr="new_ch", display_attr="ch_display_name"))
+        elif val == "none":
+            self.new_ch = None
+            self.ch_display_name = self.bot.get_feedback("ui_option_none")
+            await self.check_readiness(interaction)
 
     async def role_callback(self, interaction: discord.Interaction):
-        self.new_role = self.role_select.values[0].id if self.role_select.values else None
-        await interaction.response.defer()
+        val = self.role_select.values[0]
+        if val == "none":
+            self.new_role = None
+            self.role_display_name = self.bot.get_feedback("ui_option_none")
+            await self.check_readiness(interaction)
+        elif val == "create":
+            from ui.modals import NewRoleModal
+            await interaction.response.send_modal(NewRoleModal(self.bot, self, id_attr="new_role", display_attr="role_display_name"))
+        elif val == "manual":
+            from ui.modals import ManualInputModal
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role", id_attr="new_role", display_attr="role_display_name"))
 
     async def admin_role_callback(self, interaction: discord.Interaction):
-        self.new_admin_role = self.admin_role_select.values[0].id if self.admin_role_select.values else 0
-        await interaction.response.defer()
+        val = self.admin_role_select.values[0]
+        if val == "none":
+            self.new_admin_role = 0
+            self.admin_role_display_name = self.bot.get_feedback("ui_option_none")
+            await self.check_readiness(interaction)
+        elif val == "create":
+            from ui.modals import NewRoleModal
+            await interaction.response.send_modal(NewRoleModal(self.bot, self, id_attr="new_admin_role", display_attr="admin_role_display_name"))
+        elif val == "manual":
+            from ui.modals import ManualInputModal
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role", id_attr="new_admin_role", display_attr="admin_role_display_name"))
 
     async def master_callback(self, interaction: discord.Interaction):
         view = MasterSetupView(self.bot, self.guild_id, self.settings)
@@ -441,26 +530,90 @@ class MasterSetupView(discord.ui.View):
         self.settings = settings
         self.new_master_role = settings.get("master_role_id", 0)
         self.new_admin_ch = settings.get("admin_channel_id", 0)
+        
+        # Display Names for Embed
+        self.master_role_display_name = bot.get_feedback("ui_option_none")
+        if self.new_master_role:
+            r = discord.utils.get(bot.guilds, id=self.guild_id).get_role(self.new_master_role) if bot.guilds else None
+            self.master_role_display_name = f"@{r.name}" if r else f"ID: {self.new_master_role}"
+            
+        self.admin_ch_display_name = bot.get_feedback("ui_option_none")
+        if self.new_admin_ch:
+            ch = bot.get_channel(self.new_admin_ch)
+            self.admin_ch_display_name = f"#{ch.name}" if ch else f"ID: {self.new_admin_ch}"
 
-        self.master_role_select = discord.ui.RoleSelect(placeholder=bot.get_feedback("setup_master_role_select", guild_id=guild_id), row=0)
+        self.update_components()
+
+    def update_components(self):
+        self.clear_items()
+        
+        # 1. Master Role
+        master_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji="➕"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji="🆔"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+        ]
+        self.master_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_master_role_select", guild_id=self.guild_id), options=master_options, row=0)
         self.master_role_select.callback = self.master_role_callback
         self.add_item(self.master_role_select)
 
-        self.admin_ch_select = discord.ui.ChannelSelect(placeholder=bot.get_feedback("setup_admin_channel_select", guild_id=guild_id), channel_types=[discord.ChannelType.text], row=1)
+        # 2. Admin Channel
+        ch_options = [
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch"), value="current", emoji="📍"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji="➕"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji="🆔"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji="❌")
+        ]
+        self.admin_ch_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_channel_select", guild_id=self.guild_id), options=ch_options, row=1)
         self.admin_ch_select.callback = self.admin_ch_callback
         self.add_item(self.admin_ch_select)
 
-        save_btn = discord.ui.Button(label=bot.get_feedback("ui_btn_save"), style=discord.ButtonStyle.success, row=2)
+        save_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_save"), style=discord.ButtonStyle.success, row=2)
         save_btn.callback = self.save_callback
         self.add_item(save_btn)
 
+    async def create_embed(self):
+        embed = discord.Embed(title=self.bot.get_feedback("ui_master_setup_title"), color=discord.Color.dark_red())
+        embed.add_field(name="Master Admin Rang", value=self.master_role_display_name, inline=True)
+        embed.add_field(name="Admin Log Csatorna", value=self.admin_ch_display_name, inline=True)
+        return embed
+
+    async def check_readiness(self, interaction: discord.Interaction):
+        embed = await self.create_embed()
+        if interaction.response.is_done():
+            await interaction.edit_original_response(embed=embed, view=self)
+        else:
+            await interaction.response.edit_message(embed=embed, view=self)
+
     async def master_role_callback(self, interaction: discord.Interaction):
-        self.new_master_role = self.master_role_select.values[0].id if self.master_role_select.values else 0
-        await interaction.response.defer()
+        val = self.master_role_select.values[0]
+        if val == "none":
+            self.new_master_role = 0
+            self.master_role_display_name = self.bot.get_feedback("ui_option_none")
+            await self.check_readiness(interaction)
+        elif val == "create":
+            from ui.modals import NewRoleModal
+            await interaction.response.send_modal(NewRoleModal(self.bot, self, id_attr="new_master_role", display_attr="master_role_display_name"))
+        elif val == "manual":
+            from ui.modals import ManualInputModal
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role", id_attr="new_master_role", display_attr="master_role_display_name"))
 
     async def admin_ch_callback(self, interaction: discord.Interaction):
-        self.new_admin_ch = self.admin_ch_select.values[0].id if self.admin_ch_select.values else 0
-        await interaction.response.defer()
+        val = self.admin_ch_select.values[0]
+        if val == "current":
+            self.new_admin_ch = interaction.channel.id
+            self.admin_ch_display_name = f"#{interaction.channel.name} (Jelenlegi)"
+            await self.check_readiness(interaction)
+        elif val == "create":
+            from ui.modals import NewChannelModal
+            await interaction.response.send_modal(NewChannelModal(self.bot, self, id_attr="new_admin_ch", display_attr="admin_ch_display_name"))
+        elif val == "manual":
+            from ui.modals import ManualInputModal
+            await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel", id_attr="new_admin_ch", display_attr="admin_ch_display_name"))
+        elif val == "none":
+            self.new_admin_ch = 0
+            self.admin_ch_display_name = self.bot.get_feedback("ui_option_none")
+            await self.check_readiness(interaction)
 
     async def save_callback(self, interaction: discord.Interaction):
         await database.update_guild_settings(

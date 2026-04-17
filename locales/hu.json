@@ -124,5 +124,13 @@
     "new_tv_series_alert": "Új sorozat / epizód várható!",
     "ui_option_default_ch": "Szerver alapértelmezett csatornája",
     "error_default_ch_not_set": "❌ Nincs beállítva alapértelmezett csatorna! Használd a `/setup` parancsot.",
-    "error_default_role_not_set": "❌ Nincs beállítva alapértelmezett ping rang! Használd a `/setup` parancsot."
+    "error_default_role_not_set": "❌ Nincs beállítva alapértelmezett ping rang! Használd a `/setup` parancsot.",
+    "ui_option_current_ch": "Jelenlegi csatorna",
+    "ui_option_none": "Nincs / Szüntetés",
+    "ui_option_create_ch": "Új csatorna létrehozása...",
+    "ui_option_create_role": "Új rang létrehozása...",
+    "ui_option_manual_ch": "Manuális ID vagy Név...",
+    "ui_option_manual_role": "Manuális ID vagy Név...",
+    "ui_setup_title": "Szerver Beállítások",
+    "ui_master_setup_title": "Master Beállítások"
 }

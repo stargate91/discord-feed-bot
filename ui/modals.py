@@ -220,10 +220,12 @@ class AlertTemplateModal(discord.ui.Modal):
         await interaction.response.defer()
 
 class NewChannelModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view):
+    def __init__(self, bot, parent_view, id_attr="selected_channel_id", display_attr="channel_display_name"):
         super().__init__(title="Új csatorna létrehozása")
         self.bot = bot
         self.parent_view = parent_view
+        self.id_attr = id_attr
+        self.display_attr = display_attr
         
         self.name_input = discord.ui.TextInput(
             label="Csatorna neve",
@@ -251,20 +253,23 @@ class NewChannelModal(discord.ui.Modal):
                 reason=f"Feed Bot monitor creation (Original: {raw_name})"
             )
             
-            self.parent_view.selected_channel_id = new_channel.id
-            self.parent_view.channel_display_name = f"#{new_channel.name} (Létrehozva)"
+            setattr(self.parent_view, self.id_attr, new_channel.id)
+            setattr(self.parent_view, self.display_attr, f"#{new_channel.name} (Létrehozva)")
             
             await self.parent_view.check_readiness(interaction)
         except Exception as e:
             await interaction.response.send_message(f"❌ Hiba a csatorna létrehozásakor: {e}", ephemeral=True)
 
 class ManualInputModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view, mode="channel"):
+    def __init__(self, bot, parent_view, mode="channel", id_attr=None, display_attr=None):
         title = "Manuális ID vagy Név megadása" if mode == "channel" else "Manuális Rang ID vagy Név"
         super().__init__(title=title)
         self.bot = bot
         self.parent_view = parent_view
         self.mode = mode
+        
+        self.id_attr = id_attr or ("selected_channel_id" if mode == "channel" else "selected_role_id")
+        self.display_attr = display_attr or ("channel_display_name" if mode == "channel" else "role_display_name")
         
         self.input_field = discord.ui.TextInput(
             label="ID vagy Pontos Név",
@@ -285,8 +290,8 @@ class ManualInputModal(discord.ui.Modal):
                 target = discord.utils.get(guild.text_channels, name=val.lower())
             
             if target:
-                self.parent_view.selected_channel_id = target.id
-                self.parent_view.channel_display_name = f"#{target.name} (Manuális)"
+                setattr(self.parent_view, self.id_attr, target.id)
+                setattr(self.parent_view, self.display_attr, f"#{target.name} (Manuális)")
                 await self.parent_view.check_readiness(interaction)
             else:
                 await interaction.response.send_message("❌ Csatorna nem található ezzel az ID-val vagy névvel.", ephemeral=True)
@@ -299,17 +304,19 @@ class ManualInputModal(discord.ui.Modal):
                 target = discord.utils.get(guild.roles, name=val)
             
             if target:
-                self.parent_view.selected_role_id = target.id
-                self.parent_view.role_display_name = f"@{target.name} (Manuális)"
+                setattr(self.parent_view, self.id_attr, target.id)
+                setattr(self.parent_view, self.display_attr, f"@{target.name} (Manuális)")
                 await self.parent_view.check_readiness(interaction)
             else:
                 await interaction.response.send_message("❌ Rang nem található ezzel az ID-val vagy névvel.", ephemeral=True)
 
 class NewRoleModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view):
+    def __init__(self, bot, parent_view, id_attr="selected_role_id", display_attr="role_display_name"):
         super().__init__(title="Új rang létrehozása")
         self.bot = bot
         self.parent_view = parent_view
+        self.id_attr = id_attr
+        self.display_attr = display_attr
         
         self.name_input = discord.ui.TextInput(
             label="Rang neve",
@@ -329,8 +336,8 @@ class NewRoleModal(discord.ui.Modal):
                 reason=f"Feed Bot monitor role creation"
             )
             
-            self.parent_view.selected_role_id = new_role.id
-            self.parent_view.role_display_name = f"@{new_role.name} (Létrehozva)"
+            setattr(self.parent_view, self.id_attr, new_role.id)
+            setattr(self.parent_view, self.display_attr, f"@{new_role.name} (Létrehozva)")
             
             await self.parent_view.check_readiness(interaction)
         except Exception as e:
