@@ -165,7 +165,7 @@ class TVSeriesMonitor(BaseMonitor):
             })
             
             # Wrap overview for better readability on narrow views
-            wrapped_overview = textwrap.fill(overview[:1000], width=35)
+            wrapped_overview = textwrap.fill(overview[:1000], width=42)
             if len(overview) > 1000:
                 wrapped_overview += "..."
 
@@ -179,7 +179,7 @@ class TVSeriesMonitor(BaseMonitor):
                 embed.set_image(url=poster_url)
             
             if genre_text:
-                wrapped_genres = textwrap.fill(genre_text, width=60)
+                wrapped_genres = textwrap.fill(genre_text, width=30)
                 embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
@@ -230,7 +230,7 @@ class TVSeriesMonitor(BaseMonitor):
                     trailer_url = await self._get_trailer_url(series_id)
                     
                     # Wrap overview for better readability
-                    wrapped_overview = textwrap.fill(series.get("overview", "")[:1000], width=35)
+                    wrapped_overview = textwrap.fill(series.get("overview", "")[:1000], width=42)
                     
                     alert_text = self.get_alert_message({"name": "TMDB TV Series", "title": name, "url": tmdb_url})
                     
@@ -245,7 +245,7 @@ class TVSeriesMonitor(BaseMonitor):
                         embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
                     
                     if genre_text:
-                        wrapped_genres = textwrap.fill(genre_text, width=60)
+                        wrapped_genres = textwrap.fill(genre_text, width=30)
                         embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
                     embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)

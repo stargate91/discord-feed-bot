@@ -169,7 +169,7 @@ class MovieMonitor(BaseMonitor):
             })
             
             # Wrap overview for better readability on narrow views
-            wrapped_overview = textwrap.fill(overview[:1000], width=35)
+            wrapped_overview = textwrap.fill(overview[:1000], width=42)
             if len(overview) > 1000:
                 wrapped_overview += "..."
 
@@ -184,7 +184,7 @@ class MovieMonitor(BaseMonitor):
             
             if genre_text:
                 # Wrap genres too if they are long
-                wrapped_genres = textwrap.fill(genre_text, width=60)
+                wrapped_genres = textwrap.fill(genre_text, width=30)
                 embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
@@ -237,7 +237,7 @@ class MovieMonitor(BaseMonitor):
                     alert_text = self.get_alert_message({"name": "TMDB Movies", "title": title, "url": tmdb_url})
                     
                     # Wrap overview for better readability
-                    wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=35)
+                    wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)
                     
                     embed = discord.Embed(
                         title=title[:256],
@@ -250,7 +250,7 @@ class MovieMonitor(BaseMonitor):
                         embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
                     
                     if genre_text:
-                        wrapped_genres = textwrap.fill(genre_text, width=60)
+                        wrapped_genres = textwrap.fill(genre_text, width=30)
                         embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
                     
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
