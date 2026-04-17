@@ -141,7 +141,21 @@ class FeedBot(commands.Bot):
         if message.author.bot:
             return
         
-        if message.content.startswith(self.command_prefix):
+        prefix = self.command_prefix
+        suffix = self.config.get("command_suffix", "")
+        
+        if message.content.startswith(prefix):
+            # Handle Suffix (e.g., !sync_nova -> !sync)
+            if suffix:
+                parts = message.content.split(" ", 1)
+                command_part = parts[0]
+                if command_part.endswith(suffix):
+                    clean_command = command_part[:-len(suffix)]
+                    if len(parts) > 1:
+                        message.content = clean_command + " " + parts[1]
+                    else:
+                        message.content = clean_command
+
             guild_id = message.guild.id if message.guild else 0
             master_guilds = self.config.get("master_guild_ids", [])
             
@@ -154,7 +168,6 @@ class FeedBot(commands.Bot):
                     return
             
             # Universal Restriction: Master guilds can limit prefix commands to themselves
-            # (Existing logic preserved)
             if master_guilds and message.guild and message.guild.id not in master_guilds:
                 return
         
