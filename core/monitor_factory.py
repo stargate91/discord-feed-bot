@@ -3,7 +3,6 @@ from monitors.rss_monitor import RSSMonitor
 from monitors.epic_games_monitor import EpicGamesMonitor
 from monitors.steam_free_monitor import SteamFreeMonitor
 from monitors.gog_free_monitor import GOGFreeMonitor
-from monitors.reddit_monitor import RedditMonitor
 from monitors.twitter_monitor import TwitterMonitor
 from monitors.stream_monitor import StreamMonitor
 from monitors.steam_news_monitor import SteamNewsMonitor
@@ -26,8 +25,6 @@ def create_monitor_instance(bot, m_config):
         return SteamFreeMonitor(bot, m_config)
     elif m_type == "gog_free":
         return GOGFreeMonitor(bot, m_config)
-    elif m_type == "reddit":
-        return RedditMonitor(bot, m_config)
     elif m_type == "twitter":
         return TwitterMonitor(bot, m_config)
     elif m_type == "steam_news":
