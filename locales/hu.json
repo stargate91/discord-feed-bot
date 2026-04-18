@@ -215,5 +215,10 @@
     "ui_setup_admin_role_label": "Admin rang",
     "ui_setup_save_info": "A lenyíló menükből válaszd ki a változtatni kívánt értékeket, majd nyomj a mentésre!",
     "ui_setup_not_set": "Nincs beállítva",
-    "ui_option_current_ch_name": "Jelenlegi csatorna (#{name})"
+    "ui_option_current_ch_name": "Jelenlegi csatorna (#{name})",
+    "ui_setup_lang_success": "🌍 Szerver nyelve sikeresen beállítva: **{lang}**",
+    "ui_setup_ch_success": "✅ Alapértelmezett értesítési csatorna beállítva: <#{id}>",
+    "ui_setup_role_success": "✅ Alapértelmezett ping rang beállítva: <@&{id}>",
+    "ui_setup_admin_role_success": "✅ Szerver admin rang beállítva: <@&{id}>",
+    "ui_setup_template_success": "✅ Egyedi üzenet sablon a(z) **{platform}** platformhoz sikeresen frissítve!"
 }
