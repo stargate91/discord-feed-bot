@@ -37,11 +37,15 @@ class MovieMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"tmdb_now_playing:{self.tmdb_lang}"
 
-    async def _get_en_fallback(self, movie_id):
-        """Fetch English details as fallback when localized data is missing."""
+    async def _get_en_fallback(self, movie_id, original=False):
+        """Fetch English (or original language) details as fallback."""
         try:
-            url = f"https://api.themoviedb.org/3/movie/{movie_id}?language=en-US"
-            if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+            if original:
+                url = f"https://api.themoviedb.org/3/movie/{movie_id}"
+            else:
+                url = f"https://api.themoviedb.org/3/movie/{movie_id}?language=en-US"
+            if not self.bearer_token and self.api_key:
+                url += ("&" if "?" in url else "?") + f"api_key={self.api_key}"
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=self.get_headers()) as response:
                     return await response.json()
@@ -164,6 +168,13 @@ class MovieMonitor(BaseMonitor):
                 en_data = await self._get_en_fallback(movie_id)
                 if not title: title = en_data.get("title", "")
                 if not overview: overview = en_data.get("overview", "")
+            
+            # Original language fallback
+            if not title: title = movie.get("original_title", "")
+            if not overview:
+                orig_data = await self._get_en_fallback(movie_id, original=True)
+                overview = orig_data.get("overview", "")
+
             if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
             
             # Genres
@@ -267,6 +278,13 @@ class MovieMonitor(BaseMonitor):
             en_data = await self._get_en_fallback(movie_id)
             if not title: title = en_data.get("title", "")
             if not overview: overview = en_data.get("overview", "")
+        
+        # Original language fallback
+        if not title: title = movie.get("original_title", "")
+        if not overview:
+            orig_data = await self._get_en_fallback(movie_id, original=True)
+            overview = orig_data.get("overview", "")
+
         if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
         
         # Ratings
