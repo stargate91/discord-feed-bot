@@ -77,43 +77,44 @@ class MovieMonitor(BaseMonitor):
         return {}
 
     async def _get_trailer_url(self, movie_id):
-        """Fetch the official YouTube trailer URL for a movie."""
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language={self.tmdb_lang}"
-        if not self.bearer_token and self.api_key:
-            url += f"&api_key={self.api_key}"
-            
+        """Fetch the official YouTube trailer URL for a movie (Localized -> EN -> Original)."""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=self.get_headers()) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        results = data.get("results", [])
-                        # Look for YouTube Trailer
-                        for video in results:
-                            if video.get("site") == "YouTube" and video.get("type") == "Trailer":
-                                return f"https://www.youtube.com/watch?v={video.get('key')}"
-                        
-                        # Fallback to any YouTube video if no localized trailer
-                        if self.tmdb_lang != "en-US":
-                            # Try English for trailer
-                            return await self._get_trailer_url_en(movie_id)
-        except: pass
-        return None
+                # 1. Try Localized
+                url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language={self.tmdb_lang}"
+                if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+                
+                async with session.get(url, headers=self.get_headers()) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for v in data.get("results", []):
+                            if v.get("site") == "YouTube" and v.get("type") == "Trailer":
+                                return f"https://www.youtube.com/watch?v={v.get('key')}"
 
-    async def _get_trailer_url_en(self, movie_id):
-        """Fallback to fetch English trailer."""
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language=en-US"
-        if not self.bearer_token and self.api_key:
-            url += f"&api_key={self.api_key}"
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=self.get_headers()) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        for video in data.get("results", []):
-                            if video.get("site") == "YouTube" and video.get("type") == "Trailer":
-                                return f"https://www.youtube.com/watch?v={video.get('key')}"
-        except: pass
+                # 2. Try English Fallback
+                if self.tmdb_lang != "en-US":
+                    url_en = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language=en-US"
+                    if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
+                    async with session.get(url_en, headers=self.get_headers()) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for v in data.get("results", []):
+                                if v.get("site") == "YouTube" and v.get("type") == "Trailer":
+                                    return f"https://www.youtube.com/watch?v={v.get('key')}"
+
+                # 3. Try No Language Fallback (Original/All)
+                url_orig = f"https://api.themoviedb.org/3/movie/{movie_id}/videos"
+                # Handle query param for api_key fallback
+                url_orig += (f"?api_key={self.api_key}" if not self.bearer_token and self.api_key else "")
+                
+                async with session.get(url_orig, headers=self.get_headers()) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for v in data.get("results", []):
+                            if v.get("site") == "YouTube" and v.get("type") == "Trailer":
+                                return f"https://www.youtube.com/watch?v={v.get('key')}"
+        except:
+            pass
         return None
 
     async def check_for_updates(self):

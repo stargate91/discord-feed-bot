@@ -91,6 +91,11 @@ class TVSeriesMonitor(BaseMonitor):
                 en_data = await self._get_en_fallback("tv", series_id)
                 if not name: name = en_data.get("name", "")
                 if not overview: overview = en_data.get("overview", "")
+            # Original language fallback
+            if not name: name = series.get("original_name", "")
+            if not overview:
+                orig_data = await self._get_en_fallback("tv", series_id, original=True)
+                overview = orig_data.get("overview", "")
             if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
             
             # Genres
@@ -150,11 +155,15 @@ class TVSeriesMonitor(BaseMonitor):
             log.info("Initial TV Series seed completed.")
             self.is_first_run = False
 
-    async def _get_en_fallback(self, media_type, item_id):
-        """Fetch English details as fallback when localized data is missing."""
+    async def _get_en_fallback(self, media_type, item_id, original=False):
+        """Fetch English (or original language) details as fallback."""
         try:
-            url = f"https://api.themoviedb.org/3/{media_type}/{item_id}?language=en-US"
-            if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+            if original:
+                url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
+            else:
+                url = f"https://api.themoviedb.org/3/{media_type}/{item_id}?language=en-US"
+            if not self.bearer_token and self.api_key:
+                url += ("&" if "?" in url else "?") + f"api_key={self.api_key}"
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=self.get_headers()) as response:
                     return await response.json()
@@ -173,15 +182,16 @@ class TVSeriesMonitor(BaseMonitor):
 
     async def _get_trailer_url(self, series_id):
         try:
-            url = self.get_api_url(f"tv/{series_id}/videos")
             async with aiohttp.ClientSession() as session:
+                # 1. Localized
+                url = self.get_api_url(f"tv/{series_id}/videos")
                 async with session.get(url, headers=self.get_headers()) as response:
                     data = await response.json()
                     for video in data.get("results", []):
                         if video["site"] == "YouTube" and video["type"] == "Trailer":
                             return f"https://www.youtube.com/watch?v={video['key']}"
                 
-                # English fallback if no localized trailer found
+                # 2. English fallback
                 if self.tmdb_lang != "en-US":
                     url_en = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
                     if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
@@ -190,6 +200,15 @@ class TVSeriesMonitor(BaseMonitor):
                         for video in data.get("results", []):
                             if video["site"] == "YouTube" and video["type"] == "Trailer":
                                 return f"https://www.youtube.com/watch?v={video['key']}"
+
+                # 3. No Language fallback (Original/All)
+                url_orig = f"https://api.themoviedb.org/3/tv/{series_id}/videos"
+                if not self.bearer_token and self.api_key: url_orig += f"?api_key={self.api_key}"
+                async with session.get(url_orig, headers=self.get_headers()) as response:
+                    data = await response.json()
+                    for video in data.get("results", []):
+                        if video["site"] == "YouTube" and video["type"] == "Trailer":
+                            return f"https://www.youtube.com/watch?v={video['key']}"
             return None
         except:
             return None
@@ -238,6 +257,11 @@ class TVSeriesMonitor(BaseMonitor):
             en_data = await self._get_en_fallback("tv", series_id)
             if not name: name = en_data.get("name", "")
             if not overview: overview = en_data.get("overview", "")
+        # Original language fallback
+        if not name: name = series.get("original_name", "")
+        if not overview:
+            orig_data = await self._get_en_fallback("tv", series_id, original=True)
+            overview = orig_data.get("overview", "")
         if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
         
         # Ratings
