@@ -140,8 +140,11 @@ class EpicGamesMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
         embed.set_footer(text="Epic Games Store")
 
-        alert_key = "new_epic_games_alert" if is_active else "upcoming_free_game_alert"
-        alert_text = self.bot.get_feedback(alert_key, name=title, guild_id=self.guild_id)
+        alert_text = self.get_alert_message({
+            "name": "Epic Games",
+            "title": title,
+            "url": game_url
+        })
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
@@ -225,8 +228,11 @@ class EpicGamesMonitor(BaseMonitor):
                 embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
             embed.set_footer(text="Epic Games Store")
 
-            alert_key = "new_epic_games_alert" if is_active else "upcoming_free_game_alert"
-            alert_text = self.bot.get_feedback(alert_key, name=title, guild_id=self.guild_id)
+            alert_text = self.get_alert_message({
+                "name": "Epic Games",
+                "title": title,
+                "url": game_url
+            })
             view = discord.ui.View()
             btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
             view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
