@@ -80,6 +80,8 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                 elif self.monitor_type == "steam_news":
                     match = re.search(r"app/(\d+)", val)
                     m_config["appid"] = match.group(1) if match else val
+                elif self.monitor_type == "crypto":
+                    m_config["source_id"] = val
 
             if self.monitor_type == "epic_games":
                 m_config["include_upcoming"] = True
