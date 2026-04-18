@@ -4,6 +4,9 @@ from core.base_monitor import BaseMonitor
 from logger import log
 import database
 
+# Standard User-Agent
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
 class SteamNewsMonitor(BaseMonitor):
     """Monitor for Steam game news and updates."""
     
@@ -27,7 +30,7 @@ class SteamNewsMonitor(BaseMonitor):
         if not feed:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url) as response:
+                    async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch Steam News for {self.name}: {response.status}")
                             return
@@ -66,10 +69,9 @@ class SteamNewsMonitor(BaseMonitor):
             description = clean_html(raw_contents)
             image_url = extract_image_url(raw_contents)
             
-            # Formulate message using template hierarchy
+            # Formulate message using template hierarchy (REMOVED title for cleanliness)
             alert_text = self.get_alert_message({
                 "name": self.name,
-                "title": title,
                 "url": url,
                 "author": author
             })
@@ -79,7 +81,7 @@ class SteamNewsMonitor(BaseMonitor):
                 title=title[:256],
                 url=url,
                 description=description[:300] + "..." if len(description) > 300 else description,
-                color=self.get_color(0x1b2838) # Steam Dark Blue
+                color=self.get_color(0x3d3f45)
             )
             embed.set_author(name=author)
             embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
@@ -103,7 +105,7 @@ class SteamNewsMonitor(BaseMonitor):
         if not self.appid: return None
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url) as response:
+                async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                     if response.status != 200: return None
                     data = await response.json()
                     feed = data.get("appnews", {}).get("newsitems", [])
@@ -118,13 +120,14 @@ class SteamNewsMonitor(BaseMonitor):
                     description = clean_html(raw_contents)
                     image_url = extract_image_url(raw_contents)
                     
-                    alert_text = self.get_alert_message({"name": self.name, "title": title, "url": url})
+                    # Formulate message (REMOVED title for cleanliness)
+                    alert_text = self.get_alert_message({"name": self.name, "url": url})
                     
                     embed = discord.Embed(
                         title=title[:256],
                         url=url,
                         description=description[:300] + "..." if len(description) > 300 else description,
-                        color=self.get_color()
+                        color=self.get_color(0x3d3f45)
                     )
                     
                     if image_url:
@@ -137,3 +140,4 @@ class SteamNewsMonitor(BaseMonitor):
                     return {"content": f"{alert_text}\n{url}", "embed": embed, "view": view}
         except:
             return None
+
