@@ -18,7 +18,7 @@ class BaseMonitor(ABC):
     def ping_role(self):
         """Return the formatted ping string if a role is configured."""
         if self.ping_role_id and self.ping_role_id != 0:
-            return f"<@&{self.ping_role_id}> " # Note the trailing space
+            return f"<@&{self.ping_role_id}>"
         return ""
 
     def get_alert_message(self, variables=None):
@@ -54,7 +54,10 @@ class BaseMonitor(ABC):
         for k, v in variables.items():
             msg = msg.replace(f"{{{k}}}", str(v))
             
-        return f"{self.ping_role}{msg}"
+        ping = self.ping_role
+        if ping:
+            return f"{ping}\n{msg}"
+        return msg
 
     def get_shared_key(self):
         """Return a key for the shared poll registry. Subclasses should override if pollable."""
