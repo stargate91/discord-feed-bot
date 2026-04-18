@@ -162,16 +162,16 @@ class TVSeriesMonitor(BaseMonitor):
                     for video in data.get("results", []):
                         if video["site"] == "YouTube" and video["type"] == "Trailer":
                             return f"https://www.youtube.com/watch?v={video['key']}"
-            
-            # English fallback if no localized trailer
-            if self.tmdb_lang != "en-US":
-                url_en = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
-                if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
-                async with session.get(url_en, headers=self.get_headers()) as response:
-                    data = await response.json()
-                    for video in data.get("results", []):
-                        if video["site"] == "YouTube" and video["type"] == "Trailer":
-                            return f"https://www.youtube.com/watch?v={video['key']}"
+                
+                # English fallback if no localized trailer found
+                if self.tmdb_lang != "en-US":
+                    url_en = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
+                    if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
+                    async with session.get(url_en, headers=self.get_headers()) as response:
+                        data = await response.json()
+                        for video in data.get("results", []):
+                            if video["site"] == "YouTube" and video["type"] == "Trailer":
+                                return f"https://www.youtube.com/watch?v={video['key']}"
             return None
         except:
             return None
