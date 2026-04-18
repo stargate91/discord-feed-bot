@@ -77,42 +77,42 @@ class MovieMonitor(BaseMonitor):
         return {}
 
     async def _get_trailer_url(self, movie_id):
-        """Fetch the official YouTube trailer URL for a movie (Localized -> EN -> Original)."""
+        """Fetch a YouTube video URL (Priority: Trailer -> Teaser -> Clip)."""
         try:
             async with aiohttp.ClientSession() as session:
-                # 1. Try Localized
-                url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language={self.tmdb_lang}"
-                if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+                best_video = None
                 
-                async with session.get(url, headers=self.get_headers()) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        for v in data.get("results", []):
-                            if v.get("site") == "YouTube" and v.get("type") == "Trailer":
-                                return f"https://www.youtube.com/watch?v={v.get('key')}"
-
-                # 2. Try English Fallback
-                if self.tmdb_lang != "en-US":
-                    url_en = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language=en-US"
-                    if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
-                    async with session.get(url_en, headers=self.get_headers()) as resp:
+                # We check tiers: Localized, then EN, then No-Language
+                # In each tier, we prefer Trailer, but keep track of Teaser as backup
+                tiers = [
+                    f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language={self.tmdb_lang}",
+                    f"https://api.themoviedb.org/3/movie/{movie_id}/videos?language=en-US" if self.tmdb_lang != "en-US" else None,
+                    f"https://api.themoviedb.org/3/movie/{movie_id}/videos"
+                ]
+                
+                for url in tiers:
+                    if not url: continue
+                    if not self.bearer_token and self.api_key:
+                        url += ("&" if "?" in url else "?") + f"api_key={self.api_key}"
+                    
+                    async with session.get(url, headers=self.get_headers()) as resp:
                         if resp.status == 200:
                             data = await resp.json()
-                            for v in data.get("results", []):
+                            results = data.get("results", [])
+                            
+                            # 1. Look for Trailer
+                            for v in results:
                                 if v.get("site") == "YouTube" and v.get("type") == "Trailer":
                                     return f"https://www.youtube.com/watch?v={v.get('key')}"
-
-                # 3. Try No Language Fallback (Original/All)
-                url_orig = f"https://api.themoviedb.org/3/movie/{movie_id}/videos"
-                # Handle query param for api_key fallback
-                url_orig += (f"?api_key={self.api_key}" if not self.bearer_token and self.api_key else "")
+                            
+                            # 2. Keep track of best alternative if we don't have one yet
+                            if not best_video:
+                                for v in results:
+                                    if v.get("site") == "YouTube" and v.get("type") in ["Teaser", "Clip"]:
+                                        best_video = f"https://www.youtube.com/watch?v={v.get('key')}"
+                                        break
                 
-                async with session.get(url_orig, headers=self.get_headers()) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        for v in data.get("results", []):
-                            if v.get("site") == "YouTube" and v.get("type") == "Trailer":
-                                return f"https://www.youtube.com/watch?v={v.get('key')}"
+                return best_video
         except:
             pass
         return None

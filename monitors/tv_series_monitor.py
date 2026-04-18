@@ -181,35 +181,41 @@ class TVSeriesMonitor(BaseMonitor):
             return {}
 
     async def _get_trailer_url(self, series_id):
+        """Fetch a YouTube video URL (Priority: Trailer -> Teaser -> Clip)."""
         try:
             async with aiohttp.ClientSession() as session:
-                # 1. Localized
-                url = self.get_api_url(f"tv/{series_id}/videos")
-                async with session.get(url, headers=self.get_headers()) as response:
-                    data = await response.json()
-                    for video in data.get("results", []):
-                        if video["site"] == "YouTube" and video["type"] == "Trailer":
-                            return f"https://www.youtube.com/watch?v={video['key']}"
+                best_video = None
                 
-                # 2. English fallback
-                if self.tmdb_lang != "en-US":
-                    url_en = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
-                    if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
-                    async with session.get(url_en, headers=self.get_headers()) as response:
-                        data = await response.json()
-                        for video in data.get("results", []):
-                            if video["site"] == "YouTube" and video["type"] == "Trailer":
-                                return f"https://www.youtube.com/watch?v={video['key']}"
+                # Tiers: Localized, then EN, then No-Language
+                tiers = [
+                    self.get_api_url(f"tv/{series_id}/videos"),
+                    f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US" if self.tmdb_lang != "en-US" else None,
+                    f"https://api.themoviedb.org/3/tv/{series_id}/videos"
+                ]
 
-                # 3. No Language fallback (Original/All)
-                url_orig = f"https://api.themoviedb.org/3/tv/{series_id}/videos"
-                if not self.bearer_token and self.api_key: url_orig += f"?api_key={self.api_key}"
-                async with session.get(url_orig, headers=self.get_headers()) as response:
-                    data = await response.json()
-                    for video in data.get("results", []):
-                        if video["site"] == "YouTube" and video["type"] == "Trailer":
-                            return f"https://www.youtube.com/watch?v={video['key']}"
-            return None
+                for url in tiers:
+                    if not url: continue
+                    if "api.themoviedb.org" in url and "api_key=" not in url:
+                        if not self.bearer_token and self.api_key:
+                            url += ("&" if "?" in url else "?") + f"api_key={self.api_key}"
+                    
+                    async with session.get(url, headers=self.get_headers()) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            results = data.get("results", [])
+                            
+                            # 1. Look for Trailer
+                            for v in results:
+                                if v.get("site") == "YouTube" and v.get("type") == "Trailer":
+                                    return f"https://www.youtube.com/watch?v={v.get('key')}"
+                            
+                            # 2. Backup: Teaser or Clip
+                            if not best_video:
+                                for v in results:
+                                    if v.get("site") == "YouTube" and v.get("type") in ["Teaser", "Clip"]:
+                                        best_video = f"https://www.youtube.com/watch?v={v.get('key')}"
+                                        break
+                return best_video
         except:
             return None
 
