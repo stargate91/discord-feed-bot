@@ -57,9 +57,103 @@ class StreamMonitor(BaseMonitor):
             self.is_first_run = False
             log.info(f"Initial check completed for {self.stream_platform}:{self.stream_username}")
 
+    async def _get_twitch_token(self):
+        """Get or refresh a Twitch App Access Token."""
+        cache_key = "twitch_app_token"
+        token = self.bot.monitor_manager.get_shared_data(cache_key)
+        if token:
+            return token
+
+        client_id = self.bot.config.get("twitch_client_id")
+        client_secret = self.bot.config.get("twitch_client_secret")
+
+        if not client_id or not client_secret:
+            log.error("Twitch credentials missing in .env")
+            return None
+
+        url = "https://id.twitch.tv/oauth2/token"
+        params = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials"
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        token = data.get("access_token")
+                        # Store in shared cache (Twitch tokens last ~60 days, we cache it briefly)
+                        self.bot.monitor_manager.set_shared_data(cache_key, token)
+                        return token
+                    else:
+                        log.error(f"Failed to get Twitch token: {response.status}")
+                        return None
+        except Exception as e:
+            log.error(f"Twitch token error: {e}")
+            return None
+
     async def _fetch_twitch_data(self):
-        """Fetch Twitch stream data (Mock / Placeholder)."""
-        return None
+        """Fetch real-time Twitch stream data using the Helix API."""
+        token = await self._get_twitch_token()
+        client_id = self.bot.config.get("twitch_client_id")
+        
+        if not token or not client_id:
+            return None
+
+        url = f"https://api.twitch.tv/helix/streams?user_login={self.stream_username}"
+        headers = {
+            "Client-ID": client_id,
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        streams = data.get("data", [])
+                        
+                        if not streams:
+                            return {"is_live": False}
+                        
+                        stream = streams[0]
+                        user_id = stream.get("user_id")
+                        
+                        # We might want profile image, requires second call to /users
+                        profile_image = ""
+                        user_url = f"https://api.twitch.tv/helix/users?id={user_id}"
+                        async with session.get(user_url, headers=headers) as user_resp:
+                            if user_resp.status == 200:
+                                u_data = await user_resp.json()
+                                users = u_data.get("data", [])
+                                if users:
+                                    profile_image = users[0].get("profile_image_url", "")
+
+                        na_text = self.bot.get_feedback("default_unknown", guild_id=self.guild_id)
+                        thumbnail = stream.get("thumbnail_url", "").replace("{width}", "1280").replace("{height}", "720")
+                        
+                        return {
+                            "is_live": True,
+                            "title": stream.get("title", ""),
+                            "game": stream.get("game_name", na_text),
+                            "viewers": stream.get("viewer_count", 0),
+                            "thumbnail": thumbnail,
+                            "display_name": stream.get("user_name", self.stream_username),
+                            "profile_image": profile_image,
+                            "url": f"https://twitch.tv/{self.stream_username}"
+                        }
+                    elif response.status == 401:
+                        # Token expired? Clear cache for next run
+                        self.bot.monitor_manager._shared_cache.pop("twitch_app_token", None)
+                        return None
+                    else:
+                        log.error(f"Twitch API error: {response.status}")
+                        return None
+        except Exception as e:
+            log.error(f"Twitch fetch error: {e}")
+            return None
 
     async def _fetch_kick_data(self):
         """Fetch Kick stream data using their internal API."""
@@ -143,9 +237,12 @@ class StreamMonitor(BaseMonitor):
     async def get_latest_item(self):
         """Fetch current stream status for manual check."""
         if self.stream_platform == "twitch":
-            return None
+            stream_data = await self._fetch_twitch_data()
+            platform_name = "Twitch"
+        else: # kick
+            stream_data = await self._fetch_kick_data()
+            platform_name = "Kick"
         
-        stream_data = await self._fetch_kick_data()
         if not stream_data or not stream_data.get("is_live"):
             return None
         
@@ -157,8 +254,6 @@ class StreamMonitor(BaseMonitor):
         display_name = stream_data.get("display_name", self.stream_username)
         profile_image = stream_data.get("profile_image", "")
         stream_url = stream_data.get("url", "")
-
-        platform_name = "Kick"
 
         embed = discord.Embed(title=title[:256], url=stream_url, color=self.get_color(0x3d3f45))
         embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)

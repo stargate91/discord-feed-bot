@@ -17,5 +17,7 @@ def load_config(config_file: str = "config.json"):
     config["tmdb_api_key"] = os.getenv("TMDB_API_KEY") or config.get("tmdb_api_key")
     config["tmdb_bearer_token"] = os.getenv("TMDB_BEARER_TOKEN") or config.get("tmdb_bearer_token")
     config["database_url"] = os.getenv("DATABASE_URL") or config.get("database_url")
+    config["twitch_client_id"] = os.getenv("TWITCH_CLIENT_ID") or config.get("twitch_client_id")
+    config["twitch_client_secret"] = os.getenv("TWITCH_CLIENT_SECRET") or config.get("twitch_client_secret")
     
     return config
