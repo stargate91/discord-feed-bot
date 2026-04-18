@@ -134,21 +134,24 @@ class EditMonitorModal(discord.ui.Modal):
             guild_id = interaction.guild_id or 0
             await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val, steam_patch_only=self.steam_patch_only)
 
-            # Sync the live monitor instance in memory
+            # --- GOLYÓÁLLÓ SZINKRONIZÁCIÓ ---
+            # Ahelyett, hogy csak a tulajdonságokat foltoznánk, teljesen újraalkotjuk a példányt a gyárból.
             if self.bot.monitor_manager:
-                target_monitor = next((m for m in self.bot.monitor_manager.monitors if m.id == self.monitor_id), None)
-                if target_monitor:
-                    target_monitor.name = new_name
-                    if self.discord_channel_id is not None:
-                        target_monitor.discord_channel_id = self.discord_channel_id
-                        # Update cached channel if possible
-                        target_monitor.channel = interaction.guild.get_channel(int(self.discord_channel_id))
-                    
-                    if self.ping_role_id is not None:
-                        target_monitor.ping_role_id = self.ping_role_id
-                    
-                    if color_val:
-                        target_monitor.embed_color = color_val
+                from core.monitor_factory import create_monitor_instance
+                
+                # 1. Eltávolítjuk a régi példányt
+                self.bot.monitor_manager.monitors = [m for m in self.bot.monitor_manager.monitors if m.id != self.monitor_id]
+                
+                # 2. Lekérjük az adatbázisból a friss adatokat ehhez az egy monitorhoz
+                db_monitors = await database.get_all_monitors()
+                curr_db_data = next((m for m in db_monitors if m["id"] == self.monitor_id), None)
+                
+                # 3. Újraalkotjuk és hozzáadjuk
+                if curr_db_data:
+                    new_monitor = create_monitor_instance(self.bot, curr_db_data)
+                    if new_monitor:
+                        self.bot.monitor_manager.add_monitor(new_monitor)
+                        log.info(f"Monitor instance {new_name} (ID: {self.monitor_id}) fully replaced in memory after edit.")
 
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_success", name=new_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:

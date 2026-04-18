@@ -106,6 +106,14 @@ class BaseMonitor(ABC):
         if not channel:
             try:
                 channel = await self.bot.fetch_channel(self.discord_channel_id)
+            except discord.NotFound as enf:
+                if enf.code == 10003: # Unknown Channel
+                    log.error(f"Channel {self.discord_channel_id} for {self.name} is GONE (10003). Disabling monitor to prevent error spam.")
+                    self.enabled = False
+                    await database.update_monitor_status(self.config.get("id"), self.guild_id, False)
+                    return
+                log.error(f"Could not fetch channel {self.discord_channel_id} for {self.name}: {enf}")
+                return
             except Exception as e:
                 log.error(f"Could not fetch channel {self.discord_channel_id} for {self.name}: {e}")
                 return
