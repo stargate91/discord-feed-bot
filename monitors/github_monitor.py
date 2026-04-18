@@ -27,6 +27,11 @@ class GitHubMonitor(BaseMonitor):
             "User-Agent": "Discord-Feed-Bot"
         }
         
+        token = self.bot.config.get("github_token")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+            log.debug(f"Using GitHub token for {self.repo_path}")
+        
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.api_url, headers=headers) as response:

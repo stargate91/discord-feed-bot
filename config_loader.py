@@ -19,5 +19,6 @@ def load_config(config_file: str = "config.json"):
     config["database_url"] = os.getenv("DATABASE_URL") or config.get("database_url")
     config["twitch_client_id"] = os.getenv("TWITCH_CLIENT_ID") or config.get("twitch_client_id")
     config["twitch_client_secret"] = os.getenv("TWITCH_CLIENT_SECRET") or config.get("twitch_client_secret")
+    config["github_token"] = os.getenv("GITHUB_TOKEN") or config.get("github_token")
     
     return config
