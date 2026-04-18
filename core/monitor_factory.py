@@ -8,6 +8,7 @@ from monitors.steam_news_monitor import SteamNewsMonitor
 from monitors.movie_monitor import MovieMonitor
 from monitors.tv_series_monitor import TVSeriesMonitor
 from monitors.crypto_monitor import CryptoMonitor
+from monitors.github_monitor import GitHubMonitor
 
 def create_monitor_instance(bot, m_config):
     """Factory function to create a monitor instance from config."""
@@ -35,4 +36,6 @@ def create_monitor_instance(bot, m_config):
         return StreamMonitor(bot, m_config)
     elif m_type == "crypto":
         return CryptoMonitor(bot, m_config)
+    elif m_type == "github":
+        return GitHubMonitor(bot, m_config)
     return None

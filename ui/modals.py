@@ -82,6 +82,15 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                     m_config["appid"] = match.group(1) if match else val
                 elif self.monitor_type == "crypto":
                     m_config["source_id"] = val
+                elif self.monitor_type == "github":
+                    # Parse owner/repo from URL or plain string
+                    val = val.strip()
+                    if "github.com/" in val:
+                        # Extract from URL: https://github.com/owner/repo/something
+                        match = re.search(r"github\.com/([^/]+)/([^/]+)", val)
+                        if match:
+                            val = f"{match.group(1)}/{match.group(2)}"
+                    m_config["repo_path"] = val
 
             if self.monitor_type == "epic_games":
                 m_config["include_upcoming"] = True
