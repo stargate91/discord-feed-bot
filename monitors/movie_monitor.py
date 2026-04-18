@@ -105,7 +105,7 @@ class MovieMonitor(BaseMonitor):
                                 if v.get("site") == "YouTube" and v.get("type") == "Trailer":
                                     return f"https://www.youtube.com/watch?v={v.get('key')}"
                             
-                            # 2. Keep track of best alternative if we don't have one yet
+                            # 2. Keep track of best alternative (Teaser/Clip)
                             if not best_video:
                                 for v in results:
                                     if v.get("site") == "YouTube" and v.get("type") in ["Teaser", "Clip"]:
@@ -306,8 +306,10 @@ class MovieMonitor(BaseMonitor):
             "url": tmdb_url
         })
         
-        # Wrap overview for better readability
+        # Wrap overview for better readability in Discord
         wrapped_overview = textwrap.fill(overview[:1000], width=42)
+        if len(overview) > 1000:
+            wrapped_overview += "..."
         
         embed = discord.Embed(
             title=title[:256],

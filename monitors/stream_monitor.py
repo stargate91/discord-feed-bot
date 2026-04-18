@@ -133,13 +133,12 @@ class StreamMonitor(BaseMonitor):
             "game": game,
             "platform": platform_name
         })
-        ping = f"{self.ping_role} " if self.ping_role else ""
 
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=stream_url, style=discord.ButtonStyle.link))
 
-        await self.send_update(content=f"{ping}{alert_text}", embed=embed, view=view)
+        await self.send_update(content=alert_text, embed=embed, view=view)
 
     async def get_latest_item(self):
         """Fetch current stream status for manual check."""

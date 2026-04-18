@@ -141,7 +141,7 @@ class SteamNewsMonitor(BaseMonitor):
         image_url = extract_image_url(raw_contents)
         
         # Formulate message
-        alert_text = self.get_alert_message({"name": self.name, "url": url})
+        alert_text = self.get_alert_message({"name": self.name, "url": url, "author": author})
         
         embed = discord.Embed(
             title=title[:256],

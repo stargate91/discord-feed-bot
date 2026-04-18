@@ -161,22 +161,26 @@ class CryptoMonitor(BaseMonitor):
             self.last_prices[sym] = current_price
 
     async def _send_alert(self, symbol, current_price, threshold, direction, percent_str):
-        # Format the message
-        # We can use the custom alert template if provided, or default
-        template = self.m_config.get("custom_alert") or self.bot.get_feedback("new_crypto_alert", guild_id=self.guild_id)
-        
-        # Placeholders: {name}=symbol, {price}=current_price, {threshold}=threshold, {direction}=emoji, {percent}=percentage
+        # Placeholders for alert message
         dir_emoji = "📈" if direction == "up" else "📉"
         
-        msg = template.format(
+        # Format the system message via variables
+        alert_msg = self.get_alert_message({
+            "name": symbol,
+            "price": f"{current_price:,.2f}",
+            "threshold": f"{threshold:,.2f}",
+            "direction": dir_emoji,
+            "percent": percent_str
+        })
+
+        # Internal message for description
+        msg = self.bot.get_feedback("new_crypto_alert", guild_id=self.guild_id).format(
             name=symbol,
             price=f"{current_price:,.2f}",
             threshold=f"{threshold:,.2f}",
             direction=dir_emoji,
             percent=percent_str
         )
-        
-        alert_msg = self.get_alert_message(msg)
         channel = self.bot.get_channel(self.discord_channel_id)
         if channel:
             color = self.get_color()

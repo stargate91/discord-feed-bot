@@ -288,8 +288,10 @@ class TVSeriesMonitor(BaseMonitor):
             "url": tmdb_url
         })
         
-        # Wrap overview for better readability
+        # Wrap overview for better readability in Discord
         wrapped_overview = textwrap.fill(overview[:1000], width=42)
+        if len(overview) > 1000:
+            wrapped_overview += "..."
         
         embed = discord.Embed(
             title=name[:256],
