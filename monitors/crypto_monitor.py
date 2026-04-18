@@ -1,4 +1,5 @@
 import aiohttp
+import discord
 import json
 import os
 import time
@@ -206,7 +207,6 @@ class CryptoMonitor(BaseMonitor):
         ids_str = ",".join(ids_to_fetch)
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids_str}&vs_currencies=usd"
         
-        import discord
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url) as resp:
@@ -219,6 +219,7 @@ class CryptoMonitor(BaseMonitor):
                         )
                         
                         summary_lines = []
+                        valid_count = 0
                         for sym, threshold in self.targets.items():
                             cid = self.coin_id_map.get(sym)
                             if cid and cid in prices_data:
@@ -228,7 +229,11 @@ class CryptoMonitor(BaseMonitor):
                                 line = f"{color_emoji} **{sym}**: {current_price:,.2f} USD ({diff:+.2f}% to threshold)"
                                 summary_lines.append(line)
                                 embed.add_field(name=sym, value=f"Price: **{current_price:,.2f} USD**\nTarget: **{threshold:,.2f} USD**\nDiff: **{diff:+.2f}%**", inline=True)
+                                valid_count += 1
                         
+                        if valid_count == 0:
+                            return {"content": "❌ No valid price data found for the symbols.", "embed": None}
+
                         embed.description = "\n".join(summary_lines)
                         embed.set_footer(text="CoinGecko", icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
                         embed.timestamp = discord.utils.utcnow()
@@ -237,8 +242,10 @@ class CryptoMonitor(BaseMonitor):
                             "content": f"📊 **Crypto Price Check: {self.name}**",
                             "embed": embed
                         }
+                    elif resp.status == 429:
+                        return {"content": "❌ CoinGecko Error: Rate limited (429). Please wait a few minutes.", "embed": None}
                     else:
-                        return None
+                        return {"content": f"❌ CoinGecko API Error: HTTP {resp.status}", "embed": None}
             except Exception as e:
                 log.error(f"Crypto get_latest_item error: {e}")
-                return None
+                return {"content": f"❌ Technical Error: {str(e)}", "embed": None}
