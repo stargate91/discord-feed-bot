@@ -14,9 +14,10 @@ class MovieMonitor(BaseMonitor):
         self.bearer_token = bot.config.get("tmdb_bearer_token")
         self.api_key = bot.config.get("tmdb_api_key") # Fallback
         
-        # Get server language from bot's cache
+        # Get server language
         settings = bot.guild_settings_cache.get(self.guild_id, {})
-        self.tmdb_lang = settings.get("language", bot.config.get("language", "hu"))
+        lang = settings.get("language", bot.config.get("language", "hu"))
+        self.tmdb_lang = "hu-HU" if lang == "hu" else "en-US"
         
         # Base URL without api_key
         self.api_url = f"https://api.themoviedb.org/3/movie/now_playing?language={self.tmdb_lang}&page=1"
@@ -185,8 +186,7 @@ class MovieMonitor(BaseMonitor):
                 embed.set_image(url=poster_url)
             
             if genre_text:
-                # Wrap genres too if they are long
-                wrapped_genres = textwrap.fill(genre_text, width=30)
+                wrapped_genres = textwrap.fill(genre_text, width=35)
                 embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
@@ -257,7 +257,7 @@ class MovieMonitor(BaseMonitor):
                         embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
                     
                     if genre_text:
-                        wrapped_genres = textwrap.fill(genre_text, width=30)
+                        wrapped_genres = textwrap.fill(genre_text, width=35)
                         embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
                     
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)

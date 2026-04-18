@@ -11,8 +11,27 @@ class TVSeriesMonitor(BaseMonitor):
     
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.api_key = bot.config.get("tmdb_api_key")
+        self.bearer_token = bot.config.get("tmdb_bearer_token")
+        self.api_key = bot.config.get("tmdb_api_key") # Fallback
+        
+        # Get server language
+        settings = bot.guild_settings_cache.get(self.guild_id, {})
+        lang = settings.get("language", bot.config.get("language", "hu"))
+        self.tmdb_lang = "hu-HU" if lang == "hu" else "en-US"
+        
         self.is_first_run = True
+
+    def get_headers(self):
+        if self.bearer_token:
+            return {"Authorization": f"Bearer {self.bearer_token}"}
+        return {}
+
+    def get_api_url(self, endpoint):
+        """Build URL with language and fallback auth."""
+        url = f"https://api.themoviedb.org/3/{endpoint}?language={self.tmdb_lang}"
+        if not self.bearer_token and self.api_key:
+            url += f"&api_key={self.api_key}"
+        return url
 
     def get_shared_key(self):
         return "tmdb_tv_trending"
@@ -24,21 +43,22 @@ class TVSeriesMonitor(BaseMonitor):
             return
 
         # Check for shared data
-        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
+        shared_key = f"{self.get_shared_key()}:{self.tmdb_lang}"
+        shared_data = self.bot.monitor_manager.get_shared_data(shared_key)
         if shared_data:
             trending = shared_data
         else:
             try:
-                url = f"https://api.themoviedb.org/3/trending/tv/day?api_key={self.api_key}"
+                url = self.get_api_url("trending/tv/day")
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as response:
+                    async with session.get(url, headers=self.get_headers()) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch TMDB Trending: {response.status}")
                             return
                         data = await response.json()
                         trending = data.get("results", [])
                         if trending:
-                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), trending)
+                            self.bot.monitor_manager.set_shared_data(shared_key, trending)
             except Exception as e:
                 log.error(f"Error fetching TMDB data: {e}")
                 return
@@ -101,8 +121,10 @@ class TVSeriesMonitor(BaseMonitor):
             embed.set_author(name=self.bot.get_feedback("new_tv_series_alert", guild_id=self.guild_id))
             if poster_url: embed.set_image(url=poster_url)
             
+            # Genres field with intelligent wrap at 35 chars
             if genre_text:
-                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
+                wrapped_genres = textwrap.fill(genre_text, width=35)
+                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
             
             embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
             embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
@@ -124,9 +146,9 @@ class TVSeriesMonitor(BaseMonitor):
 
     async def _fetch_genres(self):
         try:
-            url = f"https://api.themoviedb.org/3/genre/tv/list?api_key={self.api_key}"
+            url = self.get_api_url("genre/tv/list")
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+                async with session.get(url, headers=self.get_headers()) as response:
                     data = await response.json()
                     return {g["id"]: g["name"] for g in data.get("genres", [])}
         except:
@@ -134,9 +156,19 @@ class TVSeriesMonitor(BaseMonitor):
 
     async def _get_trailer_url(self, series_id):
         try:
-            url = f"https://api.themoviedb.org/3/tv/{series_id}/videos?api_key={self.api_key}"
+            url = self.get_api_url(f"tv/{series_id}/videos")
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    data = await response.json()
+                    for video in data.get("results", []):
+                        if video["site"] == "YouTube" and video["type"] == "Trailer":
+                            return f"https://www.youtube.com/watch?v={video['key']}"
+            
+            # English fallback if no localized trailer
+            if self.tmdb_lang != "en-US":
+                url_en = f"https://api.themoviedb.org/3/tv/{series_id}/videos?language=en-US"
+                if not self.bearer_token and self.api_key: url_en += f"&api_key={self.api_key}"
+                async with session.get(url_en, headers=self.get_headers()) as response:
                     data = await response.json()
                     for video in data.get("results", []):
                         if video["site"] == "YouTube" and video["type"] == "Trailer":
@@ -147,11 +179,11 @@ class TVSeriesMonitor(BaseMonitor):
 
     async def get_latest_item(self):
         """Fetch the single most recent trending TV series for a manual check."""
-        if not self.api_key: return None
+        if not self.bearer_token and not self.api_key: return None
         try:
-            url = f"https://api.themoviedb.org/3/trending/tv/day?api_key={self.api_key}"
+            url = self.get_api_url("trending/tv/day")
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+                async with session.get(url, headers=self.get_headers()) as response:
                     if response.status != 200: return None
                     data = await response.json()
                     results = data.get("results", [])
@@ -195,7 +227,8 @@ class TVSeriesMonitor(BaseMonitor):
                     if poster_path: embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
                     
                     if genre_text:
-                        embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=genre_text, inline=True)
+                        wrapped_genres = textwrap.fill(genre_text, width=35)
+                        embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
                     embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
                     embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
                     embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=first_air_date, guild_id=self.guild_id))
