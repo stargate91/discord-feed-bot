@@ -28,6 +28,7 @@ class StatusCog(commands.Cog, name="status"):
             # Fetch from DB
             db_statuses = await database.get_bot_statuses()
             
+            log.debug(f"Rotating presence... Monitors found: {monitor_count}, DB Statuses: {len(db_statuses)}")
             
             if db_statuses:
                 mode = await database.get_bot_setting("status_rotation_mode", "random")
@@ -53,7 +54,7 @@ class StatusCog(commands.Cog, name="status"):
                 activity_type = type_map.get(s_type, discord.ActivityType.watching)
             else:
                 # Fallback to language file
-                statuses = self.bot.language_data.get("dynamic_status", ["Watching {count} feed(s)"])
+                statuses = self.bot.language_data.get("dynamic_status", ["{count} feeds"])
                 
                 mode = await database.get_bot_setting("status_rotation_mode", "random")
                 if mode == "sequential":
@@ -66,16 +67,18 @@ class StatusCog(commands.Cog, name="status"):
                     
                 activity_type = discord.ActivityType.watching
             
+            log.info(f"Setting presence to: {activity_type.name} {status_text}")
             activity = discord.Activity(type=activity_type, name=status_text)
             await self.bot.change_presence(activity=activity, status=discord.Status.online)
             
             # Update loop interval based on config
             new_interval = int(await database.get_bot_setting("presence_interval_seconds", self.bot.config.get("presence_interval_seconds", 60)))
             if self.status_rotation.seconds != new_interval:
+                log.debug(f"Changing presence rotation interval to {new_interval}s")
                 self.status_rotation.change_interval(seconds=new_interval)
 
         except Exception as e:
-            log.error(f"Error in status_rotation task: {e}")
+            log.error(f"Error in status_rotation task: {e}", exc_info=True)
 
 
 
