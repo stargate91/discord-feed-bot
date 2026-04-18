@@ -28,11 +28,8 @@ class MonitorManager:
 
     def add_monitor(self, monitor_instance):
         """Add an already instantiated monitor."""
-        if monitor_instance.enabled:
-            self.monitors.append(monitor_instance)
-            log.info(f"Added monitor: {monitor_instance.name} ({monitor_instance.platform})")
-        else:
-            log.debug(f"Skipping disabled monitor: {monitor_instance.name}")
+        self.monitors.append(monitor_instance)
+        log.info(f"Added monitor: {monitor_instance.name} ({monitor_instance.platform}) | Enabled: {monitor_instance.enabled}")
 
     async def start_loop(self):
         """Start the background monitoring loop."""
@@ -47,6 +44,8 @@ class MonitorManager:
         
         while self.is_running and not self.bot.is_closed():
             for monitor in self.monitors:
+                if not monitor.enabled:
+                    continue
                 try:
                     log.debug(f"Checking monitor: {monitor.name}", extra={'guild_id': monitor.guild_id})
                     await monitor.check_for_updates()
