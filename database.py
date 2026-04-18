@@ -146,7 +146,7 @@ async def update_monitor_status(monitor_id, guild_id, is_enabled):
     pool = await get_pool()
     await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
-async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None):
+async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None, steam_patch_only=None):
     q_sel = "SELECT discord_channel_id, ping_role_id, extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
     pool = await get_pool()
     row = await pool.fetchrow(q_sel, monitor_id, guild_id)
@@ -170,12 +170,16 @@ async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id,
     if embed_color is not None:
         if embed_color.strip(): extra_settings["embed_color"] = embed_color.strip()
         else: extra_settings.pop("embed_color", None)
+
+    if steam_patch_only is not None:
+        extra_settings["steam_patch_only"] = steam_patch_only
         
     q_upd = '''UPDATE monitors SET name = $1, discord_channel_id = $2, 
                ping_role_id = $3, extra_settings = $4 
                WHERE id = $5 AND guild_id = $6'''
     
     await pool.execute(q_upd, name, final_ch, final_role, json.dumps(extra_settings), monitor_id, guild_id)
+    log.info(f"Monitor {monitor_id} updated in DB: name={name}, ch={final_ch}, role={final_role}")
 
 async def remove_monitor(monitor_id, guild_id):
     q = "DELETE FROM monitors WHERE id = $1 AND guild_id = $2"
