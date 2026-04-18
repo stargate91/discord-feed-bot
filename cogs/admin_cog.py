@@ -97,17 +97,46 @@ class AdminCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
-            # If count is None, purge everything. 
-            # Note: Discord purge limit is usually 100 for a single API call, 
-            # but discord.py purge() handles larger counts by looping.
-            deleted = await target_channel.purge(limit=count)
-            msg = self.bot.get_feedback("purge_success", count=len(deleted), channel=target_channel.name, guild_id=interaction.guild_id)
+            total_deleted = 0
+            chunk_size = 100
+            
+            log.info(f"Admin {interaction.user} started robust purge in #{target_channel.name} (Guild: {interaction.guild_id})")
+            
+            while count is None or total_deleted < count:
+                current_limit = chunk_size
+                if count is not None:
+                    remaining = count - total_deleted
+                    if remaining <= 0: break
+                    current_limit = min(chunk_size, remaining)
+                
+                try:
+                    # purge() in d.py can throw NotFound if a message disappears during the loop
+                    deleted = await target_channel.purge(limit=current_limit)
+                    if not deleted:
+                        break
+                    
+                    total_deleted += len(deleted)
+                    log.info(f"Purge progress: {total_deleted} messages deleted from #{target_channel.name}...")
+                    
+                    if len(deleted) < current_limit:
+                        break
+                except discord.NotFound:
+                    # If we hit an Unknown Message, just retry the next batch
+                    log.warning(f"Purge encountered 404 (Unknown Message) in #{target_channel.name}, continuing...")
+                    continue
+                except Exception as e:
+                    log.error(f"Error during purge chunk in #{target_channel.name}: {e}")
+                    break
+            
+            msg = self.bot.get_feedback("purge_success", count=total_deleted, channel=target_channel.name, guild_id=interaction.guild_id)
             await interaction.followup.send(msg, ephemeral=True)
-            log.info(f"Admin {interaction.user} purged {len(deleted)} messages from #{target_channel.name}")
+            log.info(f"Robust purge completed: {total_deleted} messages deleted from #{target_channel.name}")
             
         except discord.Forbidden:
-            await interaction.followup.send(self.bot.get_feedback("purge_error", error="Missing Permissions (Manage Messages)", guild_id=interaction.guild_id), ephemeral=True)
+            log.error(f"Purge failed in #{target_channel.name}: Forbidden", exc_info=True)
+            await interaction.followup.send(self.bot.get_feedback("purge_error", error="Missing Permissions", guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
+            log.error(f"Purge failed in #{target_channel.name}: {e}", exc_info=True)
             await interaction.followup.send(self.bot.get_feedback("purge_error", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
 class MasterCog(commands.GroupCog, name="master"):
