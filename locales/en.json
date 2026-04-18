@@ -1,7 +1,7 @@
 {
     "new_youtube_alert": "**{name}** just uploaded a new video!",
     "new_stream_alert": "**{name}** is now LIVE!",
-    "new_rss_alert": "New post available: **{title}**",
+    "new_rss_alert": "New entry published from: **{name}**",
     "new_epic_games_alert": "New free game on Epic Games Store: **{name}**!",
     "upcoming_free_game_alert": "Upcoming free game: **{name}**",
     "new_steam_free_alert": "New Steam giveaway: **{title}**",

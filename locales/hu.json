@@ -1,7 +1,7 @@
 {
     "new_youtube_alert": "**{name}** friss videót töltött fel!",
     "new_stream_alert": "**{name}** elindította az élő adást!",
-    "new_rss_alert": "Új bejegyzés jelent meg: **{title}**",
+    "new_rss_alert": "Új bejegyzés jelent meg: **{name}**",
     "new_epic_games_alert": "Ingyen tölthető az Epic Games Store-ban: **{name}**!",
     "upcoming_free_game_alert": "Közelgő ingyenes játék: **{name}**",
     "new_steam_free_alert": "Ingyenes Steam loot érkezett: **{title}**",
