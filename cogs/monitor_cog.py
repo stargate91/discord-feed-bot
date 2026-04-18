@@ -67,7 +67,6 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             log.error(f"Error in /check command for {monitor_name}: {e}", exc_info=True)
             await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
 
-    @monitor_check.autocomplete("monitor_name")
     @app_commands.command(name="repost", description="Resend the latest items to the original channel")
     @app_commands.describe(monitor_name="Which monitor's feed should be reposted?", count="Number of items to repost (1-10)")
     async def monitor_repost(self, interaction: discord.Interaction, monitor_name: str, count: int = 1):
@@ -118,6 +117,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
     @monitor_remove.autocomplete("monitor_name")
     @monitor_start.autocomplete("monitor_name")
     @monitor_stop.autocomplete("monitor_name")
+    @monitor_check.autocomplete("monitor_name")
     async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
         choices = []
         if self.bot.monitor_manager:
