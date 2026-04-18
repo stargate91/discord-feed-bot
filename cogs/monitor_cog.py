@@ -169,17 +169,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     m.enabled = False
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_stop_msg", name=monitor_name), ephemeral=True)
 
-    @monitor_stop.autocomplete("monitor_name")
-    async def stop_autocomplete(self, interaction: discord.Interaction, current: str):
-        choices = []
-        guild_id = interaction.guild_id or 0
-        monitors_cfg = await database.get_monitors_for_guild(guild_id)
-        for m_cfg in monitors_cfg:
-            if m_cfg.get("enabled", True) and current.lower() in m_cfg.get("name", "").lower():
-                choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
-        return choices[:25]
-
     @app_commands.command(name="start", description="Restart a suspended monitor")
+    @app_commands.describe(monitor_name="Which monitor should be restarted?")
     async def monitor_start(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -199,17 +190,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     m.enabled = True
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_restart_msg", name=monitor_name), ephemeral=True)
 
-    @monitor_start.autocomplete("monitor_name")
-    async def start_autocomplete(self, interaction: discord.Interaction, current: str):
-        choices = []
-        guild_id = interaction.guild_id or 0
-        monitors_cfg = await database.get_monitors_for_guild(guild_id)
-        for m_cfg in monitors_cfg:
-            if not m_cfg.get("enabled", True) and current.lower() in m_cfg.get("name", "").lower():
-                choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
-        return choices[:25]
-
     @app_commands.command(name="remove", description="Remove a monitor from the system")
+    @app_commands.describe(monitor_name="Which monitor should be removed?")
     async def monitor_remove(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -228,25 +210,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         
         await interaction.response.send_message(self.bot.get_feedback("remove_monitor_success", name=monitor_name, type=target.get('type','?')), ephemeral=True)
 
-    @monitor_remove.autocomplete("monitor_name")
-    async def remove_autocomplete(self, interaction: discord.Interaction, current: str):
-        try:
-            choices = []
-            guild_id = interaction.guild_id or 0
-            if guild_id == 0:
-                return []
-                
-            monitors_cfg = await database.get_monitors_for_guild(guild_id)
-            for m_cfg in monitors_cfg:
-                name = m_cfg.get("name", "")
-                if current.lower() in name.lower():
-                    choices.append(app_commands.Choice(name=name, value=name))
-            return choices[:25]
-        except Exception as e:
-            log.error(f"Error in remove_autocomplete: {e}")
-            return []
-
     @app_commands.command(name="edit", description="Edit an existing monitor")
+    @app_commands.describe(monitor_name="Which monitor should be edited?")
     async def monitor_edit(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -264,29 +229,29 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         view = EditMonitorWizardView(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), interaction=interaction)
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name), view=view, ephemeral=True)
 
-    @monitor_edit.autocomplete("monitor_name")
-    async def edit_autocomplete(self, interaction: discord.Interaction, current: str):
+    # --- Autocomplete Helpers ---
+    async def _monitor_name_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
         choices = []
         guild_id = interaction.guild_id or 0
+        
+        # Get monitors for this guild from DB (more reliable than manager for all types)
         monitors_cfg = await database.get_monitors_for_guild(guild_id)
+        
         for m_cfg in monitors_cfg:
-            if current.lower() in m_cfg.get("name", "").lower():
-                choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
+            name = m_cfg.get("name", "")
+            if current.lower() in name.lower():
+                choices.append(app_commands.Choice(name=name, value=name))
+                
         return choices[:25]
 
-    @monitor_repost.autocomplete("monitor_name")
-    @monitor_edit.autocomplete("monitor_name")
-    @monitor_remove.autocomplete("monitor_name")
-    @monitor_start.autocomplete("monitor_name")
-    @monitor_stop.autocomplete("monitor_name")
     @monitor_check.autocomplete("monitor_name")
-    async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
-        choices = []
-        if self.bot.monitor_manager:
-            for m in self.bot.monitor_manager.monitors:
-                if current.lower() in m.name.lower():
-                    choices.append(app_commands.Choice(name=m.name, value=m.name))
-        return choices[:25]
+    @monitor_repost.autocomplete("monitor_name")
+    @monitor_stop.autocomplete("monitor_name")
+    @monitor_start.autocomplete("monitor_name")
+    @monitor_remove.autocomplete("monitor_name")
+    @monitor_edit.autocomplete("monitor_name")
+    async def monitor_name_autocomplete_wrapper(self, interaction: discord.Interaction, current: str):
+        return await self._monitor_name_autocomplete(interaction, current)
 
 async def setup(bot):
     await bot.add_cog(MonitorCog(bot))
