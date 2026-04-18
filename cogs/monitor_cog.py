@@ -90,6 +90,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
 
         await interaction.response.defer(ephemeral=True)
         try:
+            import asyncio
             items = await target_monitor.get_latest_items(count)
             if not items:
                 await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
@@ -104,6 +105,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                         view=item.get("view")
                     )
                     sent_count += 1
+                    await asyncio.sleep(0.5) # Rate limit protection
             
             await interaction.followup.send(f"✅ Successfully reposted {sent_count} items from **{monitor_name}** to the original channel.", ephemeral=True)
             
