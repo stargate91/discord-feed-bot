@@ -138,9 +138,12 @@ class GOGFreeMonitor(BaseMonitor):
         if not isinstance(data, list) or not data:
             return [{"empty": True}]
 
+        # Get newest 'count' items from API
+        latest_data = data[:count]
+        
         results = []
-        for i in range(min(len(data), count)):
-            game = data[i]
+        # Reverse the slice to process Oldest -> Newest (sequential reposting)
+        for game in reversed(latest_data):
             na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
             game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
@@ -179,6 +182,4 @@ class GOGFreeMonitor(BaseMonitor):
             
             results.append({"content": f"{alert_text}\n{final_url}", "embed": embed, "view": view})
             
-        # Reverse to get Oldest -> Newest (sequential reposting)
-        results.reverse()
         return results

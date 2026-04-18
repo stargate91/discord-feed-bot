@@ -47,7 +47,7 @@ class EpicGamesMonitor(BaseMonitor):
             log.error(f"Unexpected Epic Games API structure: {e}")
             return
 
-        for game in elements:
+        for game in reversed(elements):
             game_id = game.get("id")
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
             
@@ -185,7 +185,7 @@ class EpicGamesMonitor(BaseMonitor):
                 if Price.get("discountPrice") != 0: is_active = False
 
             is_upcoming = False
-            if not is_active:
+            if not is_active and self.include_upcoming:
                 for offer_wrap in upcoming_offers:
                     for offer in offer_wrap.get("promotionalOffers", []):
                         if offer.get("discountSetting", {}).get("discountPercentage") == 0:
