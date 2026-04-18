@@ -18,12 +18,8 @@ ICON_STAR = "⭐"           # Used for ratings/scores (e.g., TMDB)
 # Used in Wizard platform selection, /monitor list, and Feed Embeds
 TYPE_YOUTUBE = "📺"
 TYPE_RSS = "🔗"
-TYPE_TIKTOK = "🎵"
-TYPE_INSTAGRAM = "📸"
 TYPE_GAME = "🎮"          # Steam News, Epic Games, TMDB Movies/TV
 TYPE_STREAM = "📡"         # Twitch, Kick
-TYPE_REDDIT = "🟠"
-TYPE_TWITTER = "🐦"
 TYPE_STEAM_FREE = "♨️"     # Specialized Steam Free monitor
 TYPE_GOG_FREE = "💜"       # Specialized GOG Free monitor
 TYPE_UNKNOWN = "❓"        # Fallback for undefined types

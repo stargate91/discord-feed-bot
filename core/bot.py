@@ -265,7 +265,7 @@ class FeedBot(commands.Bot):
         
         # Determine language
         master_guilds = self.config.get("master_guild_ids", [])
-        master_lang = self.config.get("master_language", "hu")
+        master_lang = self.config.get("master_language", "en")
         
         # 1. Guild specific
         lang_code = settings.get("language")

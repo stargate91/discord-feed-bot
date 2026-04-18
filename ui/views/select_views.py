@@ -1,8 +1,8 @@
 import discord
 from ui.modals import AlertTemplateModal
 from core.emojis import (
-    TYPE_YOUTUBE, TYPE_RSS, TYPE_TIKTOK, TYPE_INSTAGRAM, 
-    TYPE_GAME, TYPE_STREAM, TYPE_REDDIT, TYPE_TWITTER
+    TYPE_YOUTUBE, TYPE_RSS, 
+    TYPE_GAME, TYPE_STREAM
 )
 
 class AlertTemplateSelectView(discord.ui.View):
@@ -15,13 +15,9 @@ class AlertTemplateSelectView(discord.ui.View):
 
         options = [
             discord.SelectOption(label="YouTube", value="youtube", emoji=TYPE_YOUTUBE),
-            discord.SelectOption(label="RSS", value="rss", emoji=TYPE_RSS),
-            discord.SelectOption(label="TikTok", value="tiktok", emoji=TYPE_TIKTOK),
-            discord.SelectOption(label="Instagram", value="instagram", emoji=TYPE_INSTAGRAM),
-            discord.SelectOption(label="Steam Játék", value="steam_news", emoji=TYPE_GAME),
-            discord.SelectOption(label="Stream", value="stream", emoji=TYPE_STREAM),
-            discord.SelectOption(label="Reddit", value="reddit", emoji=TYPE_REDDIT),
-            discord.SelectOption(label="Twitter/X", value="twitter", emoji=TYPE_TWITTER),
+            discord.SelectOption(label="RSS Feed", value="rss", emoji=TYPE_RSS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_game"), value="steam_news", emoji=TYPE_GAME),
+            discord.SelectOption(label="Stream (Twitch/Kick)", value="stream", emoji=TYPE_STREAM),
         ]
 
         self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id), options=options)

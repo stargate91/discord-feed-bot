@@ -1,14 +1,13 @@
 # Discord Feed Bot
 
-A Discord bot that monitors various sources and posts updates to your server channels. It supports YouTube, TikTok, Instagram, generic RSS feeds, and free game giveaways from Epic Games, Steam and GOG.
+A Discord bot that monitors various sources and posts updates to your server channels. It supports YouTube, generic RSS feeds, and free game giveaways from Epic Games, Steam and GOG.
 
 I built this because I wanted a single bot that could track all my favorite content creators and also let me know when free games pop up. It runs in the background and checks for new stuff on a configurable interval.
 
 ## Features
 
 - **YouTube** - Monitors channels via their official RSS feed
-- **TikTok** - Uses ProxiTok instances to get an RSS feed for TikTok profiles
-- **Instagram** - Works with any RSS bridge service (like rss.app) since Instagram doesn't have native RSS
+- **Generic RSS** - Can monitor any standard RSS/Atom feed
 - **Generic RSS** - Can monitor any standard RSS/Atom feed
 - **Epic Games Store** - Checks for currently free games and optionally upcoming ones using Epic's store API
 - **Steam** - Monitors free game giveaways via GamerPower API
@@ -97,48 +96,6 @@ Monitors a YouTube channel for new video uploads.
 
 - `channel_id` - The YouTube channel ID (the part after `/channel/` in the URL)
 
-#### tiktok
-
-Monitors a TikTok user via a ProxiTok instance.
-
-```json
-{
-    "type": "tiktok",
-    "name": "Some TikToker",
-    "username": "username_here",
-    "instance_url": "https://proxitok.pabloferreiro.es",
-    "discord_channel_id": 123456789,
-    "ping_role_id": 0,
-    "enabled": true
-}
-```
-
-- `username` - TikTok username (with or without the @)
-- `instance_url` - URL of a working ProxiTok instance
-
-Note: ProxiTok instances can go down or stop working. You might need to find a new one if yours stops responding. Check the [ProxiTok wiki](https://github.com/pablouser1/ProxiTok/wiki/Public-instances) for a list.
-
-#### instagram
-
-Monitors an Instagram profile via an external RSS bridge.
-
-```json
-{
-    "type": "instagram",
-    "name": "Some Instagram Page",
-    "username": "instagram_user",
-    "rss_url": "https://rss.app/feeds/your_feed_id.xml",
-    "discord_channel_id": 123456789,
-    "ping_role_id": 0,
-    "enabled": true
-}
-```
-
-- `username` - Instagram username (used for display purposes)
-- `rss_url` - The full RSS feed URL from your RSS bridge service
-
-Instagram doesn't have native RSS so you need to use a third-party service like [rss.app](https://rss.app) or a self-hosted [RSS-Bridge](https://github.com/RSS-Bridge/rss-bridge) to generate a feed.
-
 #### rss
 
 A generic monitor for any standard RSS or Atom feed.
@@ -222,8 +179,6 @@ discord_feed_bot/
     monitor_manager.py - Runs the check loop on an interval
   monitors/
     youtube_monitor.py
-    tiktok_monitor.py
-    instagram_monitor.py
     rss_monitor.py
     epic_games_monitor.py
     steam_free_monitor.py
@@ -249,8 +204,6 @@ Each monitor stores a unique identifier for every item it has seen (video ID, po
 
 ## Known Limitations
 
-- TikTok monitoring depends on ProxiTok instances which can be unreliable
-- Instagram monitoring requires an external RSS bridge service
 - The GamerPower API sometimes includes old giveaways that are technically still "active"
 - GOG doesn't have an official giveaway API so detection might not catch every promotion instantly
 

@@ -114,7 +114,7 @@ class EditMonitorModal(discord.ui.Modal):
 
         self.name_input = discord.ui.TextInput(label=bot.get_feedback("add_monitor_name_label"), default=original_name, required=True)
         self.add_item(self.name_input)
-        self.color_input = discord.ui.TextInput(label="Embed Color (hex)", default=current_color or "", required=False, max_length=7)
+        self.color_input = discord.ui.TextInput(label=bot.get_feedback("ui_label_embed_color_hex"), default=current_color or "", required=False, max_length=7)
         self.add_item(self.color_input)
 
     async def on_submit(self, interaction: discord.Interaction):

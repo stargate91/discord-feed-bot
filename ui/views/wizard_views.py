@@ -32,7 +32,7 @@ class AddMonitorWizardView(discord.ui.View):
         
         # 1. Simplified Channel Select
         ch_options = [
-            discord.SelectOption(label=f"Jelenlegi csatorna (#{self.trigger_interaction.channel.name})", value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch_name", name=self.trigger_interaction.channel.name), value="current", emoji=ICON_LOCATION),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji=ICON_SETTINGS),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID)
@@ -340,10 +340,10 @@ class SetupWizardView(discord.ui.View):
 
     async def create_embed(self):
         embed = discord.Embed(title=self.bot.get_feedback("ui_setup_title"), color=discord.Color.blue())
-        embed.add_field(name="Nyelv", value=self.new_lang.upper(), inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_setup_lang_label"), value=self.new_lang.upper(), inline=True)
         embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.ch_display_name, inline=True)
         embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("setup_admin_role_select").split(".")[1].strip(), value=self.admin_role_display_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("ui_setup_admin_role_label"), value=self.admin_role_display_name, inline=True)
         return embed
 
     async def check_readiness(self, interaction: discord.Interaction):

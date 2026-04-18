@@ -61,47 +61,8 @@ class MasterCog(commands.GroupCog, name="master"):
         self.bot = bot
         super().__init__()
 
-    @app_commands.command(name="settings", description="Globális beállítások módosítása (csak master szerveren)")
-    @app_commands.describe(
-        admin_channel="Globális admin log csatorna",
-        refresh_interval="Monitor lekérdezési ritmus (perc)"
-    )
-    async def master_settings(
-        self,
-        interaction: discord.Interaction, 
-        admin_channel: discord.TextChannel = None, 
-        refresh_interval: app_commands.Range[int, 1, 1440] = None
-    ):
-        config_changed = False
-        details = []
-        
-        if admin_channel:
-            self.bot.config["admin_channel_id"] = admin_channel.id
-            await database.set_bot_setting("admin_channel_id", admin_channel.id) # Save to DB
-            config_changed = True
-            details.append(f"- Admin csatorna: <#{admin_channel.id}>")
-            
-        if refresh_interval:
-            self.bot.config["refresh_interval_minutes"] = refresh_interval
-            self.bot.monitor_manager.refresh_interval = refresh_interval * 60
-            self.bot.restart_monitor_task()
-            await database.set_bot_setting("refresh_interval_minutes", refresh_interval) # Save to DB
-            config_changed = True
-            details.append(f"- Monitor frissítés: **{refresh_interval} perc**")
-            
-        if config_changed:
-            msg = self.bot.get_feedback("master_settings_success", guild_id=interaction.guild_id) + "\n" + "\n".join(details)
-        else:
-            ac_id = self.bot.config.get('admin_channel_id', 0)
-            r_i = self.bot.config.get('refresh_interval_minutes', 10)
-            msg = (self.bot.get_feedback("master_settings_info", guild_id=interaction.guild_id) + "\n" +
-                   self.bot.get_feedback("master_field_admin_ch", id=ac_id, guild_id=interaction.guild_id) + "\n" +
-                   self.bot.get_feedback("master_field_refresh", val=r_i, guild_id=interaction.guild_id))
-        
-        await interaction.response.send_message(msg, ephemeral=True)
-
     @app_commands.command(name="admin-channel", description="Set the global admin log channel")
-    @app_commands.describe(channel="Célcsatorna (üresen hagyva az aktuálisat állítja be)")
+    @app_commands.describe(channel="Target channel (defaults to current if empty)")
     async def master_admin_channel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
         if not self.bot.is_master_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
@@ -112,21 +73,21 @@ class MasterCog(commands.GroupCog, name="master"):
         self.bot.config["admin_channel_id"] = target_channel.id
         await database.set_bot_setting("admin_channel_id", target_channel.id)
         
-        await interaction.response.send_message(f"✅ Globális Admin Log csatorna beállítva: <#{target_channel.id}>", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("master_admin_ch_success", id=target_channel.id, guild_id=interaction.guild_id), ephemeral=True)
 
-    @app_commands.command(name="admin-role", description="Mester hozzáférés delegálása egy specifikus rangnak ezen a szerveren")
-    @app_commands.describe(role="Válaszd ki a mester rangot")
+    @app_commands.command(name="admin-role", description="Delegate master permissions to a specific role on this server")
+    @app_commands.describe(role="Select the master role")
     async def master_admin_role(self, interaction: discord.Interaction, role: discord.Role):
-        # Csak az eredeti Bot Owner adhat ki Master rangot! (Különben bárki felhatalmazhatná magát, ha valahogy Master lesz)
+        # Only Bot Owner can grant Master role
         if not (interaction.user.id == self.bot.owner_id or (self.bot.application and interaction.user.id == self.bot.application.owner.id)):
-            await interaction.response.send_message("❌ Ezt a parancsot csak a Bot Készítője használhatja biztonsági okokból!", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("master_admin_role_owner_only"), ephemeral=True)
             return
             
         await database.update_guild_settings(interaction.guild_id, master_role_id=role.id, bot=self.bot)
-        await interaction.response.send_message(f"👑 Mester jogosultság sikeresen delegálva a következő rangnak: <@&{role.id}>", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("master_admin_role_success", id=role.id), ephemeral=True)
 
-    @app_commands.command(name="refresh-interval", description="Globális monitor lekérdezési ritmus beállítása")
-    @app_commands.describe(minutes="Hány percenként ellenőrizze a bot az új posztokat? (1-1440)")
+    @app_commands.command(name="refresh-interval", description="Set the global monitor refresh interval")
+    @app_commands.describe(minutes="How many minutes between checks? (1-1440)")
     async def master_refresh_interval(self, interaction: discord.Interaction, minutes: app_commands.Range[int, 1, 1440]):
         if not self.bot.is_master_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
@@ -137,7 +98,7 @@ class MasterCog(commands.GroupCog, name="master"):
         self.bot.restart_monitor_task()
         await database.set_bot_setting("refresh_interval_minutes", minutes)
         
-        await interaction.response.send_message(f"🔄 Globális monitor frissítési idő beállítva: **{minutes} perc**", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("master_refresh_interval_success", val=minutes), ephemeral=True)
 
     async def autocomplete_language(self, interaction: discord.Interaction, current: str):
         choices = []
@@ -147,7 +108,7 @@ class MasterCog(commands.GroupCog, name="master"):
         return choices[:25]
 
     @app_commands.command(name="language", description="Set the global master feedback language")
-    @app_commands.describe(lang_code="Nyelv kódja (pl. hu, en)")
+    @app_commands.describe(lang_code="Language code (e.g., hu, en)")
     @app_commands.autocomplete(lang_code=autocomplete_language)
     async def master_language(self, interaction: discord.Interaction, lang_code: str):
         if not self.bot.is_master_admin(interaction.user):
@@ -156,20 +117,20 @@ class MasterCog(commands.GroupCog, name="master"):
 
         lang_code = lang_code.lower()
         if lang_code not in self.bot.locales:
-            return await interaction.response.send_message(f"❌ Ismeretlen nyelv. Elérhető: {', '.join(self.bot.locales.keys())}", ephemeral=True)
+            return await interaction.response.send_message(self.bot.get_feedback("master_lang_unknown", list=', '.join(self.bot.locales.keys())), ephemeral=True)
 
         self.bot.config["master_language"] = lang_code
         self.bot.language_data = self.bot.locales[lang_code]
         await database.set_bot_setting("master_language", lang_code)
 
-        await interaction.response.send_message(f"🌍 Master (Global) nyelv sikeresen beállítva: **{lang_code.upper()}**\n\n*(Ettől függetlenül az UI és a per parancsok a Discordon lokálisak maradnak.)*", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("master_lang_success", lang_code=lang_code.upper()), ephemeral=True)
 
     # --- Status Commands ---
     
-    status_group = app_commands.Group(name="status", description="Bot rich presence kofiguráció (master)")
+    status_group = app_commands.Group(name="status", description="Bot rich presence configuration (master)")
 
     @status_group.command(name="add", description="Add a new bot status to the rotation")
-    @app_commands.describe(activity_type="Tevékenység típusa", text="Státusz szövege (használható: {count})")
+    @app_commands.describe(activity_type="Type of activity", text="Status text (use {count} for feed count)")
     @app_commands.choices(activity_type=[
         app_commands.Choice(name="Playing", value="playing"),
         app_commands.Choice(name="Watching", value="watching"),
@@ -183,7 +144,7 @@ class MasterCog(commands.GroupCog, name="master"):
             return
             
         await database.add_bot_status(activity_type.value, text[:128])
-        await interaction.response.send_message(f"✅ Státusz hozzáadva: **{activity_type.name} {text}**", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("status_add_success", type=activity_type.name, text=text), ephemeral=True)
 
     @status_group.command(name="list", description="List all configured bot statuses")
     async def status_list(self, interaction: discord.Interaction):
@@ -193,11 +154,11 @@ class MasterCog(commands.GroupCog, name="master"):
             
         statuses = await database.get_bot_statuses()
         if not statuses:
-            await interaction.response.send_message("Nincsenek beállítva egyedi státuszok.", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("status_list_empty"), ephemeral=True)
             return
             
         lines = [f"`{s['id']}` - **{s['type'].capitalize()}** {s['text']}" for s in statuses]
-        msg = "### Beállított Bot Státuszok\n" + "\n".join(lines)
+        msg = self.bot.get_feedback("status_list_title") + "\n" + "\n".join(lines)
         await interaction.response.send_message(msg[:2000], ephemeral=True)
 
     async def autocomplete_status(self, interaction: discord.Interaction, current: str):
@@ -210,7 +171,7 @@ class MasterCog(commands.GroupCog, name="master"):
         return choices[:25]
 
     @status_group.command(name="remove", description="Remove an existing bot status")
-    @app_commands.describe(status_id="A törlendő státusz")
+    @app_commands.describe(status_id="Status to delete")
     @app_commands.autocomplete(status_id=autocomplete_status)
     async def status_remove(self, interaction: discord.Interaction, status_id: str):
         if not self.bot.is_master_admin(interaction.user):
@@ -218,14 +179,14 @@ class MasterCog(commands.GroupCog, name="master"):
             return
             
         if not status_id.isdigit():
-            await interaction.response.send_message("❌ Érvénytelen azonosító.", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
             return
             
         await database.remove_bot_status(int(status_id))
-        await interaction.response.send_message(f"🗑️ Státusz (ID: {status_id}) törölve.", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("status_remove_success", id=status_id), ephemeral=True)
 
     @status_group.command(name="edit", description="Edit an existing bot status")
-    @app_commands.describe(status_id="Szerkesztendő státusz", activity_type="Új típus", text="Új szöveg")
+    @app_commands.describe(status_id="Status to edit", activity_type="New type", text="New text")
     @app_commands.autocomplete(status_id=autocomplete_status)
     @app_commands.choices(activity_type=[
         app_commands.Choice(name="Playing", value="playing"),
@@ -240,17 +201,17 @@ class MasterCog(commands.GroupCog, name="master"):
             return
             
         if not status_id.isdigit():
-            await interaction.response.send_message("❌ Érvénytelen azonosító.", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
             return
             
         await database.update_bot_status(int(status_id), activity_type.value, text[:128])
-        await interaction.response.send_message(f"✏️ Státusz (ID: {status_id}) frissítve erre: **{activity_type.name} {text}**", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("status_edit_success", id=status_id, type=activity_type.name, text=text), ephemeral=True)
 
     @status_group.command(name="setup", description="Configure how the status changes")
-    @app_commands.describe(mode="Státusz léptetési mód (sorban vagr random)", interval="Másodperc frissítésenként")
+    @app_commands.describe(mode="Status rotation mode", interval="Seconds per rotation")
     @app_commands.choices(mode=[
         app_commands.Choice(name="Random", value="random"),
-        app_commands.Choice(name="Sequential (Egymás után)", value="sequential")
+        app_commands.Choice(name="Sequential", value="sequential")
     ])
     async def status_setup(self, interaction: discord.Interaction, mode: app_commands.Choice[str], interval: app_commands.Range[int, 10, 3600]):
         if not self.bot.is_master_admin(interaction.user):
@@ -261,7 +222,7 @@ class MasterCog(commands.GroupCog, name="master"):
         await database.set_bot_setting("presence_interval_seconds", interval)
         self.bot.config["presence_interval_seconds"] = interval
         
-        await interaction.response.send_message(f"⚙️ Státusz konfiguráció frissítve:\n- Mód: **{mode.name}**\n- Váltás: **{interval} mp**", ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("status_setup_success", mode=mode.name, val=interval), ephemeral=True)
 
 
 async def setup(bot):

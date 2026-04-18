@@ -5,9 +5,9 @@ from ui.views.wizard_views import AddMonitorWizardView, EditMonitorWizardView
 from logger import log
 import database
 from core.emojis import (
-    TYPE_YOUTUBE, TYPE_RSS, TYPE_TIKTOK, TYPE_INSTAGRAM, 
-    TYPE_GAME, TYPE_STEAM_FREE, TYPE_GOG_FREE, TYPE_REDDIT, 
-    TYPE_TWITTER, TYPE_STREAM, TYPE_UNKNOWN, STATUS_SUCCESS, STATUS_ERROR
+    TYPE_YOUTUBE, TYPE_RSS, 
+    TYPE_GAME, TYPE_STEAM_FREE, TYPE_GOG_FREE, 
+    TYPE_STREAM, TYPE_UNKNOWN, STATUS_SUCCESS, STATUS_ERROR
 )
 
 class MonitorCog(commands.GroupCog, name="monitor"):
@@ -15,9 +15,9 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         self.bot = bot
         super().__init__()
 
-    @app_commands.command(name="add", description="Új monitor hozzáadása a rendszerhez")
+    @app_commands.command(name="add", description="Add a new monitor to the system")
     async def monitor_add(self, interaction: discord.Interaction):
-        """[Admin] Megnyitja a monitor varázslót új feed-ek beállításához."""
+        """[Admin] Opens the monitor wizard to configure new feeds."""
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
@@ -26,10 +26,10 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         msg = self.bot.get_feedback("ui_monitor_add_msg")
         await interaction.response.send_message(msg, view=view, ephemeral=True)
 
-    @app_commands.command(name="check", description="Manuális ellenőrzés és legutóbbi tartalom küldése")
-    @app_commands.describe(monitor_name="Melyik feed-et ellenőrizze a bot?")
+    @app_commands.command(name="check", description="Manual check and send the latest content")
+    @app_commands.describe(monitor_name="Which feed should the bot check?")
     async def monitor_check(self, interaction: discord.Interaction, monitor_name: str):
-        """[Admin] Manuálisan lekéri és elküldi a legfrissebb bejegyzést egy feed-ből."""
+        """[Admin] Manually fetches and sends the latest entry from a feed."""
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
@@ -68,7 +68,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     choices.append(app_commands.Choice(name=m.name, value=m.name))
         return choices[:25]
 
-    @app_commands.command(name="list", description="Aktív és inaktív monitorok listázása")
+    @app_commands.command(name="list", description="List active and inactive monitors")
     async def monitor_list(self, interaction: discord.Interaction):
         """[Admin] List all configured monitors with their status."""
         if not self.bot.is_bot_admin(interaction.user):
@@ -85,13 +85,9 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         type_emojis = {
             "youtube": TYPE_YOUTUBE, 
             "rss": TYPE_RSS, 
-            "tiktok": TYPE_TIKTOK, 
-            "instagram": TYPE_INSTAGRAM, 
             "epic_games": TYPE_GAME, 
             "steam_free": TYPE_STEAM_FREE, 
             "gog_free": TYPE_GOG_FREE, 
-            "reddit": TYPE_REDDIT, 
-            "twitter": TYPE_TWITTER, 
             "stream": TYPE_STREAM,
             "steam_news": TYPE_GAME,
             "movie": TYPE_GAME,
@@ -107,8 +103,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         embed.set_footer(text=self.bot.get_feedback("list_monitors_footer", count=len(monitors_cfg)))
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="stop", description="Létező monitor felfüggesztése")
-    @app_commands.describe(monitor_name="Melyik monitort szüneteltessük?")
+    @app_commands.command(name="stop", description="Suspend an existing monitor")
+    @app_commands.describe(monitor_name="Which monitor should be paused?")
     async def monitor_stop(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -138,7 +134,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
         return choices[:25]
 
-    @app_commands.command(name="start", description="Felfüggesztett monitor újraindítása")
+    @app_commands.command(name="start", description="Restart a suspended monitor")
     async def monitor_start(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -168,7 +164,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
         return choices[:25]
 
-    @app_commands.command(name="remove", description="Monitor eltávolítása a rendszerből")
+    @app_commands.command(name="remove", description="Remove a monitor from the system")
     async def monitor_remove(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
@@ -205,7 +201,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             log.error(f"Error in remove_autocomplete: {e}")
             return []
 
-    @app_commands.command(name="edit", description="Létező monitor szerkesztése")
+    @app_commands.command(name="edit", description="Edit an existing monitor")
     async def monitor_edit(self, interaction: discord.Interaction, monitor_name: str):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
