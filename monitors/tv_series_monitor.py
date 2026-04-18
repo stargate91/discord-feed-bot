@@ -82,9 +82,16 @@ class TVSeriesMonitor(BaseMonitor):
 
         for series in new_entries:
             series_id = str(series.get("id"))
-            name = series.get("name", self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id))
+            name = series.get("name", "")
             overview = series.get("overview", "")
             first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+            # English fallback for missing name/overview
+            if (not name or not overview) and self.tmdb_lang != "en-US":
+                en_data = await self._get_en_fallback("tv", series_id)
+                if not name: name = en_data.get("name", "")
+                if not overview: overview = en_data.get("overview", "")
+            if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
             
             # Genres
             genre_ids = series.get("genre_ids", [])
@@ -142,6 +149,17 @@ class TVSeriesMonitor(BaseMonitor):
         if self.is_first_run:
             log.info("Initial TV Series seed completed.")
             self.is_first_run = False
+
+    async def _get_en_fallback(self, media_type, item_id):
+        """Fetch English details as fallback when localized data is missing."""
+        try:
+            url = f"https://api.themoviedb.org/3/{media_type}/{item_id}?language=en-US"
+            if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    return await response.json()
+        except:
+            return {}
 
     async def _fetch_genres(self):
         try:
@@ -210,9 +228,17 @@ class TVSeriesMonitor(BaseMonitor):
     async def _format_series(self, series, genre_map):
         """Helper to format a TMDB series into standard output mapping."""
         series_id = series.get("id")
-        name = series.get("name", self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id))
+        name = series.get("name", "")
+        overview = series.get("overview", "")
         tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
         first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+        # English fallback for missing name/overview
+        if (not name or not overview) and self.tmdb_lang != "en-US":
+            en_data = await self._get_en_fallback("tv", series_id)
+            if not name: name = en_data.get("name", "")
+            if not overview: overview = en_data.get("overview", "")
+        if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
         
         # Ratings
         vote_avg = series.get("vote_average", 0)
@@ -233,7 +259,7 @@ class TVSeriesMonitor(BaseMonitor):
         })
         
         # Wrap overview for better readability
-        wrapped_overview = textwrap.fill(series.get("overview", "")[:1000], width=42)
+        wrapped_overview = textwrap.fill(overview[:1000], width=42)
         
         embed = discord.Embed(
             title=name[:256],

@@ -37,6 +37,17 @@ class MovieMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"tmdb_now_playing:{self.tmdb_lang}"
 
+    async def _get_en_fallback(self, movie_id):
+        """Fetch English details as fallback when localized data is missing."""
+        try:
+            url = f"https://api.themoviedb.org/3/movie/{movie_id}?language=en-US"
+            if not self.bearer_token and self.api_key: url += f"&api_key={self.api_key}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    return await response.json()
+        except:
+            return {}
+
     async def _fetch_genres(self):
         """Fetch and cache genre names for the current language."""
         if not self.bot.monitor_manager: return {}
@@ -144,9 +155,16 @@ class MovieMonitor(BaseMonitor):
 
         for movie in new_entries:
             movie_id = str(movie.get("id"))
-            title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
+            title = movie.get("title", "")
             overview = movie.get("overview", "")
             release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+            # English fallback for missing title/overview
+            if (not title or not overview) and self.tmdb_lang != "en-US":
+                en_data = await self._get_en_fallback(movie_id)
+                if not title: title = en_data.get("title", "")
+                if not overview: overview = en_data.get("overview", "")
+            if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
             
             # Genres
             genre_ids = movie.get("genre_ids", [])
@@ -239,9 +257,17 @@ class MovieMonitor(BaseMonitor):
     async def _format_movie(self, movie, genre_map):
         """Helper to format a TMDB movie into standard output mapping."""
         movie_id = movie.get("id")
-        title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
+        title = movie.get("title", "")
+        overview = movie.get("overview", "")
         tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
         release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+        # English fallback for missing title/overview
+        if (not title or not overview) and self.tmdb_lang != "en-US":
+            en_data = await self._get_en_fallback(movie_id)
+            if not title: title = en_data.get("title", "")
+            if not overview: overview = en_data.get("overview", "")
+        if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
         
         # Ratings
         vote_avg = movie.get("vote_average", 0)
@@ -262,7 +288,7 @@ class MovieMonitor(BaseMonitor):
         })
         
         # Wrap overview for better readability
-        wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)
+        wrapped_overview = textwrap.fill(overview[:1000], width=42)
         
         embed = discord.Embed(
             title=title[:256],
