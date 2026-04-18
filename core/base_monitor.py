@@ -65,8 +65,8 @@ class BaseMonitor(ABC):
         """Return a key for the shared poll registry. Subclasses should override if pollable."""
         return None
         
-    def get_color(self, default_hex=0x95A5A6):
-        """Get the localized/custom embed color, falling back to global default (0x95A5A6)."""
+    def get_color(self, default_hex=0x3d3f45):
+        """Get the localized/custom embed color, falling back to global default (0x3d3f45)."""
         # Config uses extra_settings which contains embed_color if configured
         extra = self.config.get("extra_settings", {})
         if extra and isinstance(extra, dict):
