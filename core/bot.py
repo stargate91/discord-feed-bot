@@ -93,9 +93,6 @@ class FeedBot(commands.Bot):
             if master_cog:
                 self.tree.add_command(master_cog.app_command, guild=guild_obj)
                 
-            status_cog = self.get_cog("status")
-            if status_cog:
-                self.tree.add_command(status_cog.app_command, guild=guild_obj)
 
         # Migration: Load from config.json if DB is empty
         await self._migrate_config_to_db()
