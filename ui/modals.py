@@ -26,9 +26,16 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
         self.needs_url = self.monitor_type not in types_without_url
 
         if self.needs_url:
+            label = bot.get_feedback("add_monitor_id_label")
+            placeholder = bot.get_feedback("ui_monitor_add_ph_url")
+            
+            if self.monitor_type == "crypto":
+                label = bot.get_feedback("ui_monitor_crypto_input_label")
+                placeholder = bot.get_feedback("ui_monitor_crypto_input_ph")
+
             self.url_input = discord.ui.TextInput(
-                label=bot.get_feedback("add_monitor_id_label"),
-                placeholder=bot.get_feedback("ui_monitor_add_ph_url"),
+                label=label,
+                placeholder=placeholder,
                 required=True
             )
             self.add_item(self.url_input)

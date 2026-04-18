@@ -63,6 +63,7 @@ class AddMonitorWizardView(discord.ui.View):
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news"), value="steam_news"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie"), value="movie"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series"), value="tv_series"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto"), value="crypto"),
         ]
         self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform"), options=platform_options, row=2)
         self.type_select.callback = self.type_callback

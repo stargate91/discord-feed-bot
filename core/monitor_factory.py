@@ -7,6 +7,7 @@ from monitors.stream_monitor import StreamMonitor
 from monitors.steam_news_monitor import SteamNewsMonitor
 from monitors.movie_monitor import MovieMonitor
 from monitors.tv_series_monitor import TVSeriesMonitor
+from monitors.crypto_monitor import CryptoMonitor
 
 def create_monitor_instance(bot, m_config):
     """Factory function to create a monitor instance from config."""
@@ -32,4 +33,6 @@ def create_monitor_instance(bot, m_config):
         return TVSeriesMonitor(bot, m_config)
     elif m_type == "stream":
         return StreamMonitor(bot, m_config)
+    elif m_type == "crypto":
+        return CryptoMonitor(bot, m_config)
     return None
