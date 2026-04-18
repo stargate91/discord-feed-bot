@@ -126,6 +126,7 @@ class EpicGamesMonitor(BaseMonitor):
                 expiry_ts = int(dt.timestamp())
             except: pass
 
+        embed = discord.Embed(
             title=title,
             url=game_url,
             description=description[:300] + "..." if len(description) > 300 else description,
