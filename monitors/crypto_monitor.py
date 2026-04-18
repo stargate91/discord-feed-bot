@@ -94,7 +94,7 @@ class CryptoMonitor(BaseMonitor):
                 
         self.coin_id_map = mapping
 
-    async def check(self):
+    async def check_for_updates(self):
         if not self.targets:
             return
 
