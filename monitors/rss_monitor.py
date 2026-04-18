@@ -165,15 +165,18 @@ class RSSMonitor(BaseMonitor):
         if img_url:
             embed.set_image(url=img_url)
 
-        alert_text = self.bot.get_feedback("new_rss_alert", guild_id=self.guild_id)
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        alert_text = self.get_alert_message({
+            "name": author_name,
+            "title": entry_title,
+            "url": entry_link
+        })
         
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=entry_link, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{ping}{alert_text}\n{entry_link}",
+            "content": f"{alert_text}\n{entry_link}",
             "embed": embed,
             "view": view
         }

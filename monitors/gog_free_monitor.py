@@ -172,15 +172,18 @@ class GOGFreeMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
         embed.set_footer(text=f"{self.bot.get_feedback('footer_gog', guild_id=self.guild_id)} • GamerPower")
 
-        alert_text = self.bot.get_feedback("new_gog_free_alert", guild_id=self.guild_id)
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        alert_text = self.get_alert_message({
+            "name": "GOG",
+            "title": title,
+            "url": final_url
+        })
         
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_view_gog", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=final_url, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{ping}{alert_text}\n{final_url}",
+            "content": f"{alert_text}\n{final_url}",
             "embed": embed,
             "view": view
         }

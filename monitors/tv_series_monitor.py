@@ -176,8 +176,11 @@ class TVSeriesMonitor(BaseMonitor):
                     
                     trailer_url = await self._get_trailer_url(series_id)
                     
-                    alert_text = self.bot.get_feedback("new_tv_series_alert", guild_id=self.guild_id)
-                    ping = f"{self.ping_role} " if self.ping_role else ""
+                    alert_text = self.get_alert_message({
+                        "name": self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id),
+                        "title": name,
+                        "url": tmdb_url
+                    })
                     
                     # Wrap overview for better readability
                     wrapped_overview = textwrap.fill(series.get("overview", "")[:1000], width=42)
@@ -203,7 +206,7 @@ class TVSeriesMonitor(BaseMonitor):
                         view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
                     
                     return {
-                        "content": f"{ping}{alert_text}\n{tmdb_url}",
+                        "content": f"{alert_text}\n{tmdb_url}",
                         "embed": embed,
                         "view": view
                     }

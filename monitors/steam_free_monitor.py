@@ -165,15 +165,18 @@ class SteamFreeMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
         embed.set_footer(text=f"{self.bot.get_feedback('footer_steam_news', guild_id=self.guild_id).split(' ')[0]} • GamerPower")
 
-        alert_text = self.bot.get_feedback("new_steam_free_alert", guild_id=self.guild_id)
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        alert_text = self.get_alert_message({
+            "name": "Steam",
+            "title": title,
+            "url": game_url
+        })
         
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_view_steam", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{ping}{alert_text}\n{game_url}",
+            "content": f"{alert_text}\n{game_url}",
             "embed": embed,
             "view": view
         }

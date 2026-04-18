@@ -201,7 +201,11 @@ class EpicGamesMonitor(BaseMonitor):
             except: pass
 
         alert_key = "new_epic_games_alert" if is_active else "upcoming_free_game_alert"
-        alert_text = self.bot.get_feedback(alert_key, guild_id=self.guild_id)
+        alert_text = self.get_alert_message({
+            "name": title,
+            "url": game_url
+        })
+        
         embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x000000))
         if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url=THUMBNAIL_EPIC)
@@ -211,9 +215,8 @@ class EpicGamesMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
         embed.set_footer(text="Epic Games Store")
         
-        ping = f"{self.ping_role} " if self.ping_role else ""
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
-        return {"content": f"{ping}{alert_text}\n{game_url}", "embed": embed, "view": view}
+        return {"content": f"{alert_text}\n{game_url}", "embed": embed, "view": view}

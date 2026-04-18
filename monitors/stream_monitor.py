@@ -175,15 +175,21 @@ class StreamMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id), value=f"{viewers:,}", inline=True)
         embed.set_footer(text=platform_name)
 
-        alert_text = self.bot.get_feedback("new_twitch_alert" if self.stream_platform == "twitch" else "new_kick_alert", name=display_name, guild_id=self.guild_id)
-        ping = f"{self.ping_role} " if self.ping_role else ""
+        # Format alert
+        alert_text = self.get_alert_message({
+            "name": display_name,
+            "title": title,
+            "url": stream_url,
+            "game": game,
+            "platform": platform_name
+        })
         
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=stream_url, style=discord.ButtonStyle.link))
 
         return {
-            "content": f"{ping}{alert_text}\n{stream_url}",
+            "content": f"{alert_text}\n{stream_url}",
             "embed": embed,
             "view": view
         }

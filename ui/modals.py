@@ -227,7 +227,11 @@ class ManualInputModal(discord.ui.Modal):
             if val.isdigit():
                 target = guild.get_channel(int(val))
             else:
+                # Case-insensitive search for channels
                 target = discord.utils.get(guild.text_channels, name=val.lower())
+                if not target:
+                    # Alternative search and try to match exactly ignoring case manually
+                    target = next((c for c in guild.text_channels if c.name.lower() == val.lower()), None)
             
             if target:
                 setattr(self.parent_view, self.id_attr, target.id)
@@ -241,7 +245,10 @@ class ManualInputModal(discord.ui.Modal):
             if val.isdigit():
                 target = guild.get_role(int(val))
             else:
+                # Case-insensitive search for roles
                 target = discord.utils.get(guild.roles, name=val)
+                if not target:
+                    target = next((r for r in guild.roles if r.name.lower() == val.lower()), None)
             
             if target:
                 setattr(self.parent_view, self.id_attr, target.id)

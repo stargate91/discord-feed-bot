@@ -110,16 +110,18 @@ class YouTubeMonitor(BaseMonitor):
         short_link = f"https://youtu.be/{video_id}"
         
         # Format localized alert message
-        alert_text = self.bot.get_feedback("new_video_alert_format", channel=author_name, guild_id=self.guild_id)
-        
-        ping = f"{self.ping_role}\n" if self.ping_role else ""
+        alert_text = self.get_alert_message({
+            "name": author_name,
+            "title": entry_title,
+            "url": short_link
+        })
         
         view = discord.ui.View()
         btn_label = self.bot.get_feedback("btn_view_youtube", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{ping}{alert_text}\n{short_link}",
+            "content": f"{alert_text}\n{short_link}",
             "embed": None,
             "view": view
         }

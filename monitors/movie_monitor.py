@@ -237,7 +237,11 @@ class MovieMonitor(BaseMonitor):
                     
                     trailer_url = await self._get_trailer_url(movie_id)
                     
-                    alert_text = self.bot.get_feedback("new_movie_alert", name=title, guild_id=self.guild_id)
+                    alert_text = self.get_alert_message({
+                        "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
+                        "title": title,
+                        "url": tmdb_url
+                    })
                     
                     # Wrap overview for better readability
                     wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)
