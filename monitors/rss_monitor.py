@@ -33,7 +33,8 @@ class RSSMonitor(BaseMonitor):
             # Fetch the feed as a blocking operation in an executor
             try:
                 loop = asyncio.get_event_loop()
-                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+                # Use User-Agent for feedparser
+                feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url, agent=USER_AGENT))
                 if hasattr(feed, 'entries'):
                     self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
             except Exception as e:
@@ -71,7 +72,7 @@ class RSSMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=entry_title[:256],
                 url=entry_link,
-                color=self.get_color() # Default 0x95A5A6
+                color=self.get_color(0x3d3f45)
             )
             embed.set_author(name=author_name)
             
@@ -129,7 +130,7 @@ class RSSMonitor(BaseMonitor):
 
         try:
             loop = asyncio.get_event_loop()
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url, agent=USER_AGENT))
         except Exception as e:
             log.error(f"Manual check failed for RSS {self.name}: {e}")
             return []
@@ -157,7 +158,7 @@ class RSSMonitor(BaseMonitor):
         embed = discord.Embed(
             title=entry_title[:256],
             url=entry_link,
-            color=self.get_color()
+            color=self.get_color(0x3d3f45)
         )
         embed.set_author(name=author_name)
         
