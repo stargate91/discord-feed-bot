@@ -55,6 +55,60 @@ class AdminCog(commands.Cog):
         self.bot.tree.clear_commands(guild=ctx.guild)
         await self.bot.tree.sync(guild=ctx.guild)
         await ctx.send(self.bot.get_feedback("clear_commands_success"))
+        
+    # --- Slash Commands ---
+    
+    async def autocomplete_purge_channels(self, interaction: discord.Interaction, current: str):
+        """Autocomplete only channels that have a monitor configured in this guild."""
+        monitors = await database.get_monitors_for_guild(interaction.guild_id)
+        channel_ids = {m["discord_channel_id"] for m in monitors if m.get("discord_channel_id")}
+        
+        choices = []
+        for ch_id in channel_ids:
+            channel = interaction.guild.get_channel(ch_id)
+            if not channel:
+                # Try fetching if not in cache
+                try: channel = await interaction.guild.fetch_channel(ch_id)
+                except: continue
+                
+            if channel and isinstance(channel, discord.TextChannel):
+                if current.lower() in channel.name.lower():
+                    choices.append(app_commands.Choice(name=f"#{channel.name}", value=str(ch_id)))
+        
+        return choices[:25]
+
+    @app_commands.command(name="purge", description="Purge messages from a monitored channel")
+    @app_commands.describe(channel_id="Which channel to clean up? (Only monitored channels list)", count="How many posts to delete? (Leave empty for all)")
+    @app_commands.autocomplete(channel_id=autocomplete_purge_channels)
+    async def purge(self, interaction: discord.Interaction, channel_id: str, count: int = None):
+        """[Admin] Deletes messages from a specific monitored channel."""
+        if not self.bot.is_bot_admin(interaction.user):
+            await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
+            return
+
+        target_channel = interaction.guild.get_channel(int(channel_id))
+        if not target_channel or not isinstance(target_channel, discord.TextChannel):
+            # Try fetch
+            try: target_channel = await interaction.guild.fetch_channel(int(channel_id))
+            except: 
+                await interaction.response.send_message(self.bot.get_feedback("error_channel_not_found", guild_id=interaction.guild_id), ephemeral=True)
+                return
+
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # If count is None, purge everything. 
+            # Note: Discord purge limit is usually 100 for a single API call, 
+            # but discord.py purge() handles larger counts by looping.
+            deleted = await target_channel.purge(limit=count)
+            msg = self.bot.get_feedback("purge_success", count=len(deleted), channel=target_channel.name, guild_id=interaction.guild_id)
+            await interaction.followup.send(msg, ephemeral=True)
+            log.info(f"Admin {interaction.user} purged {len(deleted)} messages from #{target_channel.name}")
+            
+        except discord.Forbidden:
+            await interaction.followup.send(self.bot.get_feedback("purge_error", error="Missing Permissions (Manage Messages)", guild_id=interaction.guild_id), ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(self.bot.get_feedback("purge_error", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
 class MasterCog(commands.GroupCog, name="master"):
     def __init__(self, bot):
