@@ -3,6 +3,8 @@ import discord
 from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
+# Standard User-Agent to avoid being blocked
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 from core.emojis import THUMBNAIL_EPIC
 import database
 
@@ -28,7 +30,7 @@ class EpicGamesMonitor(BaseMonitor):
         else:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url) as response:
+                    async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch Epic Games API: {response.status}")
                             return
@@ -124,11 +126,10 @@ class EpicGamesMonitor(BaseMonitor):
                 expiry_ts = int(dt.timestamp())
             except: pass
 
-        embed = discord.Embed(
             title=title,
             url=game_url,
             description=description[:300] + "..." if len(description) > 300 else description,
-            color=self.get_color()
+            color=self.get_color(0x3d3f45)
         )
         if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url=THUMBNAIL_EPIC)
@@ -151,7 +152,7 @@ class EpicGamesMonitor(BaseMonitor):
         """Fetch the most recent free game from Epic Games Store."""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url) as response:
+                async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                     if response.status != 200: return None
                     data = await response.json()
             elements = data["data"]["Catalog"]["searchStore"]["elements"]
@@ -206,7 +207,7 @@ class EpicGamesMonitor(BaseMonitor):
             "url": game_url
         })
         
-        embed = discord.Embed(title=title, url=game_url, color=self.get_color())
+        embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x3d3f45))
         if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url=THUMBNAIL_EPIC)
         if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):

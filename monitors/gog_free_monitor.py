@@ -4,6 +4,8 @@ from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
 from core.emojis import THUMBNAIL_GOG
+# Standard User-Agent
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 import database
 
 class GOGFreeMonitor(BaseMonitor):
@@ -27,7 +29,7 @@ class GOGFreeMonitor(BaseMonitor):
         else:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url) as response:
+                    async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status not in (200, 201):
                             log.error(f"Failed to fetch GamerPower API for GOG: {response.status}")
                             return
@@ -83,7 +85,7 @@ class GOGFreeMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=title,
                 url=final_url,
-                color=self.get_color()
+                color=self.get_color(0x3d3f45)
             )
             if image_url:
                 embed.set_image(url=image_url)
@@ -119,7 +121,7 @@ class GOGFreeMonitor(BaseMonitor):
         import aiohttp
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.api_url) as response:
+                async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                     if response.status not in (200, 201):
                         return None
                     data = await response.json()
@@ -156,7 +158,7 @@ class GOGFreeMonitor(BaseMonitor):
         embed = discord.Embed(
             title=title,
             url=final_url,
-            color=self.get_color(0x86328A) 
+            color=self.get_color(0x3d3f45)
         )
         if image_url:
             embed.set_image(url=image_url)
