@@ -209,68 +209,83 @@ class MovieMonitor(BaseMonitor):
 
     async def get_latest_item(self):
         """Fetch the most recent film for manual check."""
-        if not self.bearer_token and not self.api_key: return None
+        items = await self.get_latest_items(1)
+        return items[0] if items else None
+
+    async def get_latest_items(self, count=1):
+        """Fetch the N most recent trending movies in chronological order."""
+        if not self.bearer_token and not self.api_key: return []
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.get_api_url(), headers=self.get_headers()) as response:
-                    if response.status != 200: return None
+                    if response.status != 200: return []
                     data = await response.json()
                     results = data.get("results", [])
-                    if not results: return None
+                    if not results: return []
                     
-                    movie = results[0]
-                    movie_id = movie.get("id")
-                    title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
-                    tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
-                    release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
-                    
-                    # Ratings
-                    vote_avg = movie.get("vote_average", 0)
-                    vote_count = movie.get("vote_count", 0)
-                    na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-                    score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+                    # Get top N and reverse for chronological order
+                    entries = results[:count]
+                    entries.reverse()
 
                     genre_map = await self._fetch_genres()
-                    genre_ids = movie.get("genre_ids", [])
-                    genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
-                    genre_text = ", ".join(genre_names) if genre_names else None
-                    
-                    trailer_url = await self._get_trailer_url(movie_id)
-                    
-                    alert_text = self.get_alert_message({
-                        "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
-                        "title": title,
-                        "url": tmdb_url
-                    })
-                    
-                    # Wrap overview for better readability
-                    wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)
-                    
-                    embed = discord.Embed(
-                        title=title[:256],
-                        url=tmdb_url,
-                        description=wrapped_overview,
-                        color=self.get_color(0x01d277)
-                    )
-                    poster_path = movie.get("poster_path")
-                    if poster_path:
-                        embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
-                    
-                    if genre_text:
-                        wrapped_genres = textwrap.fill(genre_text, width=35)
-                        embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
-                    
-                    embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
-                    embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
-                        
-                    view = discord.ui.View()
-                    btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
-                    view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
-                    
-                    if trailer_url:
-                        view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
-                    
-                    return {"content": f"{alert_text}\n{tmdb_url}", "embed": embed, "view": view}
+                    items = []
+                    for movie in entries:
+                        items.append(await self._format_movie(movie, genre_map))
+                    return items
         except Exception as e:
-            log.error(f"Error in get_latest_item for movie: {e}")
-            return None
+            log.error(f"Error in get_latest_items for movie: {e}")
+            return []
+
+    async def _format_movie(self, movie, genre_map):
+        """Helper to format a TMDB movie into standard output mapping."""
+        movie_id = movie.get("id")
+        title = movie.get("title", self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id))
+        tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
+        release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+        
+        # Ratings
+        vote_avg = movie.get("vote_average", 0)
+        vote_count = movie.get("vote_count", 0)
+        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+
+        genre_ids = movie.get("genre_ids", [])
+        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
+        genre_text = ", ".join(genre_names) if genre_names else None
+        
+        trailer_url = await self._get_trailer_url(movie_id)
+        
+        alert_text = self.get_alert_message({
+            "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
+            "title": title,
+            "url": tmdb_url
+        })
+        
+        # Wrap overview for better readability
+        wrapped_overview = textwrap.fill(movie.get("overview", "")[:1000], width=42)
+        
+        embed = discord.Embed(
+            title=title[:256],
+            url=tmdb_url,
+            description=wrapped_overview,
+            color=self.get_color(0x01d277)
+        )
+        poster_path = movie.get("poster_path")
+        if poster_path:
+            embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
+        
+        if genre_text:
+            wrapped_genres = textwrap.fill(genre_text, width=35)
+            embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
+        
+        embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
+        embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
+            
+        view = discord.ui.View()
+        btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
+        view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
+        
+        if trailer_url:
+            view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+        
+        return {"content": f"{alert_text}\n{tmdb_url}", "embed": embed, "view": view}

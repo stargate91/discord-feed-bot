@@ -68,6 +68,54 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
 
     @monitor_check.autocomplete("monitor_name")
+    @app_commands.command(name="repost", description="Resend the latest items to the original channel")
+    @app_commands.describe(monitor_name="Which monitor's feed should be reposted?", count="Number of items to repost (1-10)")
+    async def monitor_repost(self, interaction: discord.Interaction, monitor_name: str, count: int = 1):
+        """[Admin] Resends the last N items to the monitor's original channel."""
+        if not self.bot.is_bot_admin(interaction.user):
+            await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
+            return
+            
+        count = max(1, min(count, 10))
+        target_monitor = None
+        if self.bot.monitor_manager:
+            for m in self.bot.monitor_manager.monitors:
+                if m.name == monitor_name:
+                    target_monitor = m
+                    break
+        
+        if not target_monitor:
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        try:
+            items = await target_monitor.get_latest_items(count)
+            if not items:
+                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
+                return
+
+            sent_count = 0
+            for item in items:
+                if item:
+                    await target_monitor.send_update(
+                        content=item.get("content"),
+                        embed=item.get("embed"),
+                        view=item.get("view")
+                    )
+                    sent_count += 1
+            
+            await interaction.followup.send(f"✅ Successfully reposted {sent_count} items from **{monitor_name}** to the original channel.", ephemeral=True)
+            
+        except Exception as e:
+            log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)
+            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
+
+    @monitor_repost.autocomplete("monitor_name")
+    @monitor_edit.autocomplete("monitor_name")
+    @monitor_remove.autocomplete("monitor_name")
+    @monitor_start.autocomplete("monitor_name")
+    @monitor_stop.autocomplete("monitor_name")
     async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
         choices = []
         if self.bot.monitor_manager:

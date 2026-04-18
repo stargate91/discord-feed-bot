@@ -91,23 +91,44 @@ class YouTubeMonitor(BaseMonitor):
 
     async def get_latest_item(self):
         """Fetch the most recent YouTube video from the feed."""
+        items = await self.get_latest_items(1)
+        return items[0] if items else None
+
+    async def get_latest_items(self, count=1):
+        """Fetch the N most recent YouTube videos from the feed."""
         if not self.channel_id:
-            return None
+            return []
 
         import asyncio
         loop = asyncio.get_event_loop()
-        feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+        try:
+            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
+        except Exception as e:
+            log.error(f"Manual check failed for YouTube {self.name}: {e}")
+            return []
         
         if not hasattr(feed, 'entries') or not feed.entries:
-            return None
+            return []
 
-        # Return the most recent entry (first in RSS)
-        entry = feed.entries[0]
+        # Get top N entries (newest first)
+        entries = feed.entries[:count]
+        # Reverse for chronological order (Oldest -> Newest)
+        entries.reverse()
+
+        results = []
+        for entry in entries:
+            results.append(self._format_entry(entry))
+        return results
+
+    def _format_entry(self, entry):
+        """Helper to format a YouTube feed entry into standard output mapping."""
+        # Extract video ID
         video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
         
         # Get channel name and format short link
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
+        entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
         
         # Format localized alert message
         alert_text = self.get_alert_message({

@@ -119,22 +119,37 @@ class RSSMonitor(BaseMonitor):
 
     async def get_latest_item(self):
         """Fetch the most recent RSS entry from the feed."""
-        if not self.feed_url:
-            return None
+        items = await self.get_latest_items(1)
+        return items[0] if items else None
 
-        import asyncio
-        import re
+    async def get_latest_items(self, count=1):
+        """Fetch the N most recent RSS entries from the feed in chronological order."""
+        if not self.feed_url:
+            return []
+
         try:
             loop = asyncio.get_event_loop()
             feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Manual check failed for RSS {self.name}: {e}")
-            return None
+            return []
             
         if not hasattr(feed, 'entries') or not feed.entries:
-            return None
+            return []
 
-        entry = feed.entries[0]
+        # Get the top N entries (newest first in feed)
+        entries = feed.entries[:count]
+        
+        # Reverse them for chronological order (Oldest -> Newest)
+        entries.reverse()
+        
+        results = []
+        for entry in entries:
+            results.append(self._format_entry(entry))
+        return results
+
+    def _format_entry(self, entry):
+        """Helper to format a feed entry into standard output mapping."""
         entry_link = entry.get("link")
         entry_title = entry.get("title", self.bot.get_feedback("monitor_rss_fallback_title", guild_id=self.guild_id))
         author_name = entry.get("author") or self.name

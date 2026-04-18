@@ -87,6 +87,13 @@ class BaseMonitor(ABC):
         """Fetch the most recent item and return its (content, embed, view) without posting or marking as published."""
         pass
 
+    async def get_latest_items(self, count=1):
+        """Fetch the N most recent items and return as a list of data dicts. Default calls get_latest_item."""
+        if count <= 1:
+            item = await self.get_latest_item()
+            return [item] if item else []
+        return [] # Subclasses should override for N > 1
+
     async def send_update(self, content=None, embed=None, view=None):
         """Send an update to the configured Discord channel."""
         if not self.discord_channel_id:
