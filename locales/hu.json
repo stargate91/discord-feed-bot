@@ -34,6 +34,7 @@
     "check_success": "✅ A(z) {name} feed legújabb tartalma sikeresen elküldve.",
     "check_no_active_offers": "ℹ️ Jelenleg nincs aktív ajánlat a(z) {name} feed-en (üres a lista).",
     "error_no_content": "❌ Nem sikerült lekérni tartalmat a(z) {name} feed-ből.",
+    "error_repost_not_supported": "❌ A(z) **{name}** monitor típushoz nem érhető el a repost funkció.",
     "error_monitor_not_found": "❌ A megadott feed nem található vagy nincs engedélyezve.",
     "add_monitor_title": "Új monitor hozzáadása",
     "add_monitor_name_label": "Megjelenített név",

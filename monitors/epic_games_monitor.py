@@ -233,4 +233,6 @@ class EpicGamesMonitor(BaseMonitor):
             
             results.append({"content": f"{alert_text}\n{game_url}", "embed": embed, "view": view})
             
+        # Reverse to get Oldest -> Newest (sequential reposting)
+        results.reverse()
         return results

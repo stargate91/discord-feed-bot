@@ -179,4 +179,6 @@ class GOGFreeMonitor(BaseMonitor):
             
             results.append({"content": f"{alert_text}\n{final_url}", "embed": embed, "view": view})
             
+        # Reverse to get Oldest -> Newest (sequential reposting)
+        results.reverse()
         return results
