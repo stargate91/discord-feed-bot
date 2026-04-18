@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+import database
 from ui.views.wizard_views import SetupWizardView
 
 class SetupCog(commands.Cog):
