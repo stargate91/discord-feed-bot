@@ -91,22 +91,32 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         try:
             import asyncio
             items = await target_monitor.get_latest_items(count)
+            
             if not items:
                 await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
                 return
 
             sent_count = 0
             for item in items:
-                if item:
-                    await target_monitor.send_update(
-                        content=item.get("content"),
-                        embed=item.get("embed"),
-                        view=item.get("view")
-                    )
-                    sent_count += 1
-                    await asyncio.sleep(0.5) # Rate limit protection
+                if not item: continue
+                
+                # Check if item explicitly marked as empty (e.g., no active giveaways)
+                if item.get("empty"):
+                    continue
+                    
+                await target_monitor.send_update(
+                    content=item.get("content"),
+                    embed=item.get("embed"),
+                    view=item.get("view")
+                )
+                sent_count += 1
+                await asyncio.sleep(1.0) # Rate limit protection for reposts
             
-            await interaction.followup.send(f"✅ Successfully reposted {sent_count} items from **{monitor_name}** to the original channel.", ephemeral=True)
+            if sent_count > 0:
+                await interaction.followup.send(f"✅ Successfully reposted **{sent_count}** items from **{monitor_name}** to the original channel.", ephemeral=True)
+            else:
+                # If we have items but all were 'empty'
+                await interaction.followup.send(self.bot.get_feedback("check_no_active_offers", name=monitor_name), ephemeral=True)
             
         except Exception as e:
             log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)
