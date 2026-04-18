@@ -9,6 +9,7 @@ class BaseMonitor(ABC):
         self.config = config
         self.id = config.get("id")
         self.name = config.get("name", "Unknown Monitor")
+        self.embed_color = config.get("embed_color", "3d3f45")
         self.platform = config.get("type", "unknown")
         self.enabled = config.get("enabled", True)
         self.discord_channel_id = config.get("discord_channel_id")
