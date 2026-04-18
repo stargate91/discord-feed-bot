@@ -112,19 +112,6 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)
             await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
 
-    @monitor_repost.autocomplete("monitor_name")
-    @monitor_edit.autocomplete("monitor_name")
-    @monitor_remove.autocomplete("monitor_name")
-    @monitor_start.autocomplete("monitor_name")
-    @monitor_stop.autocomplete("monitor_name")
-    @monitor_check.autocomplete("monitor_name")
-    async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
-        choices = []
-        if self.bot.monitor_manager:
-            for m in self.bot.monitor_manager.monitors:
-                if current.lower() in m.name.lower():
-                    choices.append(app_commands.Choice(name=m.name, value=m.name))
-        return choices[:25]
 
     @app_commands.command(name="list", description="List active and inactive monitors")
     async def monitor_list(self, interaction: discord.Interaction):
@@ -285,6 +272,20 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         for m_cfg in monitors_cfg:
             if current.lower() in m_cfg.get("name", "").lower():
                 choices.append(app_commands.Choice(name=m_cfg.get("name"), value=m_cfg.get("name")))
+        return choices[:25]
+
+    @monitor_repost.autocomplete("monitor_name")
+    @monitor_edit.autocomplete("monitor_name")
+    @monitor_remove.autocomplete("monitor_name")
+    @monitor_start.autocomplete("monitor_name")
+    @monitor_stop.autocomplete("monitor_name")
+    @monitor_check.autocomplete("monitor_name")
+    async def monitor_autocomplete(self, interaction: discord.Interaction, current: str):
+        choices = []
+        if self.bot.monitor_manager:
+            for m in self.bot.monitor_manager.monitors:
+                if current.lower() in m.name.lower():
+                    choices.append(app_commands.Choice(name=m.name, value=m.name))
         return choices[:25]
 
 async def setup(bot):
