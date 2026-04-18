@@ -84,6 +84,12 @@ class SteamNewsMonitor(BaseMonitor):
                 color=self.get_color(0x3d3f45)
             )
             embed.set_author(name=author)
+            
+            # Localized timestamp
+            timestamp = item.get("date")
+            if timestamp:
+                embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{timestamp}:f> (<t:{timestamp}:R>)", inline=False)
+            
             embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
             
             if image_url:
@@ -150,6 +156,12 @@ class SteamNewsMonitor(BaseMonitor):
             color=self.get_color(0x3d3f45)
         )
         embed.set_author(name=author)
+        
+        # Localized timestamp
+        timestamp = item.get("date")
+        if timestamp:
+            embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{timestamp}:f> (<t:{timestamp}:R>)", inline=False)
+        
         embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
         
         if image_url:

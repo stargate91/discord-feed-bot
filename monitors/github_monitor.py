@@ -122,6 +122,8 @@ class GitHubMonitor(BaseMonitor):
                 # published_at format: 2024-04-18T12:34:56Z
                 dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
                 embed.timestamp = dt
+                ts = int(dt.timestamp())
+                embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{ts}:f> (<t:{ts}:R>)", inline=False)
             except:
                 pass
                 

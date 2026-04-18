@@ -4,6 +4,7 @@ import re
 import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
+import calendar
 
 # Standard User-Agent to avoid being blocked by WordPress/Cloudflare
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -75,6 +76,11 @@ class RSSMonitor(BaseMonitor):
                 color=self.get_color(0x3d3f45)
             )
             embed.set_author(name=author_name)
+            
+            # Localized timestamp
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                ts = calendar.timegm(entry.published_parsed)
+                embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{ts}:f> (<t:{ts}:R>)", inline=False)
             
             # Thumbnail handling (Generic RSS handling)
             img_url = None
