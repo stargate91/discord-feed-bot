@@ -130,7 +130,7 @@ class FeedBot(commands.Bot):
         db_statuses = await database.get_bot_statuses()
         if not db_statuses:
             log.info("Populating database with simple default status...")
-            await database.add_bot_status("watching", "Watching {count} feeds")
+            await database.add_bot_status("watching", "{count} feeds")
             log.info("Default status added to database.")
 
     async def load_all_extensions(self):

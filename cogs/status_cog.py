@@ -3,7 +3,6 @@ import random
 import asyncio
 from discord.ext import commands, tasks
 from discord import app_commands
-from ui.views.wizard_views import StatusWizardView
 from logger import log
 import database
 
