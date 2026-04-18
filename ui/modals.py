@@ -134,13 +134,21 @@ class EditMonitorModal(discord.ui.Modal):
             guild_id = interaction.guild_id or 0
             await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val, steam_patch_only=self.steam_patch_only)
 
+            # Sync the live monitor instance in memory
             if self.bot.monitor_manager:
-                from core.monitor_factory import create_monitor_instance
-                db_monitors = await database.get_all_monitors()
-                self.bot.monitor_manager.monitors = []
-                for db_m in db_monitors:
-                    monitor = create_monitor_instance(self.bot, db_m)
-                    if monitor: self.bot.monitor_manager.add_monitor(monitor)
+                target_monitor = next((m for m in self.bot.monitor_manager.monitors if m.id == self.monitor_id), None)
+                if target_monitor:
+                    target_monitor.name = new_name
+                    if self.discord_channel_id is not None:
+                        target_monitor.discord_channel_id = self.discord_channel_id
+                        # Update cached channel if possible
+                        target_monitor.channel = interaction.guild.get_channel(int(self.discord_channel_id))
+                    
+                    if self.ping_role_id is not None:
+                        target_monitor.ping_role_id = self.ping_role_id
+                    
+                    if color_val:
+                        target_monitor.embed_color = color_val
 
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_success", name=new_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
