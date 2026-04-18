@@ -131,31 +131,38 @@ class EditMonitorModal(discord.ui.Modal):
             guild_id = interaction.guild_id or 0
             new_name = self.name_input.value
             color_val = self.color_input.value.strip() if self.color_input.value else ""
-            guild_id = interaction.guild_id or 0
+            
+            log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_ch={self.discord_channel_id}, new_role={self.ping_role_id}, color={color_val}, steam_patch={self.steam_patch_only}")
+            
             await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val, steam_patch_only=self.steam_patch_only)
+            
+            log.info(f"[EDIT DEBUG] Step 2: Database update completed successfully.")
 
-            # --- GOLYÓÁLLÓ SZINKRONIZÁCIÓ ---
-            # Ahelyett, hogy csak a tulajdonságokat foltoznánk, teljesen újraalkotjuk a példányt a gyárból.
             if self.bot.monitor_manager:
                 from core.monitor_factory import create_monitor_instance
                 
-                # 1. Eltávolítjuk a régi példányt
+                old_count = len(self.bot.monitor_manager.monitors)
                 self.bot.monitor_manager.monitors = [m for m in self.bot.monitor_manager.monitors if m.id != self.monitor_id]
+                new_count = len(self.bot.monitor_manager.monitors)
+                log.info(f"[EDIT DEBUG] Step 3: Removed old instance. Monitors: {old_count} -> {new_count}")
                 
-                # 2. Lekérjük az adatbázisból a friss adatokat ehhez az egy monitorhoz
                 db_monitors = await database.get_all_monitors()
                 curr_db_data = next((m for m in db_monitors if m["id"] == self.monitor_id), None)
+                log.info(f"[EDIT DEBUG] Step 4: DB lookup result: {curr_db_data}")
                 
-                # 3. Újraalkotjuk és hozzáadjuk
                 if curr_db_data:
                     new_monitor = create_monitor_instance(self.bot, curr_db_data)
                     if new_monitor:
                         self.bot.monitor_manager.add_monitor(new_monitor)
-                        log.info(f"Monitor instance {new_name} (ID: {self.monitor_id}) fully replaced in memory after edit.")
+                        log.info(f"[EDIT DEBUG] Step 5: New instance created. id={new_monitor.id}, ch={new_monitor.discord_channel_id}, name={new_monitor.name}")
+                    else:
+                        log.error(f"[EDIT DEBUG] Step 5 FAILED: create_monitor_instance returned None!")
+                else:
+                    log.error(f"[EDIT DEBUG] Step 4 FAILED: Monitor {self.monitor_id} not found in database after update!")
 
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_success", name=new_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
-            log.error(f"Error editing monitor: {e}", exc_info=True)
+            log.error(f"[EDIT DEBUG] EXCEPTION: {e}", exc_info=True)
             await interaction.response.send_message(self.bot.get_feedback("ui_modal_edit_monitor_error", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
 class AlertTemplateModal(discord.ui.Modal):
