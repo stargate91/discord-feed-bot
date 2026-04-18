@@ -7,6 +7,7 @@ class BaseMonitor(ABC):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
+        self.id = config.get("id")
         self.name = config.get("name", "Unknown Monitor")
         self.platform = config.get("type", "unknown")
         self.enabled = config.get("enabled", True)
