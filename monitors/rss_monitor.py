@@ -101,7 +101,6 @@ class RSSMonitor(BaseMonitor):
             # Format custom alert message
             alert_text = self.get_alert_message({
                 "name": author_name,
-                "title": entry_title,
                 "url": entry_link
             })
 
@@ -183,7 +182,6 @@ class RSSMonitor(BaseMonitor):
 
         alert_text = self.get_alert_message({
             "name": author_name,
-            "title": entry_title,
             "url": entry_link
         })
         
