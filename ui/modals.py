@@ -119,7 +119,7 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
 
         except Exception as e:
             log.error(f"Error adding monitor via modal: {e}", exc_info=True)
-            await interaction.response.send_message(f"{STATUS_ERROR} Error: {e}", ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_prefix_msg", error=str(e)), ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
     def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color="", steam_patch_only=None):

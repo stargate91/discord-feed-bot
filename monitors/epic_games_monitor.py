@@ -138,7 +138,7 @@ class EpicGamesMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
         if expiry_ts:
             embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-        embed.set_footer(text="Epic Games Store")
+        embed.set_footer(text=self.bot.get_feedback("footer_epic_store", guild_id=self.guild_id))
 
         alert_text = self.get_alert_message({
             "name": "Epic Games",
@@ -226,7 +226,7 @@ class EpicGamesMonitor(BaseMonitor):
                 embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
             if expiry_ts:
                 embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-            embed.set_footer(text="Epic Games Store")
+            embed.set_footer(text=self.bot.get_feedback("footer_epic_store", guild_id=self.guild_id))
 
             alert_text = self.get_alert_message({
                 "name": "Epic Games",

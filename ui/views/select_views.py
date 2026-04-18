@@ -15,9 +15,9 @@ class AlertTemplateSelectView(discord.ui.View):
 
         options = [
             discord.SelectOption(label="YouTube", value="youtube", emoji=TYPE_YOUTUBE),
-            discord.SelectOption(label="RSS Feed", value="rss", emoji=TYPE_RSS),
+            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_rss", guild_id=self.guild_id), value="rss", emoji=TYPE_RSS),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_game"), value="steam_news", emoji=TYPE_GAME),
-            discord.SelectOption(label="Stream (Twitch/Kick)", value="stream", emoji=TYPE_STREAM),
+            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_stream", guild_id=self.guild_id), value="stream", emoji=TYPE_STREAM),
         ]
 
         self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id), options=options)

@@ -23,7 +23,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             return
             
         view = AddMonitorWizardView(self.bot, interaction)
-        msg = self.bot.get_feedback("ui_monitor_add_msg")
+        msg = self.bot.get_feedback("ui_monitor_add_msg", guild_id=interaction.guild_id)
         await interaction.response.send_message(msg, view=view, ephemeral=True)
 
     @app_commands.command(name="check", description="Manual check and send the latest content")
@@ -41,7 +41,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     break
         
         if not target_monitor:
-            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True)
@@ -52,9 +52,9 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     platform = getattr(target_monitor, "platform", "unknown")
                     msg_key = f"check_empty_{platform}"
                     # Fallback to generic if specific not found
-                    if self.bot.get_feedback(msg_key) == msg_key:
+                    if self.bot.get_feedback(msg_key, guild_id=interaction.guild_id) == msg_key:
                         msg_key = "check_no_active_offers"
-                    await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name), ephemeral=True)
+                    await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
                 else:
                     send_kwargs = {
                         "content": data.get("content"),
@@ -65,12 +65,12 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                         send_kwargs["view"] = data.get("view")
                         
                     await interaction.followup.send(**send_kwargs)
-                    await interaction.followup.send(self.bot.get_feedback("check_success", name=monitor_name), ephemeral=True)
+                    await interaction.followup.send(self.bot.get_feedback("check_success", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
             else:
-                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
+                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
             log.error(f"Error in /check command for {monitor_name}: {e}", exc_info=True)
-            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
+            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
     @app_commands.command(name="repost", description="Resend the latest items to the original channel")
     @app_commands.describe(monitor_name="Which monitor's feed should be reposted?", count="Number of items to repost (1-10)")
@@ -89,7 +89,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                     break
         
         if not target_monitor:
-            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True)
@@ -98,7 +98,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             items = await target_monitor.get_latest_items(count)
             
             if not items:
-                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)
+                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
                 return
 
             sent_count = 0
@@ -118,18 +118,18 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 await asyncio.sleep(1.0) # Rate limit protection for reposts
             
             if sent_count > 0:
-                await interaction.followup.send(f"✅ Successfully reposted **{sent_count}** items from **{monitor_name}** to the original channel.", ephemeral=True)
+                await interaction.followup.send(self.bot.get_feedback("repost_success", count=sent_count, name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
             else:
                 # If we have items but all were 'empty'
                 platform = getattr(target_monitor, "platform", "unknown")
                 msg_key = f"check_empty_{platform}"
-                if self.bot.get_feedback(msg_key) == msg_key:
+                if self.bot.get_feedback(msg_key, guild_id=interaction.guild_id) == msg_key:
                     msg_key = "check_no_active_offers"
-                await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name), ephemeral=True)
+                await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
             
         except Exception as e:
             log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)
-            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e)), ephemeral=True)
+            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
 
     @app_commands.command(name="list", description="List active and inactive monitors")
@@ -142,10 +142,10 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         monitors_cfg = await database.get_monitors_for_guild(guild_id)
         
         if not monitors_cfg:
-            await interaction.response.send_message(self.bot.get_feedback("list_monitors_empty"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("list_monitors_empty", guild_id=interaction.guild_id), ephemeral=True)
             return
         
-        embed = discord.Embed(title=self.bot.get_feedback("list_monitors_title"), color=0x5865F2)
+        embed = discord.Embed(title=self.bot.get_feedback("list_monitors_title", guild_id=interaction.guild_id), color=0x5865F2)
         type_emojis = {
             "youtube": TYPE_YOUTUBE, 
             "rss": TYPE_RSS, 
@@ -164,7 +164,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             status = STATUS_SUCCESS if m_cfg.get("enabled", True) else STATUS_ERROR
             embed.add_field(name=f"{emoji} {m_cfg.get('name', '??')}", value=f"{status} `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>", inline=False)
         
-        embed.set_footer(text=self.bot.get_feedback("list_monitors_footer", count=len(monitors_cfg)))
+        embed.set_footer(text=self.bot.get_feedback("list_monitors_footer", count=len(monitors_cfg), guild_id=interaction.guild_id))
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="stop", description="Suspend an existing monitor")
@@ -178,7 +178,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         target = next((m for m in monitors_cfg if m.get("name") == monitor_name), None)
         
         if not target:
-            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
             return
             
         await database.update_monitor_status(target["id"], guild_id, False)
@@ -186,7 +186,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             for m in self.bot.monitor_manager.monitors:
                 if m.name == monitor_name and getattr(m, 'guild_id', None) == guild_id:
                     m.enabled = False
-        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_stop_msg", name=monitor_name), ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_stop_msg", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
 
     @app_commands.command(name="start", description="Restart a suspended monitor")
     @app_commands.describe(monitor_name="Which monitor should be restarted?")
@@ -199,7 +199,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         target = next((m for m in monitors_cfg if m.get("name") == monitor_name), None)
         
         if not target:
-            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
             return
             
         await database.update_monitor_status(target["id"], guild_id, True)
@@ -207,7 +207,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             for m in self.bot.monitor_manager.monitors:
                 if m.name == monitor_name and getattr(m, 'guild_id', None) == guild_id:
                     m.enabled = True
-        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_restart_msg", name=monitor_name), ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_restart_msg", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
 
     @app_commands.command(name="remove", description="Remove a monitor from the system")
     @app_commands.describe(monitor_name="Which monitor should be removed?")
@@ -220,14 +220,14 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         target = next((m for m in monitors_cfg if m.get("name") == monitor_name), None)
         
         if not target:
-            await interaction.response.send_message(self.bot.get_feedback("remove_monitor_not_found", name=monitor_name), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("remove_monitor_not_found", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
             return
         
         await database.remove_monitor(target["id"], guild_id)
         if self.bot.monitor_manager:
             self.bot.monitor_manager.monitors = [m for m in self.bot.monitor_manager.monitors if m.name != monitor_name or getattr(m, 'guild_id', None) != guild_id]
         
-        await interaction.response.send_message(self.bot.get_feedback("remove_monitor_success", name=monitor_name, type=target.get('type','?')), ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("remove_monitor_success", name=monitor_name, type=target.get('type','?'), guild_id=interaction.guild_id), ephemeral=True)
 
     @app_commands.command(name="edit", description="Edit an existing monitor")
     @app_commands.describe(monitor_name="Which monitor should be edited?")
@@ -240,13 +240,13 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         target = next((m for m in monitors_cfg if m.get("name") == monitor_name), None)
         
         if not target:
-            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found"), ephemeral=True)
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
             return
             
         m_type = target.get("type", "unknown")
         
         view = EditMonitorWizardView(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), interaction=interaction)
-        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name), view=view, ephemeral=True)
+        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name, guild_id=interaction.guild_id), view=view, ephemeral=True)
 
     # --- Autocomplete Helpers ---
     async def _monitor_name_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:

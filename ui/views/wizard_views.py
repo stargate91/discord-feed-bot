@@ -43,7 +43,7 @@ class AddMonitorWizardView(discord.ui.View):
 
         # 2. Simplified Role Select
         role_options = [
-            discord.SelectOption(label="Nincs ping", value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_no_ping"), value="none", emoji=ICON_MUTE),
             discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config"), value="default", emoji=ICON_SETTINGS),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
@@ -80,7 +80,7 @@ class AddMonitorWizardView(discord.ui.View):
         embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.channel_display_name, inline=True)
         embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
         platform_name = self.selected_type.upper() if self.selected_type else self.bot.get_feedback("ui_status_not_selected")
-        embed.add_field(name="Platform", value=platform_name, inline=True)
+        embed.add_field(name=self.bot.get_feedback("field_type"), value=platform_name, inline=True)
         return embed
 
     async def check_readiness(self, interaction: discord.Interaction):

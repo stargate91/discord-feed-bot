@@ -189,7 +189,7 @@ class CryptoMonitor(BaseMonitor):
                 description=msg,
                 color=color
             )
-            embed.set_footer(text="CoinGecko", icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
+            embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
             embed.timestamp = discord.utils.utcnow()
             
             await channel.send(content=alert_msg, embed=embed)
@@ -237,20 +237,20 @@ class CryptoMonitor(BaseMonitor):
                                 valid_count += 1
                         
                         if valid_count == 0:
-                            return {"content": "❌ No valid price data found for the symbols.", "embed": None}
+                            return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "embed": None}
 
                         embed.description = "\n".join(summary_lines)
-                        embed.set_footer(text="CoinGecko", icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
+                        embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
                         embed.timestamp = discord.utils.utcnow()
                         
                         return {
-                            "content": f"📊 **Crypto Price Check: {self.name}**",
+                            "content": self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id),
                             "embed": embed
                         }
                     elif resp.status == 429:
-                        return {"content": "❌ CoinGecko Error: Rate limited (429). Please wait a few minutes.", "embed": None}
+                        return {"content": self.bot.get_feedback("crypto_rate_limited", guild_id=self.guild_id), "embed": None}
                     else:
-                        return {"content": f"❌ CoinGecko API Error: HTTP {resp.status}", "embed": None}
+                        return {"content": self.bot.get_feedback("crypto_api_error", status=resp.status, guild_id=self.guild_id), "embed": None}
             except Exception as e:
                 log.error(f"Crypto get_latest_item error: {e}")
-                return {"content": f"❌ Technical Error: {str(e)}", "embed": None}
+                return {"content": self.bot.get_feedback("crypto_technical_error", error=str(e), guild_id=self.guild_id), "embed": None}
