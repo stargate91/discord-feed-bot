@@ -118,7 +118,6 @@ class TVSeriesMonitor(BaseMonitor):
                 description=wrapped_overview,
                 color=self.get_color(0x01d277) # TMDB Green
             )
-            embed.set_author(name=self.bot.get_feedback("new_tv_series_alert", guild_id=self.guild_id))
             if poster_url: embed.set_image(url=poster_url)
             
             # Genres field with intelligent wrap at 35 chars
