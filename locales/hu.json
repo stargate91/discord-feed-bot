@@ -227,5 +227,6 @@
     "ui_setup_admin_role_success": "✅ Szerver admin rang beállítva: <@&{id}>",
     "ui_setup_template_success": "✅ Egyedi üzenet sablon a(z) **{platform}** platformhoz sikeresen frissítve!",
     "ui_monitor_crypto_input_label": "Coinok és Küszöbértékek",
-    "ui_monitor_crypto_input_ph": "Példa: BTC:100000, ETH:5000"
+    "ui_monitor_crypto_input_ph": "Példa: BTC:100000, ETH:5000",
+    "purge_started": "🔄 Üzenetek törlése folyamatban a(z) {channel} csatornából... Kérlek várj."
 }

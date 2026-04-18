@@ -97,6 +97,12 @@ class AdminCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
+            # Send immediate response as it might take time
+            try:
+                await interaction.response.send_message(self.bot.get_feedback("purge_started", channel=target_channel.name, guild_id=interaction.guild_id), ephemeral=True)
+            except:
+                pass
+
             total_deleted = 0
             chunk_size = 100
             
@@ -129,15 +135,28 @@ class AdminCog(commands.Cog):
                     break
             
             msg = self.bot.get_feedback("purge_success", count=total_deleted, channel=target_channel.name, guild_id=interaction.guild_id)
-            await interaction.followup.send(msg, ephemeral=True)
+            try:
+                await interaction.followup.send(msg, ephemeral=True)
+            except discord.HTTPException:
+                # Token expired (takes too long), send to channel instead
+                await interaction.channel.send(msg)
+            
             log.info(f"Robust purge completed: {total_deleted} messages deleted from #{target_channel.name}")
             
         except discord.Forbidden:
             log.error(f"Purge failed in #{target_channel.name}: Forbidden", exc_info=True)
-            await interaction.followup.send(self.bot.get_feedback("purge_error", error="Missing Permissions", guild_id=interaction.guild_id), ephemeral=True)
+            err_msg = self.bot.get_feedback("purge_error", error="Missing Permissions", guild_id=interaction.guild_id)
+            try:
+                await interaction.followup.send(err_msg, ephemeral=True)
+            except:
+                await interaction.channel.send(err_msg)
         except Exception as e:
             log.error(f"Purge failed in #{target_channel.name}: {e}", exc_info=True)
-            await interaction.followup.send(self.bot.get_feedback("purge_error", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
+            err_msg = self.bot.get_feedback("purge_error", error=str(e), guild_id=interaction.guild_id)
+            try:
+                await interaction.followup.send(err_msg, ephemeral=True)
+            except:
+                await interaction.channel.send(err_msg)
 
 class MasterCog(commands.GroupCog, name="master"):
     def __init__(self, bot):

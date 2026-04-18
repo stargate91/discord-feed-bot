@@ -227,5 +227,6 @@
     "ui_setup_template_success": "✅ Custom alert template for **{platform}** has been updated!",
     "ui_platform_crypto": "Crypto 💰",
     "ui_monitor_crypto_input_label": "Coins & Thresholds",
-    "ui_monitor_crypto_input_ph": "Example: BTC:100000, ETH:5000"
+    "ui_monitor_crypto_input_ph": "Example: BTC:100000, ETH:5000",
+    "purge_started": "🔄 Purging messages from #{channel}... Please wait."
 }
