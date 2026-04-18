@@ -5,6 +5,9 @@ from core.base_monitor import BaseMonitor
 from logger import log
 import database
 
+# Standard User-Agent to avoid being blocked
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
 class StreamMonitor(BaseMonitor):
     """Monitor for Twitch and Kick streams."""
     
@@ -45,8 +48,6 @@ class StreamMonitor(BaseMonitor):
 
         if current_live and not self.is_live:
             if not self.is_first_run:
-                # Store in database to avoid duplicate pings across bot restarts if we can
-                # But typically stream starts are handled in-memory for session consistency
                 await self._send_live_notification(stream_data)
             self.is_live = True
         elif not current_live and self.is_live:
@@ -57,9 +58,7 @@ class StreamMonitor(BaseMonitor):
             log.info(f"Initial check completed for {self.stream_platform}:{self.stream_username}")
 
     async def _fetch_twitch_data(self):
-        """Fetch Twitch stream data via unofficial/official route."""
-        # For simplicity in this template, we assume a helper or direct API call
-        # Mocking implementation for now
+        """Fetch Twitch stream data (Mock / Placeholder)."""
         return None
 
     async def _fetch_kick_data(self):
@@ -67,7 +66,7 @@ class StreamMonitor(BaseMonitor):
         try:
             url = f"https://kick.com/api/v1/channels/{self.stream_username}"
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+                async with session.get(url, headers={"User-Agent": USER_AGENT}) as response:
                     if response.status != 200: return None
                     data = await response.json()
                     
@@ -101,12 +100,11 @@ class StreamMonitor(BaseMonitor):
         stream_url = stream_data.get("url", "")
 
         platform_name = "Twitch" if self.stream_platform == "twitch" else "Kick"
-        platform_color = self.get_color()
 
         embed = discord.Embed(
             title=title[:256],
             url=stream_url,
-            color=platform_color,
+            color=self.get_color(0x3d3f45),
         )
         embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)
 
@@ -128,10 +126,9 @@ class StreamMonitor(BaseMonitor):
 
         embed.set_footer(text=platform_name)
 
-        # Format alert
+        # Format alert (REMOVED title for cleanliness)
         alert_text = self.get_alert_message({
-            "name": self.bot.get_feedback("monitor_platform_stream", guild_id=self.guild_id),
-            "title": title,
+            "name": display_name,
             "url": stream_url,
             "game": game,
             "platform": platform_name
@@ -147,7 +144,6 @@ class StreamMonitor(BaseMonitor):
     async def get_latest_item(self):
         """Fetch current stream status for manual check."""
         if self.stream_platform == "twitch":
-            # Mock or implement
             return None
         
         stream_data = await self._fetch_kick_data()
@@ -164,9 +160,8 @@ class StreamMonitor(BaseMonitor):
         stream_url = stream_data.get("url", "")
 
         platform_name = "Kick"
-        platform_color=0x53FC18
 
-        embed = discord.Embed(title=title[:256], url=stream_url, color=platform_color)
+        embed = discord.Embed(title=title[:256], url=stream_url, color=self.get_color(0x3d3f45))
         embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)
         if thumbnail: embed.set_image(url=f"{thumbnail}?t={int(time.time())}")
         if game and game != na_text:
@@ -175,10 +170,9 @@ class StreamMonitor(BaseMonitor):
             embed.add_field(name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id), value=f"{viewers:,}", inline=True)
         embed.set_footer(text=platform_name)
 
-        # Format alert
+        # Format alert (REMOVED title for cleanliness)
         alert_text = self.get_alert_message({
             "name": display_name,
-            "title": title,
             "url": stream_url,
             "game": game,
             "platform": platform_name
@@ -193,3 +187,4 @@ class StreamMonitor(BaseMonitor):
             "embed": embed,
             "view": view
         }
+
