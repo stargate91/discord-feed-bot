@@ -35,6 +35,7 @@
     "syncing_wait": "🔄 Syncing in progress...",
     "check_success": "✅ The latest content for {name} was successfully sent.",
     "check_no_active_offers": "ℹ️ There are currently no active offers for {name} (the list is empty).",
+    "check_empty_github": "ℹ️ No releases found for this project.",
     "error_no_content": "❌ Failed to fetch content from the {name} feed.",
     "error_repost_not_supported": "❌ Reposting is not supported for the **{name}** monitor type.",
     "error_monitor_not_found": "❌ The specified feed was not found or is not enabled.",

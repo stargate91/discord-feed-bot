@@ -49,7 +49,12 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             data = await target_monitor.get_latest_item()
             if data:
                 if data.get("empty"):
-                    await interaction.followup.send(self.bot.get_feedback("check_no_active_offers", name=monitor_name), ephemeral=True)
+                    platform = getattr(target_monitor, "platform", "unknown")
+                    msg_key = f"check_empty_{platform}"
+                    # Fallback to generic if specific not found
+                    if self.bot.get_feedback(msg_key) == msg_key:
+                        msg_key = "check_no_active_offers"
+                    await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name), ephemeral=True)
                 else:
                     send_kwargs = {
                         "content": data.get("content"),
@@ -116,7 +121,11 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 await interaction.followup.send(f"✅ Successfully reposted **{sent_count}** items from **{monitor_name}** to the original channel.", ephemeral=True)
             else:
                 # If we have items but all were 'empty'
-                await interaction.followup.send(self.bot.get_feedback("check_no_active_offers", name=monitor_name), ephemeral=True)
+                platform = getattr(target_monitor, "platform", "unknown")
+                msg_key = f"check_empty_{platform}"
+                if self.bot.get_feedback(msg_key) == msg_key:
+                    msg_key = "check_no_active_offers"
+                await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name), ephemeral=True)
             
         except Exception as e:
             log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)

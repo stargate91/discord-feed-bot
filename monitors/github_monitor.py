@@ -86,7 +86,7 @@ class GitHubMonitor(BaseMonitor):
     async def get_latest_items(self, count=1):
         releases = await self.fetch_releases()
         if not releases:
-            return []
+            return [{"empty": True}]
         
         # Newest are first in GitHub API, take top N and reverse for chronological order
         latest = releases[:count]
