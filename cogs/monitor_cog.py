@@ -51,7 +51,15 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 if data.get("empty"):
                     await interaction.followup.send(self.bot.get_feedback("check_no_active_offers", name=monitor_name), ephemeral=True)
                 else:
-                    await interaction.followup.send(content=data.get("content"), embed=data.get("embed"), view=data.get("view"), ephemeral=True)
+                    send_kwargs = {
+                        "content": data.get("content"),
+                        "embed": data.get("embed"),
+                        "ephemeral": True
+                    }
+                    if data.get("view"):
+                        send_kwargs["view"] = data.get("view")
+                        
+                    await interaction.followup.send(**send_kwargs)
                     await interaction.followup.send(self.bot.get_feedback("check_success", name=monitor_name), ephemeral=True)
             else:
                 await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name), ephemeral=True)

@@ -151,7 +151,8 @@ class CryptoMonitor(BaseMonitor):
                     
                     hour_bucket = int(time.time() // 3600)
                     direction = "up" if crossed_up else "down"
-                    pub_id = f"crypto_{self.m_id}_{sym}_{threshold}_{direction}_{hour_bucket}"
+                    monitor_id = self.config.get("id", "0")
+                    pub_id = f"crypto_{monitor_id}_{sym}_{threshold}_{direction}_{hour_bucket}"
                     
                     if not await database.is_published(pub_id):
                         await self._send_alert(sym, current_price, threshold, direction, percent_str)
@@ -215,7 +216,7 @@ class CryptoMonitor(BaseMonitor):
                         
                         embed = discord.Embed(
                             title=f"Crypto Status: {self.name}",
-                            color=int(self.m_config.get("embed_color", "00FF00").replace("#", ""), 16)
+                            color=int(self.config.get("embed_color", "00FF00").replace("#", ""), 16)
                         )
                         
                         summary_lines = []
