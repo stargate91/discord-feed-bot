@@ -83,7 +83,7 @@ class GOGFreeMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=title,
                 url=final_url,
-                color=self.get_color(0x86328A)  # GOG Purple
+                color=self.get_color()
             )
             if image_url:
                 embed.set_image(url=image_url)

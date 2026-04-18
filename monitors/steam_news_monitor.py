@@ -124,7 +124,7 @@ class SteamNewsMonitor(BaseMonitor):
                         title=title[:256],
                         url=url,
                         description=description[:300] + "..." if len(description) > 300 else description,
-                        color=self.get_color(0x1b2838)
+                        color=self.get_color()
                     )
                     
                     if image_url:

@@ -179,7 +179,7 @@ class CryptoMonitor(BaseMonitor):
         alert_msg = self.get_alert_message(msg)
         channel = self.bot.get_channel(self.discord_channel_id)
         if channel:
-            color = int(self.m_config.get("embed_color", "00FF00").replace("#", ""), 16)
+            color = self.get_color()
             embed = discord.Embed(
                 title=f"Crypto Alert: {symbol}",
                 description=msg,
@@ -216,7 +216,7 @@ class CryptoMonitor(BaseMonitor):
                         
                         embed = discord.Embed(
                             title=f"Crypto Status: {self.name}",
-                            color=int(self.config.get("embed_color", "00FF00").replace("#", ""), 16)
+                            color=self.get_color()
                         )
                         
                         summary_lines = []

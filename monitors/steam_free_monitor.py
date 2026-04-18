@@ -81,7 +81,7 @@ class SteamFreeMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=title,
                 url=game_url,
-                color=self.get_color(0x1B2838)  # Steam Dark Blue
+                color=self.get_color()
             )
             if image_url:
                 embed.set_image(url=image_url)
@@ -150,7 +150,7 @@ class SteamFreeMonitor(BaseMonitor):
         embed = discord.Embed(
             title=title,
             url=game_url,
-            color=self.get_color(0x1B2838) 
+            color=self.get_color()
         )
         if image_url:
             embed.set_image(url=image_url)

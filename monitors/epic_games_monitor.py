@@ -128,7 +128,7 @@ class EpicGamesMonitor(BaseMonitor):
             title=title,
             url=game_url,
             description=description[:300] + "..." if len(description) > 300 else description,
-            color=self.get_color(0x000000)
+            color=self.get_color()
         )
         if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url=THUMBNAIL_EPIC)
@@ -206,7 +206,7 @@ class EpicGamesMonitor(BaseMonitor):
             "url": game_url
         })
         
-        embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x000000))
+        embed = discord.Embed(title=title, url=game_url, color=self.get_color())
         if image_url: embed.set_image(url=image_url)
         embed.set_thumbnail(url=THUMBNAIL_EPIC)
         if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):

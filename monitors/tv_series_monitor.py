@@ -240,7 +240,7 @@ class TVSeriesMonitor(BaseMonitor):
             title=name[:256],
             url=tmdb_url,
             description=wrapped_overview,
-            color=self.get_color(0x01d277)
+            color=self.get_color()
         )
         poster_path = series.get("poster_path")
         if poster_path: embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")

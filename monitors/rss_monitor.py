@@ -71,7 +71,7 @@ class RSSMonitor(BaseMonitor):
             embed = discord.Embed(
                 title=entry_title[:256],
                 url=entry_link,
-                color=self.get_color(0x00FF00) # Generic Green
+                color=self.get_color() # Default 0x95A5A6
             )
             embed.set_author(name=author_name)
             
@@ -157,7 +157,7 @@ class RSSMonitor(BaseMonitor):
         embed = discord.Embed(
             title=entry_title[:256],
             url=entry_link,
-            color=self.get_color(0x00FF00) 
+            color=self.get_color()
         )
         embed.set_author(name=author_name)
         

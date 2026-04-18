@@ -180,7 +180,7 @@ class MovieMonitor(BaseMonitor):
                 title=title[:256],
                 url=tmdb_url,
                 description=wrapped_overview,
-                color=self.get_color(0x01d277)
+                color=self.get_color()
             )
             if poster_url:
                 embed.set_image(url=poster_url)
@@ -268,7 +268,7 @@ class MovieMonitor(BaseMonitor):
             title=title[:256],
             url=tmdb_url,
             description=wrapped_overview,
-            color=self.get_color(0x01d277)
+            color=self.get_color()
         )
         poster_path = movie.get("poster_path")
         if poster_path:

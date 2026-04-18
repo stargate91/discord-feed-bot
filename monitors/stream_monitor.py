@@ -101,7 +101,7 @@ class StreamMonitor(BaseMonitor):
         stream_url = stream_data.get("url", "")
 
         platform_name = "Twitch" if self.stream_platform == "twitch" else "Kick"
-        platform_color=self.get_color(0x9146FF) if self.stream_platform == "twitch" else 0x53FC18
+        platform_color = self.get_color()
 
         embed = discord.Embed(
             title=title[:256],
