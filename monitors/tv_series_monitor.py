@@ -251,14 +251,28 @@ class TVSeriesMonitor(BaseMonitor):
                     results = data.get("results", [])
                     if not results: return []
                     
-                    # Get top N
-                    entries = results[:count]
-                    # Reverse for oldest to newest
-                    entries.reverse()
+                    target_genres = self.config.get("target_genres", [])
+                    filtered_results = []
+                    
+                    for item in results:
+                        if target_genres:
+                            item_genres = [str(g) for g in item.get("genre_ids", [])]
+                            orig_lang = item.get("original_language", "")
+                            if orig_lang in ["ja", "zh", "ko"] and "16" in item_genres:
+                                item_genres.append("9999")
+                                
+                            if not any(g in target_genres for g in item_genres):
+                                continue
+                        
+                        filtered_results.append(item)
+                        if len(filtered_results) >= count:
+                            break
+                            
+                    filtered_results.reverse()
 
                     genre_map = await self._fetch_genres()
                     items = []
-                    for series in entries:
+                    for series in filtered_results:
                         items.append(await self._format_series(series, genre_map))
                     return items
         except Exception as e:
