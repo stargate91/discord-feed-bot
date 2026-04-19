@@ -99,7 +99,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
                 placeholder=self.bot.get_feedback("ui_ph_genres", guild_id=self.guild_id),
                 options=options,
                 min_values=0,
-                max_values=25
+                max_values=len(options)
             )
             self.genre_select.callback = self.genre_callback
             
