@@ -7,7 +7,7 @@ from ui.modals import (
     NewRoleModal,
     ManualInputModal
 )
-from ui.views.select_views import AlertTemplateSelectView
+from ui.views.select_views import AlertTemplateSelectLayout
 from core.emojis import ICON_LOCATION, ICON_SETTINGS, ICON_ADD, ICON_ID, ICON_MUTE, ICON_DOT, ICON_CLOSE
 
 class AddMonitorWizardView(discord.ui.View):
