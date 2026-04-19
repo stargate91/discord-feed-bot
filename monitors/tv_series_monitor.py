@@ -68,11 +68,6 @@ class TVSeriesMonitor(BaseMonitor):
 
         new_entries = []
         for series in reversed(trending):
-            orig_lang = series.get("original_language", "")
-            genre_ids = series.get("genre_ids", [])
-            if orig_lang in ["ja", "zh", "ko"] and 16 in genre_ids:
-                continue
-
             series_id = str(series.get("id"))
             if not series_id: continue
 
@@ -93,6 +88,12 @@ class TVSeriesMonitor(BaseMonitor):
         target_genres = self.config.get("target_genres", [])
         if target_genres:
             item_genres = [str(g) for g in series.get("genre_ids", [])]
+            
+            # Map asian animations to the custom '9999' Anime genre
+            orig_lang = series.get("original_language", "")
+            if orig_lang in ["ja", "zh", "ko"] and "16" in item_genres:
+                item_genres.append("9999")
+                
             # If no intersection between target genres and series genres, skip posting to this target
             if not any(g in target_genres for g in item_genres):
                 return

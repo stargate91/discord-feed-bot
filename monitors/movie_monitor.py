@@ -146,11 +146,6 @@ class MovieMonitor(BaseMonitor):
         entry_type = f"movie:{self.tmdb_lang}"
         new_entries = []
         for movie in reversed(feed):
-            orig_lang = movie.get("original_language", "")
-            genre_ids = movie.get("genre_ids", [])
-            if orig_lang in ["ja", "zh", "ko"] and 16 in genre_ids:
-                continue
-
             movie_id = str(movie.get("id"))
             if not movie_id: continue
 
@@ -170,6 +165,12 @@ class MovieMonitor(BaseMonitor):
         target_genres = self.config.get("target_genres", [])
         if target_genres:
             item_genres = [str(g) for g in movie.get("genre_ids", [])]
+            
+            # Map asian animations to the custom '9999' Anime genre
+            orig_lang = movie.get("original_language", "")
+            if orig_lang in ["ja", "zh", "ko"] and "16" in item_genres:
+                item_genres.append("9999")
+                
             # If no intersection between target genres and movie genres, skip posting to this target
             if not any(g in target_genres for g in item_genres):
                 return
