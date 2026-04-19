@@ -415,9 +415,9 @@ class SetupWizardLayout(discord.ui.LayoutView):
 
 
     async def template_callback(self, interaction: discord.Interaction):
-        from ui.views.select_views import AlertTemplateSelectView
-        view = AlertTemplateSelectView(self.bot, self.guild_id, self.settings)
-        await interaction.response.send_message(self.bot.get_feedback("ui_setup_platform_select_msg", guild_id=self.guild_id), view=view, ephemeral=True)
+        from ui.views.select_views import AlertTemplateSelectLayout
+        view = AlertTemplateSelectLayout(self.bot, self.guild_id, self.settings)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     async def save_callback(self, interaction: discord.Interaction):
         # We only update the core settings here, master settings are updated in MasterSetupView

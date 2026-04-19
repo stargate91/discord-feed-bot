@@ -5,7 +5,7 @@ from core.emojis import (
     TYPE_GAME, TYPE_STREAM
 )
 
-class AlertTemplateSelectView(discord.ui.View):
+class AlertTemplateSelectLayout(discord.ui.LayoutView):
     def __init__(self, bot, guild_id, settings):
         super().__init__(timeout=300)
         self.bot = bot
@@ -22,7 +22,18 @@ class AlertTemplateSelectView(discord.ui.View):
 
         self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id), options=options)
         self.select.callback = self.select_callback
-        self.add_item(self.select)
+        
+        msg_text = self.bot.get_feedback("ui_setup_platform_select_msg", guild_id=self.guild_id)
+        if msg_text == "ui_setup_platform_select_msg":
+            msg_text = "Select a platform to configure."
+            
+        container_items = [
+            discord.ui.TextDisplay(f"### **Templates**\n{msg_text}"),
+            discord.ui.Separator(),
+            discord.ui.ActionRow(self.select)
+        ]
+        
+        self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def select_callback(self, interaction: discord.Interaction):
         platform = self.select.values[0]
