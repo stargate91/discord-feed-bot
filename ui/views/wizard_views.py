@@ -66,16 +66,32 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         title_text = self.bot.get_feedback("ui_monitor_add_step_1", guild_id=self.guild_id)
         platform_name = self.selected_type.upper() if self.selected_type else self.bot.get_feedback("ui_status_not_selected", guild_id=self.guild_id)
         
+        MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
+        TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
+
+        genre_str = ""
+        if self.selected_type in ["movie", "tv_series"]:
+            genre_dict = MOVIE_GENRES if self.selected_type == "movie" else TV_GENRES
+            if self.selected_genres:
+                g_names = []
+                for g in self.selected_genres:
+                    loc_key = f"genre_{g}"
+                    label = self.bot.get_feedback(loc_key, guild_id=self.guild_id)
+                    if isinstance(label, str) and label.startswith("Missing key"):
+                        label = genre_dict.get(int(g)) or str(g)
+                    g_names.append(str(label))
+                genre_str = f"\n**Szűrők:** {', '.join(g_names)}"
+            else:
+                genre_str = f"\n**Szűrők:** Mind (Nincs szűrés)"
+
         settings_text = (
             f"### **{title_text}**\n"
             f"*Tipp: Ha választás nélkül mész tovább, az adott csatorna lesz a cél, és senkit nem pingel!*\n\n"
             f"**{self.bot.get_feedback('ui_label_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
             f"**{self.bot.get_feedback('ui_label_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}\n"
-            f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}"
+            f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}{genre_str}"
         )
-        
-        MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
-        TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
+
 
         container_items = [
             discord.ui.TextDisplay(settings_text),
@@ -214,12 +230,30 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         
         title_text = self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name, guild_id=self.guild_id)
         
+        genre_str = ""
+        if self.monitor_type in ["movie", "tv_series"]:
+            MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
+            TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
+            genre_dict = MOVIE_GENRES if self.monitor_type == "movie" else TV_GENRES
+            
+            if self.selected_genres:
+                g_names = []
+                for g in self.selected_genres:
+                    loc_key = f"genre_{g}"
+                    label = self.bot.get_feedback(loc_key, guild_id=self.guild_id)
+                    if isinstance(label, str) and label.startswith("Missing key"):
+                        label = genre_dict.get(int(g)) or str(g)
+                    g_names.append(str(label))
+                genre_str = f"\n**Szűrők:** {', '.join(g_names)}"
+            else:
+                genre_str = f"\n**Szűrők:** Mind (Nincs szűrés)"
+
         settings_text = (
             f"### **{title_text}**\n"
             f"*Tipp: Ha üresen hagysz egy menüt és úgy mész tovább, a bot megtartja a korábbi beállítást!*\n"
             f"*Ha törölni akarsz minden eddigi beállítást (nullázni), használd a Piros gombokat!*\n\n"
             f"**{self.bot.get_feedback('ui_label_new_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
-            f"**{self.bot.get_feedback('ui_label_new_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}"
+            f"**{self.bot.get_feedback('ui_label_new_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}{genre_str}"
         )
         
         container_items = [
@@ -230,9 +264,6 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         ]
         
         if self.monitor_type in ["movie", "tv_series"]:
-            MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
-            TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
-            
             options = []
             genre_dict = MOVIE_GENRES if self.monitor_type == "movie" else TV_GENRES
             for gid, gname in genre_dict.items():
