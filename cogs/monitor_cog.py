@@ -144,7 +144,6 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.response.send_message(self.bot.get_feedback("list_monitors_empty", guild_id=interaction.guild_id), ephemeral=True)
             return
         
-        embed = discord.Embed(title=self.bot.get_feedback("list_monitors_title", guild_id=interaction.guild_id), color=0x5865F2)
         type_emojis = {
             "youtube": TYPE_YOUTUBE, 
             "rss": TYPE_RSS, 
@@ -157,14 +156,21 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             "tv_series": TYPE_GAME
         }
         
+        lines = []
         for m_cfg in monitors_cfg:
             m_type = m_cfg.get("type", "unknown")
             emoji = type_emojis.get(m_type, TYPE_UNKNOWN)
             status = STATUS_SUCCESS if m_cfg.get("enabled", True) else STATUS_ERROR
-            embed.add_field(name=f"{emoji} {m_cfg.get('name', '??')}", value=f"{status} `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>", inline=False)
-        
-        embed.set_footer(text=self.bot.get_feedback("list_monitors_footer", count=len(monitors_cfg), guild_id=interaction.guild_id))
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            lines.append(f"**{emoji} {m_cfg.get('name', '??')}**\n{status} `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>")
+            
+        pages_data = []
+        chunk_size = 10
+        for i in range(0, len(lines), chunk_size):
+            pages_data.append("\n\n".join(lines[i:i+chunk_size]))
+            
+        from ui.views.list_views import MonitorListPaginatedView
+        view = MonitorListPaginatedView(self.bot, guild_id, pages_data, len(monitors_cfg))
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command(name="stop", description="Suspend an existing monitor")
     @app_commands.describe(monitor_name="Which monitor should be paused?")
