@@ -96,9 +96,8 @@ class BaseMonitor(ABC):
                     pass
         return default_hex
 
-    @abstractmethod
     async def check_for_updates(self):
-        """Perform the check for updates and return a list of new entries/embeds."""
+        """Perform the check for updates. Deprecated in favor of fetch_new_items."""
         pass
     
     @abstractmethod
