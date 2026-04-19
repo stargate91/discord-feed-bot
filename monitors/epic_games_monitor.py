@@ -21,7 +21,7 @@ class EpicGamesMonitor(BaseMonitor):
     def get_shared_key(self):
         return "epic_games_free"
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Fetch Epic Games free promotions JSON and look for new items."""
         
         shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
@@ -33,20 +33,21 @@ class EpicGamesMonitor(BaseMonitor):
                     async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch Epic Games API: {response.status}")
-                            return
+                            return []
                         data = await response.json()
                         if data:
                             self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
             except Exception as e:
                 log.error(f"Error fetching Epic Games data: {e}")
-                return
+                return []
         
         try:
             elements = data["data"]["Catalog"]["searchStore"]["elements"]
         except (KeyError, TypeError) as e:
             log.error(f"Unexpected Epic Games API structure: {e}")
-            return
+            return []
 
+        new_entries = []
         for game in reversed(elements):
             game_id = game.get("id")
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
@@ -93,14 +94,22 @@ class EpicGamesMonitor(BaseMonitor):
                     log.debug(f"Seeding database with Epic Game: {title} ({status_type})")
                     await database.mark_as_published(db_id, "epic_games", self.api_url)
                 else:
-                    await self.send_game_notification(game, is_active)
-                    await database.mark_as_published(db_id, "epic_games", self.api_url)
+                    new_entries.append({
+                        "game": game,
+                        "is_active": is_active,
+                        "db_id": db_id
+                    })
 
         if self.is_first_run:
             log.info(f"Initial seed completed for Epic Games Store. Monitoring active.")
             self.is_first_run = False
+            
+        return new_entries
 
-    async def send_game_notification(self, game, is_active):
+    async def process_item(self, item):
+        game = item["game"]
+        is_active = item["is_active"]
+        
         title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
         description = game.get("description", "")
         
@@ -150,7 +159,10 @@ class EpicGamesMonitor(BaseMonitor):
         view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
         await self.send_update(content=f"{alert_text}\n{game_url}", embed=embed, view=view)
-        log.info(f"Sent Epic Games notification for: {title}")
+
+    async def mark_items_published(self, items):
+        for item in items:
+            await database.mark_as_published(item["db_id"], "epic_games", self.api_url)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

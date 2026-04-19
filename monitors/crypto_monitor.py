@@ -95,9 +95,9 @@ class CryptoMonitor(BaseMonitor):
                 
         self.coin_id_map = mapping
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         if not self.targets:
-            return
+            return []
 
         if not self.coin_id_map:
             await self._update_coin_map()
@@ -112,17 +112,18 @@ class CryptoMonitor(BaseMonitor):
                 log.warning(f"CryptoMonitor: Could not find CoinGecko ID for symbol {sym}")
 
         if not ids_to_fetch:
-            return
+            return []
 
         ids_str = ",".join(ids_to_fetch)
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids_str}&vs_currencies=usd"
         
+        items_to_process = []
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         prices_data = await resp.json()
-                        await self._process_prices(prices_data)
+                        items_to_process = await self._cache_and_detect_crossings(prices_data)
                     elif resp.status == 429:
                         log.warning("CryptoMonitor: CoinGecko rate limit reached (429).")
                     else:
@@ -130,7 +131,10 @@ class CryptoMonitor(BaseMonitor):
             except Exception as e:
                 log.error(f"CryptoMonitor check error: {e}")
 
-    async def _process_prices(self, prices_data):
+        return items_to_process
+
+    async def _cache_and_detect_crossings(self, prices_data):
+        events = []
         for sym, threshold in self.targets.items():
             cid = self.coin_id_map.get(sym)
             if not cid or cid not in prices_data:
@@ -140,12 +144,10 @@ class CryptoMonitor(BaseMonitor):
             prev_price = self.last_prices.get(sym)
             
             if prev_price is not None:
-                # Detect crossing
                 crossed_up = prev_price <= threshold < current_price
                 crossed_down = prev_price >= threshold > current_price
                 
                 if crossed_up or crossed_down:
-                    # diff = (current - threshold) / threshold * 100
                     diff = ((current_price - threshold) / threshold) * 100
                     percent_str = f"{diff:+.2f}%"
                     
@@ -155,10 +157,32 @@ class CryptoMonitor(BaseMonitor):
                     pub_id = f"crypto_{monitor_id}_{sym}_{threshold}_{direction}_{hour_bucket}"
                     
                     if not await database.is_published(pub_id):
-                        await self._send_alert(sym, current_price, threshold, direction, percent_str)
-                        await database.mark_as_published(pub_id)
+                        events.append({
+                            "sym": sym,
+                            "current_price": current_price,
+                            "threshold": threshold,
+                            "direction": direction,
+                            "percent_str": percent_str,
+                            "pub_id": pub_id
+                        })
             
             self.last_prices[sym] = current_price
+        return events
+
+    async def process_item(self, event):
+        await self._send_alert(
+            event["sym"], 
+            event["current_price"], 
+            event["threshold"], 
+            event["direction"], 
+            event["percent_str"]
+        )
+
+    async def mark_items_published(self, items):
+        for event in items:
+            pub_id = event.get("pub_id")
+            if pub_id:
+                await database.mark_as_published(pub_id)
 
     async def _send_alert(self, symbol, current_price, threshold, direction, percent_str):
         # Placeholders for alert message
@@ -181,19 +205,18 @@ class CryptoMonitor(BaseMonitor):
             direction=dir_emoji,
             percent=percent_str
         )
-        channel = self.bot.get_channel(self.discord_channel_id)
-        if channel:
-            color = self.get_color()
-            embed = discord.Embed(
-                title=f"Crypto Alert: {symbol}",
-                description=msg,
-                color=color
-            )
-            embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
-            embed.timestamp = discord.utils.utcnow()
-            
-            await channel.send(content=alert_msg, embed=embed)
-            log.info(f"Crypto Alert sent for {symbol} ({direction})")
+
+        color = self.get_color()
+        embed = discord.Embed(
+            title=f"Crypto Alert: {symbol}",
+            description=msg,
+            color=color
+        )
+        embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
+        embed.timestamp = discord.utils.utcnow()
+        
+        await self.send_update(content=alert_msg, embed=embed)
+        log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
     async def get_latest_item(self):
         """Fetch current prices for all targets and return a summary for manual check."""

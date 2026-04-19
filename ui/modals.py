@@ -7,11 +7,12 @@ from core.emojis import STATUS_ERROR
 
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_type, target_channels, target_roles):
+    def __init__(self, bot, monitor_type, target_channels, target_roles, target_genres=None):
         self.bot = bot
         self.monitor_type = monitor_type
         self.target_channels = target_channels
         self.target_roles = target_roles
+        self.target_genres = target_genres or []
         
         super().__init__(title=bot.get_feedback("add_monitor_title"))
 
@@ -66,6 +67,8 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
                 "target_roles": self.target_roles,
                 "enabled": True
             }
+            if self.target_genres:
+                m_config["target_genres"] = self.target_genres
 
             if self.needs_url:
                 val = self.url_input.value

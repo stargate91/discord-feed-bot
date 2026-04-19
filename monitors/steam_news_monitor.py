@@ -19,11 +19,11 @@ class SteamNewsMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"steam_news:{self.appid}"
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Fetch Steam News and look for new posts."""
         if not self.appid:
             log.warning(f"No Steam AppID for monitor: {self.name}")
-            return
+            return []
 
         # Check for shared data
         feed = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
@@ -33,17 +33,17 @@ class SteamNewsMonitor(BaseMonitor):
                     async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch Steam News for {self.name}: {response.status}")
-                            return
+                            return []
                         data = await response.json()
                         feed = data.get("appnews", {}).get("newsitems", [])
                         if feed:
                             self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
             except Exception as e:
                 log.error(f"Error fetching Steam news for {self.name}: {e}")
-                return
+                return []
 
         if not feed:
-            return
+            return []
 
         new_entries = []
         for item in reversed(feed):
@@ -57,54 +57,56 @@ class SteamNewsMonitor(BaseMonitor):
                     new_entries.append(item)
                     log.info(f"New Steam News detected: {item.get('title')} ({gid})")
 
-        for item in new_entries:
-            gid = item.get("gid")
-            title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
-            url = item.get("url")
-            author = item.get("author", "Steam")
-            raw_contents = item.get("contents", "")
-            
-            # Clean content and extract image
-            from core.utils import clean_html, extract_image_url
-            description = clean_html(raw_contents)
-            image_url = extract_image_url(raw_contents)
-            
-            # Formulate message using template hierarchy (REMOVED title for cleanliness)
-            alert_text = self.get_alert_message({
-                "name": self.name,
-                "url": url,
-                "author": author
-            })
-            
-            # Steam embeds often don't have images in the API response easily, but we can make a nice card
-            embed = discord.Embed(
-                title=title[:256],
-                url=url,
-                description=description[:300] + "..." if len(description) > 300 else description,
-                color=self.get_color(0x3d3f45)
-            )
-            embed.set_author(name=author)
-            
-            # Localized timestamp
-            timestamp = item.get("date")
-            if timestamp:
-                embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{timestamp}:f> (<t:{timestamp}:R>)", inline=False)
-            
-            embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
-            
-            if image_url:
-                embed.set_image(url=image_url)
-            
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
-            
-            await self.send_update(content=f"{alert_text}\n{url}", embed=embed, view=view)
-            await database.mark_as_published(gid, "steam_news", self.api_url)
-
         if self.is_first_run:
             log.info(f"Initial seed completed for Steam News {self.name}.")
             self.is_first_run = False
+            
+        return new_entries
+
+    async def process_item(self, item):
+        title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
+        url = item.get("url")
+        author = item.get("author", "Steam")
+        raw_contents = item.get("contents", "")
+        
+        from core.utils import clean_html, extract_image_url
+        description = clean_html(raw_contents)
+        image_url = extract_image_url(raw_contents)
+        
+        alert_text = self.get_alert_message({
+            "name": self.name,
+            "url": url,
+            "author": author
+        })
+        
+        embed = discord.Embed(
+            title=title[:256],
+            url=url,
+            description=description[:300] + "..." if len(description) > 300 else description,
+            color=self.get_color(0x3d3f45)
+        )
+        embed.set_author(name=author)
+        
+        timestamp = item.get("date")
+        if timestamp:
+            embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{timestamp}:f> (<t:{timestamp}:R>)", inline=False)
+        
+        embed.set_footer(text=self.bot.get_feedback("footer_steam_news", guild_id=self.guild_id))
+        
+        if image_url:
+            embed.set_image(url=image_url)
+        
+        view = discord.ui.View()
+        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
+        view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
+        
+        await self.send_update(content=f"{alert_text}\n{url}", embed=embed, view=view)
+
+    async def mark_items_published(self, items):
+        for item in items:
+            gid = item.get("gid")
+            if gid:
+                await database.mark_as_published(gid, "steam_news", self.api_url)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

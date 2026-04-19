@@ -62,6 +62,19 @@ class BaseMonitor(ABC):
         if ping:
             return f"{ping}\n{msg}"
         return msg
+        
+    async def fetch_new_items(self):
+        """Fetch and return new, unpublished items from the data source.
+        Should return a list of items."""
+        return []
+
+    async def process_item(self, item):
+        """Process and send the new item to discord."""
+        pass
+        
+    async def mark_items_published(self, items):
+        """Mark a list of items as published globally (guild_id=0)."""
+        pass
 
     def get_shared_key(self):
         """Return a key for the shared poll registry. Subclasses should override if pollable."""

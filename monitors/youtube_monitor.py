@@ -15,18 +15,16 @@ class YouTubeMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"youtube:{self.channel_id}"
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Fetch YouTube RSS feed and look for new videos."""
         if not self.channel_id:
             log.warning(f"No channel ID for YouTube monitor: {self.name}")
-            return
+            return []
 
-        # Check for shared data
         shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
         if shared_data:
             feed = shared_data
         else:
-            # Fetch the feed as a blocking operation in an executor
             import asyncio
             loop = asyncio.get_event_loop()
             try:
@@ -35,59 +33,56 @@ class YouTubeMonitor(BaseMonitor):
                     self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
             except Exception as e:
                 log.error(f"Failed to fetch YouTube feed for {self.name}: {e}")
-                return
+                return []
         
         if not feed or not hasattr(feed, 'entries'):
-            log.debug(f"Could not fetch feed entries for {self.name}")
-            return
+            return []
 
-        # Process entries in reverse chronological order (oldest first)
         new_entries = []
         for entry in reversed(feed.entries):
-            # Extract video ID
             video_id = entry.get("yt_videoid")
             if not video_id:
-                # Fallback extraction from id tag
                 video_id = entry.get("id", "").split(":")[-1]
-            
             if not video_id:
                 continue
 
             if not await database.is_published(video_id, "youtube"):
                 if self.is_first_run:
-                    # On first run, we just mark existing videos as published without sending alerts
                     log.debug(f"Seeding database with existing video: {video_id}")
                     await database.mark_as_published(video_id, "youtube", self.feed_url)
                 else:
                     new_entries.append(entry)
                     log.info(f"New YouTube video detected: {entry.get('title', 'Unknown')} ({video_id})")
 
-        # Send updates for new entries
-        for entry in new_entries:
-            video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
-            author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
-            short_link = f"https://youtu.be/{video_id}"
-            entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
-            
-            # Format custom alert message
-            alert_text = self.get_alert_message({
-                "name": author_name,
-                "title": entry_title,
-                "url": short_link
-            })
-            
-            # Create interactive button
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_view_youtube", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
-            
-            await self.send_update(content=f"{alert_text}\n{short_link}", embed=None, view=view)
-            await database.mark_as_published(video_id, "youtube", self.feed_url)
-
-        # After the first successful check, mark as not first run
         if self.is_first_run:
             log.info(f"Initial seed completed for {self.name}. Monitoring active for next updates.")
             self.is_first_run = False
+            
+        return new_entries
+
+    async def process_item(self, entry):
+        video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+        short_link = f"https://youtu.be/{video_id}"
+        entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
+        
+        alert_text = self.get_alert_message({
+            "name": author_name,
+            "title": entry_title,
+            "url": short_link
+        })
+        
+        view = discord.ui.View()
+        btn_label = self.bot.get_feedback("btn_view_youtube", guild_id=self.guild_id)
+        view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
+        
+        await self.send_update(content=f"{alert_text}\n{short_link}", embed=None, view=view)
+
+    async def mark_items_published(self, items):
+        for entry in items:
+            video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+            if video_id:
+                await database.mark_as_published(video_id, "youtube", self.feed_url)
 
     async def get_latest_item(self):
         """Fetch the most recent YouTube video from the feed."""

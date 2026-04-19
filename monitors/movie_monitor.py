@@ -117,11 +117,11 @@ class MovieMonitor(BaseMonitor):
             pass
         return None
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Fetch TMDB Now Playing and look for new movies."""
         if not self.bearer_token and not self.api_key:
             log.warning("TMDB Auth missing in configuration. Movie monitor disabled.")
-            return
+            return []
 
         # Check for shared data
         feed = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
@@ -131,21 +131,26 @@ class MovieMonitor(BaseMonitor):
                     async with session.get(self.get_api_url(), headers=self.get_headers()) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch TMDB movies: {response.status}")
-                            return
+                            return []
                         data = await response.json()
                         feed = data.get("results", [])
                         if feed:
                             self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
             except Exception as e:
                 log.error(f"Error fetching TMDB movies: {e}")
-                return
+                return []
 
         if not feed:
-            return
+            return []
 
         entry_type = f"movie:{self.tmdb_lang}"
         new_entries = []
         for movie in reversed(feed):
+            orig_lang = movie.get("original_language", "")
+            genre_ids = movie.get("genre_ids", [])
+            if orig_lang in ["ja", "zh", "ko"] and 16 in genre_ids:
+                continue
+
             movie_id = str(movie.get("id"))
             if not movie_id: continue
 
@@ -156,86 +161,95 @@ class MovieMonitor(BaseMonitor):
                     new_entries.append(movie)
                     log.info(f"New Movie detected ({self.tmdb_lang}): {movie.get('title')} ({movie_id})")
 
-        genre_map = await self._fetch_genres()
-
-        for movie in new_entries:
-            movie_id = str(movie.get("id"))
-            title = movie.get("title", "")
-            overview = movie.get("overview", "")
-            release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
-
-            # English fallback for missing title/overview
-            if (not title or not overview) and self.tmdb_lang != "en-US":
-                en_data = await self._get_en_fallback(movie_id)
-                if not title: title = en_data.get("title", "")
-                if not overview: overview = en_data.get("overview", "")
-            
-            # Original language fallback
-            if not title: title = movie.get("original_title", "")
-            if not overview:
-                orig_data = await self._get_en_fallback(movie_id, original=True)
-                overview = orig_data.get("overview", "")
-
-            if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
-            
-            # Genres
-            genre_ids = movie.get("genre_ids", [])
-            genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
-            genre_text = ", ".join(genre_names) if genre_names else None
-
-            # Ratings
-            vote_avg = movie.get("vote_average", 0)
-            vote_count = movie.get("vote_count", 0)
-            na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-            score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
-
-            poster_path = movie.get("poster_path")
-            poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
-            tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
-            
-            trailer_url = await self._get_trailer_url(movie_id)
-            
-            alert_text = self.get_alert_message({
-                "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
-                "title": title,
-                "url": tmdb_url
-            })
-            
-            # Wrap overview for better readability on narrow views
-            wrapped_overview = textwrap.fill(overview[:1000], width=42)
-            if len(overview) > 1000:
-                wrapped_overview += "..."
-
-            embed = discord.Embed(
-                title=title[:256],
-                url=tmdb_url,
-                description=wrapped_overview,
-                color=self.get_color(0x3d3f45)
-            )
-            if poster_url:
-                embed.set_image(url=poster_url)
-            
-            if genre_text:
-                wrapped_genres = textwrap.fill(genre_text, width=35)
-                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
-            
-            embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
-            embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
-            
-            embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=release_date, guild_id=self.guild_id))
-            
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
-            
-            if trailer_url:
-                view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
-            
-            await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
-            await database.mark_as_published(movie_id, entry_type, self.api_url)
-
         if self.is_first_run:
             self.is_first_run = False
+            
+        return new_entries
+
+    async def process_item(self, movie):
+        target_genres = self.config.get("target_genres", [])
+        if target_genres:
+            item_genres = [str(g) for g in movie.get("genre_ids", [])]
+            # If no intersection between target genres and movie genres, skip posting to this target
+            if not any(g in target_genres for g in item_genres):
+                return
+
+        genre_map = await self._fetch_genres()
+        movie_id = str(movie.get("id"))
+        title = movie.get("title", "")
+        overview = movie.get("overview", "")
+        release_date = movie.get("release_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+        if (not title or not overview) and self.tmdb_lang != "en-US":
+            en_data = await self._get_en_fallback(movie_id)
+            if not title: title = en_data.get("title", "")
+            if not overview: overview = en_data.get("overview", "")
+        
+        if not title: title = movie.get("original_title", "")
+        if not overview:
+            orig_data = await self._get_en_fallback(movie_id, original=True)
+            overview = orig_data.get("overview", "")
+
+        if not title: title = self.bot.get_feedback("monitor_movie_fallback_title", guild_id=self.guild_id)
+        
+        genre_ids = movie.get("genre_ids", [])
+        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
+        genre_text = ", ".join(genre_names) if genre_names else None
+
+        vote_avg = movie.get("vote_average", 0)
+        vote_count = movie.get("vote_count", 0)
+        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+
+        poster_path = movie.get("poster_path")
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+        tmdb_url = f"https://www.themoviedb.org/movie/{movie_id}"
+        
+        trailer_url = await self._get_trailer_url(movie_id)
+        
+        alert_text = self.get_alert_message({
+            "name": self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id),
+            "title": title,
+            "url": tmdb_url
+        })
+        
+        wrapped_overview = textwrap.fill(overview[:1000], width=42)
+        if len(overview) > 1000:
+            wrapped_overview += "..."
+
+        embed = discord.Embed(
+            title=title[:256],
+            url=tmdb_url,
+            description=wrapped_overview,
+            color=self.get_color(0x3d3f45)
+        )
+        if poster_url:
+            embed.set_image(url=poster_url)
+        
+        if genre_text:
+            wrapped_genres = textwrap.fill(genre_text, width=35)
+            embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
+        
+        embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
+        embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
+        
+        embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=release_date, guild_id=self.guild_id))
+        
+        view = discord.ui.View()
+        btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
+        view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
+        
+        if trailer_url:
+            view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+        
+        await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
+
+    async def mark_items_published(self, items):
+        entry_type = f"movie:{self.tmdb_lang}"
+        for movie in items:
+            movie_id = str(movie.get("id"))
+            if movie_id:
+                await database.mark_as_published(movie_id, entry_type, self.api_url)
 
     async def get_latest_item(self):
         """Fetch the most recent film for manual check."""

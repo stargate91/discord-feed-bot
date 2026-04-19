@@ -17,6 +17,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         self.selected_channels = []
         self.selected_roles = []
         self.selected_type = None
+        self.selected_genres = []
         
         self.channel_display_name = bot.get_feedback("ui_status_not_selected", guild_id=self.guild_id)
         self.role_display_name = bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
@@ -73,18 +74,57 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
             f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}"
         )
         
+        MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western"}
+        TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western"}
+
         container_items = [
             discord.ui.TextDisplay(settings_text),
             discord.ui.Separator(),
             discord.ui.ActionRow(self.channel_select),
             discord.ui.ActionRow(self.role_select),
-            discord.ui.ActionRow(self.type_select),
-            discord.ui.ActionRow(self.next_btn)
+            discord.ui.ActionRow(self.type_select)
         ]
+
+        if self.selected_type in ["movie", "tv_series"]:
+            options = []
+            genre_dict = MOVIE_GENRES if self.selected_type == "movie" else TV_GENRES
+            for gid, gname in genre_dict.items():
+                loc_key = f"genre_{gid}"
+                label = self.bot.get_feedback(loc_key, guild_id=self.guild_id)
+                if isinstance(label, str) and label.startswith("Missing key"):
+                    label = gname
+                options.append(discord.SelectOption(label=label, value=str(gid)))
+            
+            self.genre_select = discord.ui.Select(
+                placeholder=self.bot.get_feedback("ui_ph_genres", guild_id=self.guild_id),
+                options=options,
+                min_values=0,
+                max_values=25
+            )
+            self.genre_select.callback = self.genre_callback
+            
+            # Restore previously selected genres if any exist and are still valid
+            valid_values = [str(g) for g in genre_dict.keys()]
+            self.selected_genres = [g for g in self.selected_genres if g in valid_values]
+            if self.selected_genres:
+                for option in self.genre_select.options:
+                    if option.value in self.selected_genres:
+                        option.default = True
+            
+            container_items.append(discord.ui.ActionRow(self.genre_select))
+
+        container_items.append(discord.ui.ActionRow(self.next_btn))
         
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
+    async def genre_callback(self, interaction: discord.Interaction):
+        self.selected_genres = self.genre_select.values
+        await interaction.response.edit_message(view=self)
+
     async def check_readiness(self, interaction: discord.Interaction):
+        if self.selected_type not in ["movie", "tv_series"]:
+            self.selected_genres = []
+
         self.update_components()
         self.next_btn.disabled = not self.selected_type
 
@@ -122,7 +162,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         role_ids = self.selected_roles if self.selected_roles else []
         
         from ui.modals import AddMonitorWizardStepTwoModal
-        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_ids, role_ids)
+        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_ids, role_ids, target_genres=self.selected_genres)
         await interaction.response.send_modal(modal)
 
 

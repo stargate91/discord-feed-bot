@@ -36,11 +36,11 @@ class TVSeriesMonitor(BaseMonitor):
     def get_shared_key(self):
         return "tmdb_tv_trending"
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Fetch trending items and look for new IDs."""
         if not self.api_key:
             log.warning("No TMDB API key provided.")
-            return
+            return []
 
         # Check for shared data
         shared_key = f"{self.get_shared_key()}:{self.tmdb_lang}"
@@ -54,20 +54,25 @@ class TVSeriesMonitor(BaseMonitor):
                     async with session.get(url, headers=self.get_headers()) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch TMDB Trending: {response.status}")
-                            return
+                            return []
                         data = await response.json()
                         trending = data.get("results", [])
                         if trending:
                             self.bot.monitor_manager.set_shared_data(shared_key, trending)
             except Exception as e:
                 log.error(f"Error fetching TMDB data: {e}")
-                return
+                return []
 
         if not trending:
-            return
+            return []
 
         new_entries = []
         for series in reversed(trending):
+            orig_lang = series.get("original_language", "")
+            genre_ids = series.get("genre_ids", [])
+            if orig_lang in ["ja", "zh", "ko"] and 16 in genre_ids:
+                continue
+
             series_id = str(series.get("id"))
             if not series_id: continue
 
@@ -78,82 +83,91 @@ class TVSeriesMonitor(BaseMonitor):
                     new_entries.append(series)
                     log.info(f"New TV Series detected: {series.get('name')} ({series_id})")
 
-        genre_map = await self._fetch_genres()
-
-        for series in new_entries:
-            series_id = str(series.get("id"))
-            name = series.get("name", "")
-            overview = series.get("overview", "")
-            first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
-
-            # English fallback for missing name/overview
-            if (not name or not overview) and self.tmdb_lang != "en-US":
-                en_data = await self._get_en_fallback("tv", series_id)
-                if not name: name = en_data.get("name", "")
-                if not overview: overview = en_data.get("overview", "")
-            # Original language fallback
-            if not name: name = series.get("original_name", "")
-            if not overview:
-                orig_data = await self._get_en_fallback("tv", series_id, original=True)
-                overview = orig_data.get("overview", "")
-            if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
-            
-            # Genres
-            genre_ids = series.get("genre_ids", [])
-            genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
-            genre_text = ", ".join(genre_names) if genre_names else None
-
-            # Ratings
-            vote_avg = series.get("vote_average", 0)
-            vote_count = series.get("vote_count", 0)
-            na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-            score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
-
-            poster_path = series.get("poster_path")
-            poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
-            tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
-            
-            trailer_url = await self._get_trailer_url(series_id)
-
-            alert_text = self.get_alert_message({
-                "name": self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id),
-                "title": name,
-                "url": tmdb_url
-            })
-
-            # Wrap overview for better readability in Discord
-            wrapped_overview = textwrap.fill(overview[:1000], width=42)
-
-            embed = discord.Embed(
-                title=name[:256],
-                url=tmdb_url,
-                description=wrapped_overview,
-                color=self.get_color(0x3d3f45)
-            )
-            if poster_url: embed.set_image(url=poster_url)
-            
-            # Genres field with intelligent wrap at 35 chars
-            if genre_text:
-                wrapped_genres = textwrap.fill(genre_text, width=35)
-                embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
-            
-            embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
-            embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
-            
-            embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=first_air_date, guild_id=self.guild_id))
-
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
-            if trailer_url:
-                view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
-
-            await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
-            await database.mark_as_published(series_id, "tmdb_tv", tmdb_url)
-
         if self.is_first_run:
             log.info("Initial TV Series seed completed.")
             self.is_first_run = False
+            
+        return new_entries
+
+    async def process_item(self, series):
+        target_genres = self.config.get("target_genres", [])
+        if target_genres:
+            item_genres = [str(g) for g in series.get("genre_ids", [])]
+            # If no intersection between target genres and series genres, skip posting to this target
+            if not any(g in target_genres for g in item_genres):
+                return
+
+        genre_map = await self._fetch_genres()
+
+        series_id = str(series.get("id"))
+        name = series.get("name", "")
+        overview = series.get("overview", "")
+        first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+
+        if (not name or not overview) and self.tmdb_lang != "en-US":
+            en_data = await self._get_en_fallback("tv", series_id)
+            if not name: name = en_data.get("name", "")
+            if not overview: overview = en_data.get("overview", "")
+        if not name: name = series.get("original_name", "")
+        if not overview:
+            orig_data = await self._get_en_fallback("tv", series_id, original=True)
+            overview = orig_data.get("overview", "")
+        if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
+        
+        genre_ids = series.get("genre_ids", [])
+        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
+        genre_text = ", ".join(genre_names) if genre_names else None
+
+        vote_avg = series.get("vote_average", 0)
+        vote_count = series.get("vote_count", 0)
+        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+
+        poster_path = series.get("poster_path")
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+        tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
+        
+        trailer_url = await self._get_trailer_url(series_id)
+
+        alert_text = self.get_alert_message({
+            "name": self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id),
+            "title": name,
+            "url": tmdb_url
+        })
+
+        wrapped_overview = textwrap.fill(overview[:1000], width=42)
+
+        embed = discord.Embed(
+            title=name[:256],
+            url=tmdb_url,
+            description=wrapped_overview,
+            color=self.get_color(0x3d3f45)
+        )
+        if poster_url: embed.set_image(url=poster_url)
+        
+        if genre_text:
+            wrapped_genres = textwrap.fill(genre_text, width=35)
+            embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
+        
+        embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
+        embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
+        
+        embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=first_air_date, guild_id=self.guild_id))
+
+        view = discord.ui.View()
+        btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
+        view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
+        if trailer_url:
+            view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+
+        await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
+
+    async def mark_items_published(self, items):
+        for series in items:
+            series_id = str(series.get("id"))
+            if series_id:
+                tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
+                await database.mark_as_published(series_id, "tmdb_tv", tmdb_url)
 
     async def _get_en_fallback(self, media_type, item_id, original=False):
         """Fetch English (or original language) details as fallback."""

@@ -21,11 +21,11 @@ class StreamMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"{self.stream_platform}:{self.stream_username}"
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Check if the stream is live."""
         if not self.stream_username:
             log.warning(f"No username for {self.stream_platform} monitor: {self.name}")
-            return
+            return []
 
         # Check for shared data
         shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
@@ -42,13 +42,14 @@ class StreamMonitor(BaseMonitor):
                     self.bot.monitor_manager.set_shared_data(self.get_shared_key(), stream_data)
             except Exception as e:
                 log.error(f"Error fetching {self.stream_platform} data for {self.stream_username}: {e}")
-                return
+                return []
 
+        items = []
         current_live = stream_data.get("is_live", False) if stream_data else False
 
         if current_live and not self.is_live:
             if not self.is_first_run:
-                await self._send_live_notification(stream_data)
+                items.append(stream_data)
             self.is_live = True
         elif not current_live and self.is_live:
             self.is_live = False
@@ -56,6 +57,16 @@ class StreamMonitor(BaseMonitor):
         if self.is_first_run:
             self.is_first_run = False
             log.info(f"Initial check completed for {self.stream_platform}:{self.stream_username}")
+            
+        return items
+
+    async def process_item(self, stream_data):
+        await self._send_live_notification(stream_data)
+
+    async def mark_items_published(self, items):
+        # Streams don't use the database for tracking published state in the same way,
+        # they rely on `self.is_live` state which is updated in fetch_new_items.
+        pass
 
     async def _get_twitch_token(self):
         """Get or refresh a Twitch App Access Token."""

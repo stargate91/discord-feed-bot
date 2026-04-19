@@ -49,14 +49,14 @@ class GitHubMonitor(BaseMonitor):
             log.error(f"Failed to fetch GitHub releases for {self.repo_path}: {e}")
             return []
 
-    async def check_for_updates(self):
+    async def fetch_new_items(self):
         """Check for new GitHub releases."""
         if not self.repo_path:
-            return
+            return []
 
         releases = await self.fetch_releases()
         if not releases:
-            return
+            return []
 
         # Process in reverse chronological order (oldest first)
         new_releases = []
@@ -71,18 +71,25 @@ class GitHubMonitor(BaseMonitor):
                     await database.mark_as_published(release_id, "github", self.api_url)
                 else:
                     new_releases.append(release)
-        
-        for release in new_releases:
-            formatted = self._format_release(release)
-            await self.send_update(
-                content=formatted["content"],
-                embed=formatted["embed"],
-                view=formatted["view"]
-            )
-            await database.mark_as_published(str(release.get("id")), "github", self.api_url)
 
         if self.is_first_run:
             self.is_first_run = False
+            
+        return new_releases
+
+    async def process_item(self, release):
+        formatted = self._format_release(release)
+        await self.send_update(
+            content=formatted["content"],
+            embed=formatted["embed"],
+            view=formatted["view"]
+        )
+
+    async def mark_items_published(self, items):
+        for release in items:
+            release_id = str(release.get("id"))
+            if release_id != "None":
+                await database.mark_as_published(release_id, "github", self.api_url)
 
     async def get_latest_item(self):
         items = await self.get_latest_items(1)
