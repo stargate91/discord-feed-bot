@@ -167,18 +167,20 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
 
 
 class EditMonitorWizardLayout(discord.ui.LayoutView):
-    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", interaction=None):
+    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", current_genres=None, interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.monitor_id = monitor_id
         self.original_name = original_name
         self.monitor_type = monitor_type
         self.current_color = current_color
+        self.current_genres = current_genres or []
         self.guild_id = interaction.guild_id if interaction else 0
         self.trigger_interaction = interaction
         
         self.selected_channels = []
         self.selected_roles = []
+        self.selected_genres = [str(g) for g in self.current_genres] if self.current_genres else []
         
         self.channel_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
         self.role_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
@@ -224,11 +226,47 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
             discord.ui.TextDisplay(settings_text),
             discord.ui.Separator(),
             discord.ui.ActionRow(self.channel_select),
-            discord.ui.ActionRow(self.role_select),
-            discord.ui.ActionRow(self.clear_ch_btn, self.clear_role_btn, self.next_btn)
+            discord.ui.ActionRow(self.role_select)
         ]
         
+        if self.monitor_type in ["movie", "tv_series"]:
+            MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
+            TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
+            
+            options = []
+            genre_dict = MOVIE_GENRES if self.monitor_type == "movie" else TV_GENRES
+            for gid, gname in genre_dict.items():
+                loc_key = f"genre_{gid}"
+                label = self.bot.get_feedback(loc_key, guild_id=self.guild_id)
+                if isinstance(label, str) and label.startswith("Missing key"):
+                    label = gname
+                options.append(discord.SelectOption(label=label, value=str(gid)))
+            
+            self.genre_select = discord.ui.Select(
+                placeholder=self.bot.get_feedback("ui_ph_genres", guild_id=self.guild_id),
+                options=options,
+                min_values=0,
+                max_values=len(options)
+            )
+            self.genre_select.callback = self.genre_callback
+            
+            # Pre-select matching genres
+            valid_values = [str(g) for g in genre_dict.keys()]
+            if self.selected_genres:
+                self.selected_genres = [g for g in self.selected_genres if g in valid_values]
+                for option in self.genre_select.options:
+                    if option.value in self.selected_genres:
+                        option.default = True
+            
+            container_items.append(discord.ui.ActionRow(self.genre_select))
+            
+        container_items.append(discord.ui.ActionRow(self.clear_ch_btn, self.clear_role_btn, self.next_btn))
+        
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
+
+    async def genre_callback(self, interaction: discord.Interaction):
+        self.selected_genres = self.genre_select.values
+        await interaction.response.edit_message(view=self)
 
     async def check_readiness(self, interaction: discord.Interaction):
         self.update_components()
@@ -270,7 +308,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
     async def next_btn_callback(self, interaction: discord.Interaction):
         from ui.modals import EditMonitorModal
         # [] means keep existing
-        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channels, self.selected_roles, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None)
+        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channels, self.selected_roles, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None, target_genres=self.selected_genres if self.monitor_type in ["movie", "tv_series"] else None)
         await interaction.response.send_modal(modal)
 
 

@@ -146,7 +146,7 @@ class EditMonitorModal(discord.ui.Modal):
             
             log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_chs={self.target_channels}, new_roles={self.target_roles}, color={color_val}, steam_patch={self.steam_patch_only}")
             
-            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only)
+            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only, target_genres=self.target_genres)
             
             log.info(f"[EDIT DEBUG] Step 2: Database update completed successfully.")
 
