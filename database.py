@@ -81,15 +81,18 @@ async def init_db():
 
 async def add_monitor(m_config, guild_id):
     extra_settings = m_config.copy()
-    for k in ["type", "name", "discord_channel_id", "ping_role_id", "enabled", "id", "guild_id"]:
+    for k in ["type", "name", "discord_channel_id", "ping_role_id", "target_channels", "target_roles", "enabled", "id", "guild_id"]:
         extra_settings.pop(k, None)
         
+    extra_settings["target_channels"] = m_config.get("target_channels", [])
+    extra_settings["target_roles"] = m_config.get("target_roles", [])
+
     q = '''INSERT INTO monitors (guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings)
            VALUES ($1, $2, $3, $4, $5, $6, $7)'''
     
     args = (
         guild_id, m_config.get('type'), m_config.get('name'),
-        m_config.get('discord_channel_id'), m_config.get('ping_role_id', 0),
+        0, 0,
         bool(m_config.get('enabled', True)),
         json.dumps(extra_settings)
     )
@@ -116,6 +119,15 @@ async def get_all_monitors():
                     extra.update(nested)
                 m.update(extra)
             except: pass
+            
+        if "target_channels" not in m or not m["target_channels"]:
+            if m["discord_channel_id"]: m["target_channels"] = [m["discord_channel_id"]]
+            else: m["target_channels"] = []
+            
+        if "target_roles" not in m or not m["target_roles"]:
+            if m["ping_role_id"]: m["target_roles"] = [m["ping_role_id"]]
+            else: m["target_roles"] = []
+            
         monitors.append(m)
     return monitors
 
@@ -138,6 +150,15 @@ async def get_monitors_for_guild(guild_id):
                     extra.update(nested)
                 m.update(extra)
             except: pass
+            
+        if "target_channels" not in m or not m["target_channels"]:
+            if m["discord_channel_id"]: m["target_channels"] = [m["discord_channel_id"]]
+            else: m["target_channels"] = []
+            
+        if "target_roles" not in m or not m["target_roles"]:
+            if m["ping_role_id"]: m["target_roles"] = [m["ping_role_id"]]
+            else: m["target_roles"] = []
+            
         monitors.append(m)
     return monitors
 
@@ -146,26 +167,24 @@ async def update_monitor_status(monitor_id, guild_id, is_enabled):
     pool = await get_pool()
     await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
-async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id, ping_role_id, embed_color=None, steam_patch_only=None):
-    q_sel = "SELECT discord_channel_id, ping_role_id, extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
+async def update_monitor_details(monitor_id, guild_id, name, target_channels, target_roles, embed_color=None, steam_patch_only=None):
+    q_sel = "SELECT extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
     pool = await get_pool()
     row = await pool.fetchrow(q_sel, monitor_id, guild_id)
     
     if not row:
         return # Should not happen if monitor exists
-        
-    curr_ch = row[0]
-    curr_role = row[1]
-    extra_settings_json = row[2]
     
-    # Use current if new value is None
-    final_ch = discord_channel_id if discord_channel_id is not None else curr_ch
-    final_role = ping_role_id if ping_role_id is not None else curr_role
-    
+    extra_settings_json = row[0]
     extra_settings = {}
     if extra_settings_json:
         try: extra_settings = json.loads(extra_settings_json)
         except: pass
+    
+    if target_channels is not None and len(target_channels) > 0:
+        extra_settings["target_channels"] = target_channels
+    if target_roles is not None and len(target_roles) > 0:
+        extra_settings["target_roles"] = target_roles
         
     if embed_color is not None:
         if embed_color.strip(): extra_settings["embed_color"] = embed_color.strip()
@@ -174,12 +193,11 @@ async def update_monitor_details(monitor_id, guild_id, name, discord_channel_id,
     if steam_patch_only is not None:
         extra_settings["steam_patch_only"] = steam_patch_only
         
-    q_upd = '''UPDATE monitors SET name = $1, discord_channel_id = $2, 
-               ping_role_id = $3, extra_settings = $4 
-               WHERE id = $5 AND guild_id = $6'''
+    q_upd = '''UPDATE monitors SET name = $1, extra_settings = $2 
+               WHERE id = $3 AND guild_id = $4'''
     
-    await pool.execute(q_upd, name, final_ch, final_role, json.dumps(extra_settings), monitor_id, guild_id)
-    log.info(f"Monitor {monitor_id} updated in DB: name={name}, ch={final_ch}, role={final_role}")
+    await pool.execute(q_upd, name, json.dumps(extra_settings), monitor_id, guild_id)
+    log.info(f"Monitor {monitor_id} updated in DB: name={name}, chs={extra_settings.get('target_channels', [])}, roles={extra_settings.get('target_roles', [])}")
 
 async def remove_monitor(monitor_id, guild_id):
     q = "DELETE FROM monitors WHERE id = $1 AND guild_id = $2"

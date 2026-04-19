@@ -7,11 +7,11 @@ from core.emojis import STATUS_ERROR
 
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_type, discord_channel_id, ping_role_id):
+    def __init__(self, bot, monitor_type, target_channels, target_roles):
         self.bot = bot
         self.monitor_type = monitor_type
-        self.discord_channel_id = discord_channel_id
-        self.ping_role_id = ping_role_id
+        self.target_channels = target_channels
+        self.target_roles = target_roles
         
         super().__init__(title=bot.get_feedback("add_monitor_title"))
 
@@ -62,8 +62,8 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             m_config = {
                 "type": self.monitor_type,
                 "name": self.name_input.value,
-                "discord_channel_id": self.discord_channel_id,
-                "ping_role_id": self.ping_role_id,
+                "target_channels": self.target_channels,
+                "target_roles": self.target_roles,
                 "enabled": True
             }
 
@@ -122,11 +122,11 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             await interaction.response.send_message(self.bot.get_feedback("error_prefix_msg", error=str(e)), ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_id, original_name, discord_channel_id, ping_role_id, current_color="", steam_patch_only=None):
+    def __init__(self, bot, monitor_id, original_name, target_channels, target_roles, current_color="", steam_patch_only=None):
         self.bot = bot
         self.monitor_id = monitor_id
-        self.discord_channel_id = discord_channel_id
-        self.ping_role_id = ping_role_id
+        self.target_channels = target_channels
+        self.target_roles = target_roles
         self.steam_patch_only = steam_patch_only
         super().__init__(title=bot.get_feedback("ui_monitor_edit_title", name=original_name))
 
@@ -141,9 +141,9 @@ class EditMonitorModal(discord.ui.Modal):
             new_name = self.name_input.value
             color_val = self.color_input.value.strip() if self.color_input.value else ""
             
-            log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_ch={self.discord_channel_id}, new_role={self.ping_role_id}, color={color_val}, steam_patch={self.steam_patch_only}")
+            log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_chs={self.target_channels}, new_roles={self.target_roles}, color={color_val}, steam_patch={self.steam_patch_only}")
             
-            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.discord_channel_id, self.ping_role_id, embed_color=color_val, steam_patch_only=self.steam_patch_only)
+            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only)
             
             log.info(f"[EDIT DEBUG] Step 2: Database update completed successfully.")
 
@@ -192,136 +192,4 @@ class AlertTemplateModal(discord.ui.Modal):
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer()
 
-class NewChannelModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view, id_attr="selected_channel_id", display_attr="channel_display_name"):
-        super().__init__(title=bot.get_feedback("ui_modal_new_channel_title"))
-        self.bot = bot
-        self.parent_view = parent_view
-        self.id_attr = id_attr
-        self.display_attr = display_attr
-        
-        self.name_input = discord.ui.TextInput(
-            label=self.bot.get_feedback("ui_modal_new_channel_label"),
-            placeholder=self.bot.get_feedback("ui_modal_new_channel_ph"),
-            required=True,
-            max_length=100
-        )
-        self.add_item(self.name_input)
 
-    async def on_submit(self, interaction: discord.Interaction):
-        from core.utils import slugify
-        raw_name = self.name_input.value
-        clean_name = slugify(raw_name)
-        
-        try:
-            # Create the channel in the same category as the current channel if possible
-            overwrites = {
-                interaction.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False)
-            }
-            category = interaction.channel.category if hasattr(interaction.channel, 'category') else None
-            
-            new_channel = await interaction.guild.create_text_channel(
-                name=clean_name,
-                category=category,
-                reason=f"Feed Bot monitor creation (Original: {raw_name})"
-            )
-            
-            setattr(self.parent_view, self.id_attr, new_channel.id)
-            setattr(self.parent_view, self.display_attr, f"#{new_channel.name} {self.bot.get_feedback('ui_suffix_created')}")
-            
-            await self.parent_view.check_readiness(interaction)
-        except Exception as e:
-            await interaction.response.send_message(self.bot.get_feedback("error_channel_create_fail", error=str(e)), ephemeral=True)
-
-class ManualInputModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view, mode="channel", id_attr=None, display_attr=None):
-        if mode == "channel":
-            title = bot.get_feedback("ui_modal_manual_input_title_ch")
-        else:
-            title = bot.get_feedback("ui_modal_manual_input_title_role")
-        super().__init__(title=title)
-        self.bot = bot
-        self.parent_view = parent_view
-        self.mode = mode
-        
-        self.id_attr = id_attr or ("selected_channel_id" if mode == "channel" else "selected_role_id")
-        self.display_attr = display_attr or ("channel_display_name" if mode == "channel" else "role_display_name")
-        
-        self.input_field = discord.ui.TextInput(
-            label=self.bot.get_feedback("ui_modal_manual_input_label"),
-            placeholder=self.bot.get_feedback("ui_modal_manual_input_ph"),
-            required=True
-        )
-        self.add_item(self.input_field)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        val = self.input_field.value.strip()
-        guild = interaction.guild
-        
-        if self.mode == "channel":
-            target = None
-            if val.isdigit():
-                target = guild.get_channel(int(val))
-            else:
-                # Case-insensitive search for channels
-                target = discord.utils.get(guild.text_channels, name=val.lower())
-                if not target:
-                    # Alternative search and try to match exactly ignoring case manually
-                    target = next((c for c in guild.text_channels if c.name.lower() == val.lower()), None)
-            
-            if target:
-                setattr(self.parent_view, self.id_attr, target.id)
-                setattr(self.parent_view, self.display_attr, f"#{target.name} {self.bot.get_feedback('ui_suffix_manual')}")
-                await self.parent_view.check_readiness(interaction)
-            else:
-                await interaction.response.send_message(self.bot.get_feedback("error_channel_not_found"), ephemeral=True)
-        
-        else: # role mode
-            target = None
-            if val.isdigit():
-                target = guild.get_role(int(val))
-            else:
-                # Case-insensitive search for roles
-                target = discord.utils.get(guild.roles, name=val)
-                if not target:
-                    target = next((r for r in guild.roles if r.name.lower() == val.lower()), None)
-            
-            if target:
-                setattr(self.parent_view, self.id_attr, target.id)
-                setattr(self.parent_view, self.display_attr, f"@{target.name} {self.bot.get_feedback('ui_suffix_manual')}")
-                await self.parent_view.check_readiness(interaction)
-            else:
-                await interaction.response.send_message(self.bot.get_feedback("error_role_not_found"), ephemeral=True)
-
-class NewRoleModal(discord.ui.Modal):
-    def __init__(self, bot, parent_view, id_attr="selected_role_id", display_attr="role_display_name"):
-        super().__init__(title=bot.get_feedback("ui_modal_new_role_title"))
-        self.bot = bot
-        self.parent_view = parent_view
-        self.id_attr = id_attr
-        self.display_attr = display_attr
-        
-        self.name_input = discord.ui.TextInput(
-            label=self.bot.get_feedback("ui_modal_new_role_label"),
-            placeholder=self.bot.get_feedback("ui_modal_new_role_ph"),
-            required=True,
-            max_length=100
-        )
-        self.add_item(self.name_input)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        name = self.name_input.value
-        try:
-            # Create a standard role, mentionable usually wanted for ping feeds
-            new_role = await interaction.guild.create_role(
-                name=name,
-                mentionable=True,
-                reason=f"Feed Bot monitor role creation"
-            )
-            
-            setattr(self.parent_view, self.id_attr, new_role.id)
-            setattr(self.parent_view, self.display_attr, f"@{new_role.name} {self.bot.get_feedback('ui_suffix_created')}")
-            
-            await self.parent_view.check_readiness(interaction)
-        except Exception as e:
-            await interaction.response.send_message(self.bot.get_feedback("error_role_create_fail", error=str(e)), ephemeral=True)

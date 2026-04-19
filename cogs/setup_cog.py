@@ -43,21 +43,7 @@ class SetupCog(commands.Cog):
         await database.update_guild_settings(guild_id, language=lang_code, bot=self.bot)
         await interaction.response.send_message(self.bot.get_feedback("ui_setup_lang_success", lang=lang_code.upper()), ephemeral=True)
 
-    @set_group.command(name="default-channel", description="Set the default channel for notifications")
-    @app_commands.describe(channel="Target channel for posts")
-    @app_commands.default_permissions(administrator=True)
-    async def set_default_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        guild_id = interaction.guild_id or 0
-        await database.update_guild_settings(guild_id, default_channel_id=channel.id, bot=self.bot)
-        await interaction.response.send_message(self.bot.get_feedback("ui_setup_ch_success", id=channel.id), ephemeral=True)
 
-    @set_group.command(name="default-ping-role", description="Set the default role to mention in notifications")
-    @app_commands.describe(role="Select the role to be pinged")
-    @app_commands.default_permissions(administrator=True)
-    async def set_default_ping_role(self, interaction: discord.Interaction, role: discord.Role):
-        guild_id = interaction.guild_id or 0
-        await database.update_guild_settings(guild_id, default_ping_role_id=role.id, bot=self.bot)
-        await interaction.response.send_message(self.bot.get_feedback("ui_setup_role_success", id=role.id), ephemeral=True)
 
     @set_group.command(name="admin-role", description="Set the role allowed to manage the bot on this server")
     @app_commands.describe(role="Select the server admin role")

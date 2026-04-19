@@ -12,16 +12,18 @@ class BaseMonitor(ABC):
         self.embed_color = config.get("embed_color", "3d3f45")
         self.platform = config.get("type", "unknown")
         self.enabled = config.get("enabled", True)
-        self.discord_channel_id = config.get("discord_channel_id")
-        self.ping_role_id = config.get("ping_role_id", 0)
+        self.target_channels = config.get("target_channels", [])
+        self.target_roles = config.get("target_roles", [])
         self.guild_id = config.get("guild_id", 0)
 
     @property
     def ping_role(self):
         """Return the formatted ping string if a role is configured."""
-        if self.ping_role_id and self.ping_role_id != 0:
-            return f"<@&{self.ping_role_id}>"
-        return ""
+        pings = []
+        for role_id in self.target_roles:
+            if role_id and role_id != 0:
+                pings.append(f"<@&{role_id}>")
+        return " ".join(pings) if pings else ""
 
     def get_alert_message(self, variables=None):
         """
@@ -99,34 +101,32 @@ class BaseMonitor(ABC):
         return [] # Subclasses should override for N > 1
 
     async def send_update(self, content=None, embed=None, view=None):
-        """Send an update to the configured Discord channel."""
-        if not self.discord_channel_id:
-            log.warning(f"No Discord channel ID configured for monitor: {self.name}")
+        """Send an update to the configured Discord channel(s)."""
+        if not self.target_channels:
+            log.warning(f"No target channels configured for monitor: {self.name}")
             return
 
-        channel = self.bot.get_channel(self.discord_channel_id)
-        if not channel:
-            try:
-                channel = await self.bot.fetch_channel(self.discord_channel_id)
-            except discord.NotFound as enf:
-                if enf.code == 10003: # Unknown Channel
-                    log.error(f"Channel {self.discord_channel_id} for {self.name} is GONE (10003). Disabling monitor to prevent error spam.")
-                    self.enabled = False
-                    await database.update_monitor_status(self.config.get("id"), self.guild_id, False)
-                    return
-                log.error(f"Could not fetch channel {self.discord_channel_id} for {self.name}: {enf}")
-                return
-            except Exception as e:
-                log.error(f"Could not fetch channel {self.discord_channel_id} for {self.name}: {e}")
-                return
+        for ch_id in self.target_channels:
+            channel = self.bot.get_channel(ch_id)
+            if not channel:
+                try:
+                    channel = await self.bot.fetch_channel(ch_id)
+                except discord.NotFound as enf:
+                    if enf.code == 10003: # Unknown Channel
+                        log.error(f"Channel {ch_id} for {self.name} is GONE (10003).")
+                        continue
+                    log.error(f"Could not fetch channel {ch_id} for {self.name}: {enf}")
+                    continue
+                except Exception as e:
+                    log.error(f"Could not fetch channel {ch_id} for {self.name}: {e}")
+                    continue
 
-        if channel:
-            try:
-                await channel.send(content=content, embed=embed, view=view)
-                log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
-                # Analytics: Increment daily post count for this guild/platform
-                await database.increment_post_stat(self.guild_id, self.platform)
-            except Exception as e:
-                log.error(f"Failed to send update for {self.name}: {e}", extra={'guild_id': self.guild_id})
-        else:
-            log.warning(f"Could not find channel {self.discord_channel_id} for {self.name}", extra={'guild_id': self.guild_id})
+            if channel:
+                try:
+                    await channel.send(content=content, embed=embed, view=view)
+                    log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
+                    await database.increment_post_stat(self.guild_id, self.platform)
+                except Exception as e:
+                    log.error(f"Failed to send update to channel {ch_id} for {self.name}: {e}", extra={'guild_id': self.guild_id})
+            else:
+                log.warning(f"Could not find channel {ch_id} for {self.name}", extra={'guild_id': self.guild_id})
