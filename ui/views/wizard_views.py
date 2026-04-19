@@ -183,7 +183,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
 
 
 class EditMonitorWizardLayout(discord.ui.LayoutView):
-    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", current_genres=None, interaction=None):
+    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", current_genres=None, steam_patch_only=None, interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.monitor_id = monitor_id
@@ -191,6 +191,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         self.monitor_type = monitor_type
         self.current_color = current_color
         self.current_genres = current_genres or []
+        self.steam_patch_only = steam_patch_only
         self.guild_id = interaction.guild_id if interaction else 0
         self.trigger_interaction = interaction
         

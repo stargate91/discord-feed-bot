@@ -250,8 +250,10 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             
         m_type = target.get("type", "unknown")
         current_genres = target.get("target_genres", [])
+        steam_patch = target.get("steam_patch_only", None)
         
-        view = EditMonitorWizardLayout(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), current_genres=current_genres, interaction=interaction)
+        from ui.views.wizard_views import EditMonitorWizardLayout
+        view = EditMonitorWizardLayout(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), current_genres=current_genres, steam_patch_only=steam_patch, interaction=interaction)
         await interaction.response.send_message(view=view, ephemeral=True)
 
     # --- Autocomplete Helpers ---
