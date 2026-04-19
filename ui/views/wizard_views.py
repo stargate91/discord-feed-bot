@@ -416,7 +416,7 @@ class SetupWizardLayout(discord.ui.LayoutView):
 
     async def template_callback(self, interaction: discord.Interaction):
         from ui.views.select_views import AlertTemplateSelectLayout
-        view = AlertTemplateSelectLayout(self.bot, self.guild_id, self.settings)
+        view = AlertTemplateSelectLayout(self.bot, self.guild_id, self.settings, force_lang=self.new_lang)
         await interaction.response.send_message(view=view, ephemeral=True)
 
     async def save_callback(self, interaction: discord.Interaction):

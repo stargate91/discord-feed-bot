@@ -6,29 +6,34 @@ from core.emojis import (
 )
 
 class AlertTemplateSelectLayout(discord.ui.LayoutView):
-    def __init__(self, bot, guild_id, settings):
+    def __init__(self, bot, guild_id, settings, force_lang=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.guild_id = guild_id
         self.settings = settings
+        self.force_lang = force_lang
         self.current_templates = settings.get("alert_templates", {})
 
         options = [
             discord.SelectOption(label="YouTube", value="youtube", emoji=TYPE_YOUTUBE),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_rss", guild_id=self.guild_id), value="rss", emoji=TYPE_RSS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_game"), value="steam_news", emoji=TYPE_GAME),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_stream", guild_id=self.guild_id), value="stream", emoji=TYPE_STREAM),
+            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_rss", guild_id=self.guild_id, force_lang=self.force_lang), value="rss", emoji=TYPE_RSS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_game", guild_id=self.guild_id, force_lang=self.force_lang), value="steam_news", emoji=TYPE_GAME),
+            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_stream", guild_id=self.guild_id, force_lang=self.force_lang), value="stream", emoji=TYPE_STREAM),
         ]
 
-        self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id), options=options)
+        self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id, force_lang=self.force_lang), options=options)
         self.select.callback = self.select_callback
         
-        msg_text = self.bot.get_feedback("ui_setup_platform_select_msg", guild_id=self.guild_id)
+        msg_text = self.bot.get_feedback("ui_setup_platform_select_msg", guild_id=self.guild_id, force_lang=self.force_lang)
         if msg_text == "ui_setup_platform_select_msg":
             msg_text = "Select a platform to configure."
             
+        title_text = self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.force_lang)
+        if title_text == "ui_btn_templates":
+            title_text = "Templates"
+
         container_items = [
-            discord.ui.TextDisplay(f"### **Templates**\n{msg_text}"),
+            discord.ui.TextDisplay(f"### **{title_text}**\n{msg_text}"),
             discord.ui.Separator(),
             discord.ui.ActionRow(self.select)
         ]
@@ -49,5 +54,5 @@ class AlertTemplateSelectLayout(discord.ui.LayoutView):
 
         # Update in-memory settings for the main SetupWizardView to save later
         self.settings["alert_templates"] = self.current_templates
-        msg = self.bot.get_feedback("ui_setup_template_save_msg", platform=platform.capitalize(), guild_id=self.guild_id)
+        msg = self.bot.get_feedback("ui_setup_template_save_msg", platform=platform.capitalize(), guild_id=self.guild_id, force_lang=self.force_lang)
         await interaction.followup.send(msg, ephemeral=True)
