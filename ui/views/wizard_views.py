@@ -256,7 +256,7 @@ class EditMonitorWizardView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-class SetupWizardView(discord.ui.View):
+class SetupWizardLayout(discord.ui.LayoutView):
     def __init__(self, bot, guild_id):
         super().__init__(timeout=300)
         self.bot = bot
@@ -295,9 +295,8 @@ class SetupWizardView(discord.ui.View):
         for code, data in self.bot.locales.items():
             lang_options.append(discord.SelectOption(label=data.get("language_name", code.upper()), value=code, default=(code == self.new_lang)))
         
-        self.lang_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_lang"), options=lang_options, row=0)
+        self.lang_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_lang"), options=lang_options)
         self.lang_select.callback = self.lang_callback
-        self.add_item(self.lang_select)
 
         # 2. Default Channel
         ch_options = [
@@ -306,9 +305,8 @@ class SetupWizardView(discord.ui.View):
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
-        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_ch"), options=ch_options, row=1)
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_ch"), options=ch_options)
         self.channel_select.callback = self.channel_callback
-        self.add_item(self.channel_select)
 
         # 3. Default Ping Role
         role_options = [
@@ -316,9 +314,8 @@ class SetupWizardView(discord.ui.View):
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
         ]
-        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_role"), options=role_options, row=2)
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_default_role"), options=role_options)
         self.role_select.callback = self.role_callback
-        self.add_item(self.role_select)
 
         # 4. Admin Role
         admin_options = [
@@ -326,34 +323,47 @@ class SetupWizardView(discord.ui.View):
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_CLOSE)
         ]
-        self.admin_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_role_select", guild_id=self.guild_id), options=admin_options, row=3)
+        self.admin_role_select = discord.ui.Select(placeholder=self.bot.get_feedback("setup_admin_role_select", guild_id=self.guild_id), options=admin_options)
         self.admin_role_select.callback = self.admin_role_callback
-        self.add_item(self.admin_role_select)
 
         # 5. Templates/Save footer
-
-        template_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_templates"), style=discord.ButtonStyle.secondary, row=4)
+        template_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_templates"), style=discord.ButtonStyle.secondary)
         template_btn.callback = self.template_callback
-        self.add_item(template_btn)
 
-        save_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_save"), style=discord.ButtonStyle.success, row=4)
+        save_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_save"), style=discord.ButtonStyle.success)
         save_btn.callback = self.save_callback
-        self.add_item(save_btn)
 
-    async def create_embed(self):
-        embed = discord.Embed(title=self.bot.get_feedback("ui_setup_title"), color=discord.Color.blue())
-        embed.add_field(name=self.bot.get_feedback("ui_setup_lang_label"), value=self.new_lang.upper(), inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.ch_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_setup_admin_role_label"), value=self.admin_role_display_name, inline=True)
-        return embed
+        # Build Container layout items
+        title_text = self.bot.get_feedback("ui_setup_title", guild_id=self.guild_id)
+        if title_text == "ui_setup_title":
+            title_text = "Bot Setup" # Fallback if missing
+            
+        settings_text = (
+            f"### **{title_text}**\n"
+            f"**{self.bot.get_feedback('ui_setup_lang_label', guild_id=self.guild_id)}:** {self.new_lang.upper()}\n"
+            f"**{self.bot.get_feedback('ui_label_target_ch', guild_id=self.guild_id)}:** {self.ch_display_name}\n"
+            f"**{self.bot.get_feedback('ui_label_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}\n"
+            f"**{self.bot.get_feedback('ui_setup_admin_role_label', guild_id=self.guild_id)}:** {self.admin_role_display_name}"
+        )
+        
+        container_items = [
+            discord.ui.TextDisplay(settings_text),
+            discord.ui.Separator(),
+            discord.ui.ActionRow(self.lang_select),
+            discord.ui.ActionRow(self.channel_select),
+            discord.ui.ActionRow(self.role_select),
+            discord.ui.ActionRow(self.admin_role_select),
+            discord.ui.ActionRow(template_btn, save_btn)
+        ]
+        
+        self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def check_readiness(self, interaction: discord.Interaction):
-        embed = await self.create_embed()
+        self.update_components()
         if interaction.response.is_done():
-            await interaction.edit_original_response(embed=embed, view=self)
+            await interaction.edit_original_response(view=self)
         else:
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
     async def lang_callback(self, interaction: discord.Interaction):
         self.new_lang = self.lang_select.values[0]
@@ -428,6 +438,8 @@ class SetupWizardView(discord.ui.View):
             "admin_role_id": self.new_admin_role
         })
         self.bot.guild_settings_cache[self.guild_id] = current
-        await interaction.response.edit_message(content=self.bot.get_feedback("setup_save_success", guild_id=self.guild_id), view=None)
+        success_view = discord.ui.LayoutView()
+        success_view.add_item(discord.ui.TextDisplay(self.bot.get_feedback("setup_save_success", guild_id=self.guild_id)))
+        await interaction.response.edit_message(view=success_view)
 
 
