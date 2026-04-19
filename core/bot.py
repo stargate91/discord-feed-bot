@@ -255,7 +255,7 @@ class FeedBot(commands.Bot):
         else:
             await interaction.response.send_message(msg, ephemeral=True)
 
-    def get_feedback(self, key, guild_id=None, **kwargs):
+    def get_feedback(self, key, guild_id=None, force_lang=None, **kwargs):
         """Helper to get localized feedback."""
         guild_id = guild_id or 0
         settings = self.guild_settings_cache.get(guild_id, {})
@@ -264,16 +264,20 @@ class FeedBot(commands.Bot):
         master_guilds = self.config.get("master_guild_ids", [])
         master_lang = self.config.get("master_language", "en")
         
-        # 1. Guild specific
-        lang_code = settings.get("language")
-        
-        # 2. Master/Global Fallback
-        if not lang_code:
-            if guild_id == 0 or guild_id in master_guilds:
-                lang_code = master_lang
-            else:
-                # Normal guilds default to EN if nothing else is set
-                lang_code = "en"
+        # 1. Force Language Override
+        if force_lang:
+            lang_code = force_lang
+        else:
+            # 2. Guild specific
+            lang_code = settings.get("language")
+            
+            # 3. Master/Global Fallback
+            if not lang_code:
+                if guild_id == 0 or guild_id in master_guilds:
+                    lang_code = master_lang
+                else:
+                    # Normal guilds default to EN if nothing else is set
+                    lang_code = "en"
 
         lang_data = self.locales.get(lang_code, self.locales.get("en", self.language_data))
 
