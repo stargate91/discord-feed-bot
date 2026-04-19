@@ -67,6 +67,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         
         settings_text = (
             f"### **{title_text}**\n"
+            f"*Tipp: Ha választás nélkül mész tovább, az adott csatorna lesz a cél, és senkit nem pingel!*\n\n"
             f"**{self.bot.get_feedback('ui_label_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
             f"**{self.bot.get_feedback('ui_label_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}\n"
             f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}"
@@ -160,6 +161,12 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         )
         self.role_select.callback = self.role_callback
 
+        self.clear_ch_btn = discord.ui.Button(label="Csatornák Törlése 🗑️", style=discord.ButtonStyle.danger)
+        self.clear_ch_btn.callback = self.clear_ch_callback
+
+        self.clear_role_btn = discord.ui.Button(label="Ping Törlése 🗑️", style=discord.ButtonStyle.danger)
+        self.clear_role_btn.callback = self.clear_role_callback
+
         self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id), style=discord.ButtonStyle.primary, disabled=False)
         self.next_btn.callback = self.next_btn_callback
         
@@ -167,7 +174,8 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         
         settings_text = (
             f"### **{title_text}**\n"
-            f"*Ha üresen hagyod a menüket, az eddigi beállításokat hagyod jóvá!*\n\n"
+            f"*Tipp: Ha üresen hagysz egy menüt és úgy mész tovább, a bot megtartja a korábbi beállítást!*\n"
+            f"*Ha törölni akarsz minden eddigi beállítást (nullázni), használd a Piros gombokat!*\n\n"
             f"**{self.bot.get_feedback('ui_label_new_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
             f"**{self.bot.get_feedback('ui_label_new_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}"
         )
@@ -177,7 +185,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
             discord.ui.Separator(),
             discord.ui.ActionRow(self.channel_select),
             discord.ui.ActionRow(self.role_select),
-            discord.ui.ActionRow(self.next_btn)
+            discord.ui.ActionRow(self.clear_ch_btn, self.clear_role_btn, self.next_btn)
         ]
         
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
@@ -207,6 +215,16 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         else:
             self.role_display_name = self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
             
+        await self.check_readiness(interaction)
+
+    async def clear_ch_callback(self, interaction: discord.Interaction):
+        self.selected_channels = [-1]
+        self.channel_display_name = "Törlésre jelölve! 🗑️"
+        await self.check_readiness(interaction)
+
+    async def clear_role_callback(self, interaction: discord.Interaction):
+        self.selected_roles = [-1]
+        self.role_display_name = "Törlésre jelölve! 🗑️"
         await self.check_readiness(interaction)
 
     async def next_btn_callback(self, interaction: discord.Interaction):

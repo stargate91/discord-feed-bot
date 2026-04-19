@@ -181,10 +181,17 @@ async def update_monitor_details(monitor_id, guild_id, name, target_channels, ta
         try: extra_settings = json.loads(extra_settings_json)
         except: pass
     
-    if target_channels is not None and len(target_channels) > 0:
-        extra_settings["target_channels"] = target_channels
-    if target_roles is not None and len(target_roles) > 0:
-        extra_settings["target_roles"] = target_roles
+    if target_channels is not None:
+        if len(target_channels) == 1 and target_channels[0] == -1:
+            extra_settings["target_channels"] = []
+        elif len(target_channels) > 0:
+            extra_settings["target_channels"] = target_channels
+            
+    if target_roles is not None:
+        if len(target_roles) == 1 and target_roles[0] == -1:
+            extra_settings["target_roles"] = []
+        elif len(target_roles) > 0:
+            extra_settings["target_roles"] = target_roles
         
     if embed_color is not None:
         if embed_color.strip(): extra_settings["embed_color"] = embed_color.strip()
