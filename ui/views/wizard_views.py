@@ -29,24 +29,35 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
 
     def update_components(self):
         self.clear_items()
+        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
         
         # 1. Simplified Channel Select
         ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch_name", name=self.trigger_interaction.channel.name, guild_id=self.guild_id), value="current", emoji=ICON_LOCATION),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch_name", name=self.trigger_interaction.channel.name, guild_id=self.guild_id), value="current", emoji=ICON_LOCATION)
+        ]
+        if settings.get("default_channel_id"):
+            ch_options.append(discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS))
+            
+        ch_options.extend([
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
-        ]
+        ])
+        
         self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_channel_select", guild_id=self.guild_id), options=ch_options)
         self.channel_select.callback = self.channel_callback
 
         # 2. Simplified Role Select
         role_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id), value="none", emoji=ICON_MUTE),
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id), value="none", emoji=ICON_MUTE)
+        ]
+        if settings.get("default_ping_role_id"):
+            role_options.append(discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS))
+            
+        role_options.extend([
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
-        ]
+        ])
+        
         self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_role_select", guild_id=self.guild_id), options=role_options)
         self.role_select.callback = self.role_callback
 
@@ -93,11 +104,11 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def check_readiness(self, interaction: discord.Interaction):
-        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-        has_channel = self.selected_channel_id or settings.get("default_channel_id")
-        self.next_btn.disabled = not (has_channel and self.selected_type)
-        
         self.update_components()
+        
+        has_channel = self.selected_channel_id is not None
+        self.next_btn.disabled = not (has_channel and self.selected_type)
+
         if interaction.response.is_done():
             await interaction.edit_original_response(view=self)
         else:
@@ -110,10 +121,6 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
             self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current', guild_id=self.guild_id)}"
             await self.check_readiness(interaction)
         elif val == "default":
-            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-            if not settings.get("default_channel_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set", guild_id=self.guild_id), ephemeral=True)
-                return
             self.selected_channel_id = 0 # 0 means use global default from settings
             self.channel_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
@@ -131,10 +138,6 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
             self.role_display_name = self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "default":
-            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-            if not settings.get("default_ping_role_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set", guild_id=self.guild_id), ephemeral=True)
-                return
             self.selected_role_id = 0 # 0 means we'll use fallback in next_callback
             self.role_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
@@ -181,23 +184,32 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
 
     def update_components(self):
         self.clear_items()
+        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
         
         ch_options = [
             discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id), value="keep", emoji=ICON_DOT),
-            discord.SelectOption(label=f"{self.bot.get_feedback('ui_option_current_ch', guild_id=self.guild_id)} (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji=ICON_LOCATION),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
+            discord.SelectOption(label=f"{self.bot.get_feedback('ui_option_current_ch', guild_id=self.guild_id)} (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji=ICON_LOCATION)
         ]
+        if settings.get("default_channel_id"):
+            ch_options.append(discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS))
+            
+        ch_options.append(discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch", guild_id=self.guild_id), value="manual", emoji=ICON_ID))
+        
         self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_ch_short", guild_id=self.guild_id), options=ch_options)
         self.channel_select.callback = self.channel_callback
 
         role_options = [
             discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id), value="keep", emoji=ICON_DOT),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none", guild_id=self.guild_id), value="none", emoji=ICON_MUTE),
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none", guild_id=self.guild_id), value="none", emoji=ICON_MUTE)
+        ]
+        if settings.get("default_ping_role_id"):
+            role_options.append(discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS))
+            
+        role_options.extend([
             discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
             discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
-        ]
+        ])
+        
         self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_role_short", guild_id=self.guild_id), options=role_options)
         self.role_select.callback = self.role_callback
 
@@ -240,10 +252,6 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
             self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current', guild_id=self.guild_id)}"
             await self.check_readiness(interaction)
         elif val == "default":
-            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-            if not settings.get("default_channel_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set", guild_id=self.guild_id), ephemeral=True)
-                return
             self.selected_channel_id = 0
             self.channel_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
@@ -262,10 +270,6 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
             self.role_display_name = self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "default":
-            settings = self.bot.guild_settings_cache.get(self.guild_id, {})
-            if not settings.get("default_ping_role_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set", guild_id=self.guild_id), ephemeral=True)
-                return
             self.selected_role_id = 0
             self.role_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
