@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from ui.views.wizard_views import AddMonitorWizardView, EditMonitorWizardView
+from ui.views.wizard_views import AddMonitorWizardLayout, EditMonitorWizardLayout
 from logger import log
 import database
 from core.emojis import (
@@ -22,9 +22,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
             
-        view = AddMonitorWizardView(self.bot, interaction)
-        msg = self.bot.get_feedback("ui_monitor_add_msg", guild_id=interaction.guild_id)
-        await interaction.response.send_message(msg, view=view, ephemeral=True)
+        view = AddMonitorWizardLayout(self.bot, interaction)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @app_commands.command(name="check", description="Manual check and send the latest content")
     @app_commands.describe(monitor_name="Which feed should the bot check?")
@@ -245,8 +244,8 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             
         m_type = target.get("type", "unknown")
         
-        view = EditMonitorWizardView(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), interaction=interaction)
-        await interaction.response.send_message(self.bot.get_feedback("ui_monitor_edit_title", name=monitor_name, guild_id=interaction.guild_id), view=view, ephemeral=True)
+        view = EditMonitorWizardLayout(self.bot, target["id"], monitor_name, m_type, current_color=target.get("embed_color", ""), interaction=interaction)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     # --- Autocomplete Helpers ---
     async def _monitor_name_autocomplete(self, interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:

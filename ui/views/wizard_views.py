@@ -10,7 +10,7 @@ from ui.modals import (
 from ui.views.select_views import AlertTemplateSelectLayout
 from core.emojis import ICON_LOCATION, ICON_SETTINGS, ICON_ADD, ICON_ID, ICON_MUTE, ICON_DOT, ICON_CLOSE
 
-class AddMonitorWizardView(discord.ui.View):
+class AddMonitorWizardLayout(discord.ui.LayoutView):
     def __init__(self, bot, interaction):
         super().__init__(timeout=300)
         self.bot = bot
@@ -22,8 +22,8 @@ class AddMonitorWizardView(discord.ui.View):
         self.selected_type = None
         
         # Display names for the embed/feedback
-        self.channel_display_name = bot.get_feedback("ui_status_not_selected")
-        self.role_display_name = bot.get_feedback("ui_status_no_ping")
+        self.channel_display_name = bot.get_feedback("ui_status_not_selected", guild_id=self.guild_id)
+        self.role_display_name = bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
 
         self.update_components()
 
@@ -32,109 +32,122 @@ class AddMonitorWizardView(discord.ui.View):
         
         # 1. Simplified Channel Select
         ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch_name", name=self.trigger_interaction.channel.name), value="current", emoji=ICON_LOCATION),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji=ICON_SETTINGS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch"), value="create", emoji=ICON_ADD),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID)
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_current_ch_name", name=self.trigger_interaction.channel.name, guild_id=self.guild_id), value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_ch", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
         ]
-        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_channel_select"), options=ch_options, row=0)
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_channel_select", guild_id=self.guild_id), options=ch_options)
         self.channel_select.callback = self.channel_callback
-        self.add_item(self.channel_select)
 
         # 2. Simplified Role Select
         role_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_no_ping"), value="none", emoji=ICON_MUTE),
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config"), value="default", emoji=ICON_SETTINGS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id), value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
         ]
-        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_role_select"), options=role_options, row=1)
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("add_monitor_role_select", guild_id=self.guild_id), options=role_options)
         self.role_select.callback = self.role_callback
-        self.add_item(self.role_select)
 
         # 3. Platform Select (Original options preserved)
         platform_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube"), value="youtube"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss"), value="rss"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games"), value="epic_games"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free"), value="steam_free"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_gog_free"), value="gog_free"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_stream"), value="stream"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news"), value="steam_news"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie"), value="movie"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series"), value="tv_series"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto"), value="crypto"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_github"), value="github"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube", guild_id=self.guild_id), value="youtube"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss", guild_id=self.guild_id), value="rss"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games", guild_id=self.guild_id), value="epic_games"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free", guild_id=self.guild_id), value="steam_free"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_gog_free", guild_id=self.guild_id), value="gog_free"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_stream", guild_id=self.guild_id), value="stream"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news", guild_id=self.guild_id), value="steam_news"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie", guild_id=self.guild_id), value="movie"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series", guild_id=self.guild_id), value="tv_series"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto", guild_id=self.guild_id), value="crypto"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_github", guild_id=self.guild_id), value="github"),
         ]
-        self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform"), options=platform_options, row=2)
+        self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform", guild_id=self.guild_id), options=platform_options)
         self.type_select.callback = self.type_callback
-        self.add_item(self.type_select)
 
         # 5. Next Button
-        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_settings"), style=discord.ButtonStyle.success, disabled=True, row=4)
+        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_settings", guild_id=self.guild_id), style=discord.ButtonStyle.success, disabled=True)
         self.next_btn.callback = self.next_callback
-        self.add_item(self.next_btn)
 
-    async def create_status_embed(self):
-        embed = discord.Embed(title=self.bot.get_feedback("ui_monitor_add_step_1"), color=discord.Color.blue())
-        embed.add_field(name=self.bot.get_feedback("ui_label_target_ch"), value=self.channel_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_label_ping_role"), value=self.role_display_name, inline=True)
-        platform_name = self.selected_type.upper() if self.selected_type else self.bot.get_feedback("ui_status_not_selected")
-        embed.add_field(name=self.bot.get_feedback("field_type"), value=platform_name, inline=True)
-        return embed
+        title_text = self.bot.get_feedback("ui_monitor_add_step_1", guild_id=self.guild_id)
+        platform_name = self.selected_type.upper() if self.selected_type else self.bot.get_feedback("ui_status_not_selected", guild_id=self.guild_id)
+        
+        settings_text = (
+            f"### **{title_text}**\n"
+            f"**{self.bot.get_feedback('ui_label_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
+            f"**{self.bot.get_feedback('ui_label_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}\n"
+            f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}"
+        )
+        
+        container_items = [
+            discord.ui.TextDisplay(settings_text),
+            discord.ui.Separator(),
+            discord.ui.ActionRow(self.channel_select),
+            discord.ui.ActionRow(self.role_select),
+            discord.ui.ActionRow(self.type_select),
+            discord.ui.ActionRow(self.next_btn)
+        ]
+        
+        self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def check_readiness(self, interaction: discord.Interaction):
         settings = self.bot.guild_settings_cache.get(self.guild_id, {})
         has_channel = self.selected_channel_id or settings.get("default_channel_id")
         self.next_btn.disabled = not (has_channel and self.selected_type)
         
-        embed = await self.create_status_embed()
+        self.update_components()
         if interaction.response.is_done():
-            await interaction.edit_original_response(embed=embed, view=self)
+            await interaction.edit_original_response(view=self)
         else:
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
     async def channel_callback(self, interaction: discord.Interaction):
         val = self.channel_select.values[0]
         if val == "current":
             self.selected_channel_id = interaction.channel.id
-            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
+            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current', guild_id=self.guild_id)}"
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
             if not settings.get("default_channel_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set", guild_id=self.guild_id), ephemeral=True)
                 return
             self.selected_channel_id = 0 # 0 means use global default from settings
-            self.channel_display_name = self.bot.get_feedback("ui_status_default_config")
+            self.channel_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "create":
+            from ui.modals import NewChannelModal
             await interaction.response.send_modal(NewChannelModal(self.bot, self))
         elif val == "manual":
+            from ui.modals import ManualInputModal
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
 
     async def role_callback(self, interaction: discord.Interaction):
         val = self.role_select.values[0]
         if val == "none":
             self.selected_role_id = 0
-            self.role_display_name = self.bot.get_feedback("ui_status_no_ping")
+            self.role_display_name = self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
             if not settings.get("default_ping_role_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set", guild_id=self.guild_id), ephemeral=True)
                 return
             self.selected_role_id = 0 # 0 means we'll use fallback in next_callback
-            self.role_display_name = self.bot.get_feedback("ui_status_default_config")
+            self.role_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "create":
+            from ui.modals import NewRoleModal
             await interaction.response.send_modal(NewRoleModal(self.bot, self))
         elif val == "manual":
+            from ui.modals import ManualInputModal
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role"))
 
     async def type_callback(self, interaction: discord.Interaction):
         self.selected_type = self.type_select.values[0]
-        self.update_components() # Refresh to show/hide steam select
+        self.update_components() # Refresh
         await self.check_readiness(interaction)
 
     async def next_callback(self, interaction: discord.Interaction):
@@ -142,11 +155,12 @@ class AddMonitorWizardView(discord.ui.View):
         ch_id = self.selected_channel_id or settings.get("default_channel_id")
         role_id = self.selected_role_id or settings.get("default_ping_role_id") or 0
         
+        from ui.modals import AddMonitorWizardStepTwoModal
         modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_id, role_id)
         await interaction.response.send_modal(modal)
 
 
-class EditMonitorWizardView(discord.ui.View):
+class EditMonitorWizardLayout(discord.ui.LayoutView):
     def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
@@ -160,8 +174,8 @@ class EditMonitorWizardView(discord.ui.View):
         self.selected_channel_id = None
         self.selected_role_id = 0
         
-        self.channel_display_name = bot.get_feedback("ui_status_unchanged")
-        self.role_display_name = bot.get_feedback("ui_status_unchanged")
+        self.channel_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
+        self.role_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
         
         self.update_components()
 
@@ -169,89 +183,102 @@ class EditMonitorWizardView(discord.ui.View):
         self.clear_items()
         
         ch_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged"), value="keep", emoji=ICON_DOT),
-            discord.SelectOption(label=f"{self.bot.get_feedback('ui_option_current_ch')} (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji=ICON_LOCATION),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch"), value="default", emoji=ICON_SETTINGS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch"), value="manual", emoji=ICON_ID)
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id), value="keep", emoji=ICON_DOT),
+            discord.SelectOption(label=f"{self.bot.get_feedback('ui_option_current_ch', guild_id=self.guild_id)} (#{self.trigger_interaction.channel.name if self.trigger_interaction else '?'})", value="current", emoji=ICON_LOCATION),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_default_ch", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_ch", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
         ]
-        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_ch_short"), options=ch_options, row=0)
+        self.channel_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_ch_short", guild_id=self.guild_id), options=ch_options)
         self.channel_select.callback = self.channel_callback
-        self.add_item(self.channel_select)
 
         role_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged"), value="keep", emoji=ICON_DOT),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_none"), value="none", emoji=ICON_MUTE),
-            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config"), value="default", emoji=ICON_SETTINGS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role"), value="create", emoji=ICON_ADD),
-            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role"), value="manual", emoji=ICON_ID)
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id), value="keep", emoji=ICON_DOT),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_none", guild_id=self.guild_id), value="none", emoji=ICON_MUTE),
+            discord.SelectOption(label=self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id), value="default", emoji=ICON_SETTINGS),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_create_role", guild_id=self.guild_id), value="create", emoji=ICON_ADD),
+            discord.SelectOption(label=self.bot.get_feedback("ui_option_manual_role", guild_id=self.guild_id), value="manual", emoji=ICON_ID)
         ]
-        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_role_short"), options=role_options, row=1)
+        self.role_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_edit_role_short", guild_id=self.guild_id), options=role_options)
         self.role_select.callback = self.role_callback
-        self.add_item(self.role_select)
 
-        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name"), style=discord.ButtonStyle.primary, disabled=False, row=3)
+        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id), style=discord.ButtonStyle.primary, disabled=False)
         self.next_btn.callback = self.next_btn_callback
-        self.add_item(self.next_btn)
-
-    async def create_edit_embed(self):
-        embed = discord.Embed(title=self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name), color=discord.Color.orange())
-        embed.add_field(name=self.bot.get_feedback("ui_label_new_target_ch"), value=self.channel_display_name, inline=True)
-        embed.add_field(name=self.bot.get_feedback("ui_label_new_ping_role"), value=self.role_display_name, inline=True)
-        return embed
+        
+        title_text = self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name, guild_id=self.guild_id)
+        
+        settings_text = (
+            f"### **{title_text}**\n"
+            f"**{self.bot.get_feedback('ui_label_new_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
+            f"**{self.bot.get_feedback('ui_label_new_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}"
+        )
+        
+        container_items = [
+            discord.ui.TextDisplay(settings_text),
+            discord.ui.Separator(),
+            discord.ui.ActionRow(self.channel_select),
+            discord.ui.ActionRow(self.role_select),
+            discord.ui.ActionRow(self.next_btn)
+        ]
+        
+        self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def check_readiness(self, interaction: discord.Interaction):
-        embed = await self.create_edit_embed()
+        self.update_components()
         if interaction.response.is_done():
-            await interaction.edit_original_response(embed=embed, view=self)
+            await interaction.edit_original_response(view=self)
         else:
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(view=self)
 
     async def channel_callback(self, interaction: discord.Interaction):
         val = self.channel_select.values[0]
         if val == "keep":
             self.selected_channel_id = None
-            self.channel_display_name = self.bot.get_feedback("ui_status_unchanged")
+            self.channel_display_name = self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "current":
             self.selected_channel_id = interaction.channel.id
-            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current')}"
+            self.channel_display_name = f"#{interaction.channel.name} {self.bot.get_feedback('ui_suffix_current', guild_id=self.guild_id)}"
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
             if not settings.get("default_channel_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set"), ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_default_ch_not_set", guild_id=self.guild_id), ephemeral=True)
                 return
             self.selected_channel_id = 0
-            self.channel_display_name = self.bot.get_feedback("ui_status_default_config")
+            self.channel_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "manual":
+            from ui.modals import ManualInputModal
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="channel"))
 
     async def role_callback(self, interaction: discord.Interaction):
         val = self.role_select.values[0]
         if val == "keep":
             self.selected_role_id = None
-            self.role_display_name = self.bot.get_feedback("ui_status_unchanged")
+            self.role_display_name = self.bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "none":
             self.selected_role_id = 0
-            self.role_display_name = self.bot.get_feedback("ui_status_no_ping")
+            self.role_display_name = self.bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "default":
             settings = self.bot.guild_settings_cache.get(self.guild_id, {})
             if not settings.get("default_ping_role_id"):
-                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set"), ephemeral=True)
+                await interaction.response.send_message(self.bot.get_feedback("error_default_role_not_set", guild_id=self.guild_id), ephemeral=True)
                 return
             self.selected_role_id = 0
-            self.role_display_name = self.bot.get_feedback("ui_status_default_config")
+            self.role_display_name = self.bot.get_feedback("ui_status_default_config", guild_id=self.guild_id)
             await self.check_readiness(interaction)
         elif val == "create":
+            from ui.modals import NewRoleModal
             await interaction.response.send_modal(NewRoleModal(self.bot, self))
         elif val == "manual":
+            from ui.modals import ManualInputModal
             await interaction.response.send_modal(ManualInputModal(self.bot, self, mode="role"))
 
     async def next_btn_callback(self, interaction: discord.Interaction):
         # If None, we pass 0 or original handled in EditMonitorModal
+        from ui.modals import EditMonitorModal
         modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channel_id, self.selected_role_id, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None)
         await interaction.response.send_modal(modal)
 
