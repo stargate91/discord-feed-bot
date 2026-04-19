@@ -125,12 +125,13 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             await interaction.response.send_message(self.bot.get_feedback("error_prefix_msg", error=str(e)), ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_id, original_name, target_channels, target_roles, current_color="", steam_patch_only=None):
+    def __init__(self, bot, monitor_id, original_name, target_channels, target_roles, current_color="", steam_patch_only=None, target_genres=None):
         self.bot = bot
         self.monitor_id = monitor_id
         self.target_channels = target_channels
         self.target_roles = target_roles
         self.steam_patch_only = steam_patch_only
+        self.target_genres = target_genres
         super().__init__(title=bot.get_feedback("ui_monitor_edit_title", name=original_name))
 
         self.name_input = discord.ui.TextInput(label=bot.get_feedback("add_monitor_name_label"), default=original_name, required=True)
