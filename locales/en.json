@@ -114,7 +114,7 @@
     "monitor_platform_epic": "Epic Games Store",
     "monitor_platform_github": "GitHub",
     "ui_status_not_selected": "Not selected",
-    "ui_status_no_ping": "No ping (or default)",
+    "ui_status_no_ping": "No ping",
     "ui_status_unchanged": "Unchanged",
     "ui_label_target_ch": "Target Channel",
     "ui_label_ping_role": "Ping Role",

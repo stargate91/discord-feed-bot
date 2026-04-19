@@ -116,7 +116,7 @@
     "monitor_platform_epic": "Epic Games Store",
     "monitor_platform_github": "GitHub",
     "ui_status_not_selected": "Nincs kiválasztva",
-    "ui_status_no_ping": "Nincs ping (vagy alapértelmezett)",
+    "ui_status_no_ping": "Nincs ping",
     "ui_status_unchanged": "Változatlan",
     "ui_label_target_ch": "Célcsatorna",
     "ui_label_ping_role": "Ping Rang",
