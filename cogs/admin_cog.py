@@ -19,6 +19,14 @@ def is_admin():
         return True
     return commands.check(predicate)
 
+def is_master_only():
+    async def predicate(interaction: discord.Interaction):
+        if not getattr(interaction.client, "is_master_admin", lambda u: False)(interaction.user):
+            await interaction.response.send_message(interaction.client.get_feedback("error_no_permission"), ephemeral=True)
+            return False
+        return True
+    return app_commands.check(predicate)
+
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -169,11 +177,8 @@ class MasterCog(commands.GroupCog, name="master"):
 
     @app_commands.command(name="refresh-interval", description="Set the global monitor refresh interval")
     @app_commands.describe(minutes="How many minutes between checks? (1-1440)")
+    @is_master_only()
     async def master_refresh_interval(self, interaction: discord.Interaction, minutes: app_commands.Range[int, 1, 1440]):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         self.bot.config["refresh_interval_minutes"] = minutes
         self.bot.monitor_manager.refresh_interval = minutes * 60
         self.bot.restart_monitor_task()
@@ -185,11 +190,8 @@ class MasterCog(commands.GroupCog, name="master"):
 
     @app_commands.command(name="generate-premium", description="Generate a new premium code (Master Admin only)")
     @app_commands.describe(days="Duration in days (0 for lifetime)", uses="How many times can it be redeemed?")
+    @is_master_only()
     async def master_generate_premium(self, interaction: discord.Interaction, days: int, uses: int = 1):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         import secrets
         import string
         
@@ -214,20 +216,14 @@ class MasterCog(commands.GroupCog, name="master"):
         app_commands.Choice(name="Streaming", value="streaming"),
         app_commands.Choice(name="Competing in", value="competing")
     ])
+    @is_master_only()
     async def status_add(self, interaction: discord.Interaction, activity_type: app_commands.Choice[str], text: str):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         await database.add_bot_status(activity_type.value, text[:128])
         await interaction.response.send_message(self.bot.get_feedback("status_add_success", type=activity_type.name, text=text), ephemeral=True)
 
     @status_group.command(name="list", description="List all configured bot statuses")
+    @is_master_only()
     async def status_list(self, interaction: discord.Interaction):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         statuses = await database.get_bot_statuses()
         if not statuses:
             await interaction.response.send_message(self.bot.get_feedback("status_list_empty"), ephemeral=True)
@@ -249,11 +245,8 @@ class MasterCog(commands.GroupCog, name="master"):
     @status_group.command(name="remove", description="Remove an existing bot status")
     @app_commands.describe(status_id="Status to delete")
     @app_commands.autocomplete(status_id=autocomplete_status)
+    @is_master_only()
     async def status_remove(self, interaction: discord.Interaction, status_id: str):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         if not status_id.isdigit():
             await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
             return
@@ -271,11 +264,8 @@ class MasterCog(commands.GroupCog, name="master"):
         app_commands.Choice(name="Streaming", value="streaming"),
         app_commands.Choice(name="Competing in", value="competing")
     ])
+    @is_master_only()
     async def status_edit(self, interaction: discord.Interaction, status_id: str, activity_type: app_commands.Choice[str], text: str):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         if not status_id.isdigit():
             await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
             return
@@ -289,11 +279,8 @@ class MasterCog(commands.GroupCog, name="master"):
         app_commands.Choice(name="Random", value="random"),
         app_commands.Choice(name="Sequential", value="sequential")
     ])
+    @is_master_only()
     async def status_setup(self, interaction: discord.Interaction, mode: app_commands.Choice[str], interval: app_commands.Range[int, 10, 3600]):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
         await database.set_bot_setting("status_rotation_mode", mode.value)
         await database.set_bot_setting("presence_interval_seconds", interval)
         self.bot.config["presence_interval_seconds"] = interval
