@@ -10,6 +10,7 @@
     "new_kick_alert": "**{name}** is now live on Kick!",
     "new_crypto_alert": "{direction} **{name}** price crossed the threshold! Current price: **{price} USD** ({percent} from threshold)",
     "new_github_alert": "New GitHub release published:",
+    "new_steam_news_alert": "New game update published for **{name}**:",
     "field_worth": "Worth",
     "field_type": "Type",
     "field_expiry": "Expiry",

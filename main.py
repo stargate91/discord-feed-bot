@@ -39,6 +39,23 @@ async def main():
         # Initialize Bot
         bot = FeedBot(config)
         
+        # Initialize Webhook Server
+        from core.webhook_server import app, setup_webhook_bot
+        import uvicorn
+        
+        setup_webhook_bot(bot)
+        
+        # Start Webhook Server in background
+        web_config = uvicorn.Config(
+            app, 
+            host=os.getenv("WEBHOOK_HOST", "0.0.0.0"), 
+            port=int(os.getenv("WEBHOOK_PORT", 8080)),
+            log_level="error"
+        )
+        server = uvicorn.Server(web_config)
+        asyncio.create_task(server.serve())
+        log.info(f"Webhook server started on {os.getenv('WEBHOOK_HOST', '0.0.0.0')}:{os.getenv('WEBHOOK_PORT', 8080)}")
+
         # Start Bot
         async with bot:
             await bot.start(token)

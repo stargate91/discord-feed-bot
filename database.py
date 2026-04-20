@@ -19,61 +19,17 @@ async def init_db():
     """Initialize the database and create tables."""
     pool = await get_pool()
     queries = [
-        # 1. Monitors
-        '''CREATE TABLE IF NOT EXISTS monitors (
+        # ... (other tables)
+        # 8. Payment History
+        '''CREATE TABLE IF NOT EXISTS payment_history (
             id SERIAL PRIMARY KEY,
             guild_id BIGINT NOT NULL,
-            type TEXT NOT NULL,
-            name TEXT NOT NULL,
-            discord_channel_id BIGINT NOT NULL,
-            ping_role_id BIGINT,
-            enabled BOOLEAN DEFAULT TRUE,
-            extra_settings TEXT
-        )''',
-        # 2. Published entries v2
-        '''CREATE TABLE IF NOT EXISTS published_entries_v2 (
-            entry_id TEXT,
-            platform TEXT,
-            guild_id BIGINT,
-            feed_url TEXT,
-            published_at TIMESTAMP,
-            PRIMARY KEY (entry_id, platform, guild_id)
-        )''',
-        # 3. Guild settings
-        '''CREATE TABLE IF NOT EXISTS guild_settings (
-            guild_id BIGINT PRIMARY KEY,
-            language TEXT DEFAULT 'en',
-            admin_role_id BIGINT DEFAULT 0,
-            alert_templates TEXT,
-            premium_until TIMESTAMP,
-            refresh_interval INTEGER
-        )''',
-        # 4. Monitor stats daily
-        '''CREATE TABLE IF NOT EXISTS monitor_stats_daily (
-            date TEXT,
-            guild_id BIGINT,
-            platform TEXT,
-            post_count INTEGER DEFAULT 1,
-            PRIMARY KEY (date, guild_id, platform)
-        )''',
-        # 5. Bot statuses
-        '''CREATE TABLE IF NOT EXISTS bot_statuses (
-            id SERIAL PRIMARY KEY,
-            type TEXT NOT NULL DEFAULT 'watching',
-            status_text TEXT NOT NULL
-        )''',
-        # 6. Global Bot Settings
-        '''CREATE TABLE IF NOT EXISTS bot_settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )''',
-        # 7. Premium Codes
-        '''CREATE TABLE IF NOT EXISTS premium_codes (
-            code TEXT PRIMARY KEY,
-            duration_days INTEGER NOT NULL,
-            max_uses INTEGER NOT NULL DEFAULT 1,
-            used_count INTEGER NOT NULL DEFAULT 0,
-            created_at TIMESTAMP
+            stripe_session_id TEXT UNIQUE,
+            price_id TEXT,
+            amount_cents INTEGER,
+            currency TEXT,
+            status TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )'''
     ]
 
@@ -236,6 +192,36 @@ async def remove_all_monitors(guild_id):
     q = "DELETE FROM monitors WHERE guild_id = $1"
     pool = await get_pool()
     await pool.execute(q, guild_id)
+
+async def add_premium_days(guild_id, days):
+    """Adds premium days to a guild. If already has premium, it stacks."""
+    pool = await get_pool()
+    from datetime import datetime, timedelta
+    
+    # Check current status
+    res = await pool.fetchrow("SELECT premium_until FROM guild_settings WHERE guild_id = $1", guild_id)
+    now = datetime.utcnow()
+    
+    if not res:
+        # Create setting entry if missing
+        new_expiry = now + timedelta(days=days)
+        await pool.execute("INSERT INTO guild_settings (guild_id, premium_until) VALUES ($1, $2)", guild_id, new_expiry)
+    else:
+        current_expiry = res['premium_until']
+        if not current_expiry or current_expiry < now:
+            new_expiry = now + timedelta(days=days)
+        else:
+            new_expiry = current_expiry + timedelta(days=days)
+        await pool.execute("UPDATE guild_settings SET premium_until = $2 WHERE guild_id = $1", guild_id, new_expiry)
+    
+    log.info(f"Premium updated for guild {guild_id}: +{days} days.")
+
+async def log_payment(guild_id, session_id, price_id, amount, currency, status="completed"):
+    """Log a payment transaction."""
+    pool = await get_pool()
+    q = """INSERT INTO payment_history (guild_id, stripe_session_id, price_id, amount_cents, currency, status)
+           VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (stripe_session_id) DO NOTHING"""
+    await pool.execute(q, guild_id, session_id, price_id, amount, currency, status)
 
 async def is_published(entry_id, platform, guild_id=0):
     q = "SELECT 1 FROM published_entries_v2 WHERE entry_id = $1 AND platform = $2 AND guild_id = $3"

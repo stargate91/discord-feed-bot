@@ -10,6 +10,7 @@
     "new_kick_alert": "**{name}** élőben van a Kick-en!",
     "new_crypto_alert": "{direction} **{name}** árfolyama átlépte a küszöböt! Jelenlegi ár: **{price} USD** ({percent} a küszöbtől)",
     "new_github_alert": "Új GitHub verzió jelent meg:",
+    "new_steam_news_alert": "Frissítés érkezett a **{name}** játékhoz:",
     "field_worth": "Érték",
     "field_type": "Típus",
     "field_expiry": "Lejárat",

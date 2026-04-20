@@ -5,3 +5,6 @@ python-dotenv
 aiohttp
 colorama
 asyncpg
+stripe
+fastapi
+uvicorn

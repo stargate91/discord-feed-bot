@@ -37,6 +37,7 @@ class PremiumCog(commands.GroupCog, name="premium"):
     @app_commands.default_permissions(administrator=True)
     @app_commands.checks.cooldown(5, 600.0, key=lambda i: i.guild_id)
     async def premium_activate(self, interaction: discord.Interaction, code: str):
+        # ... (implementation preserved)
         guild_id = interaction.guild_id
         if not guild_id:
             await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
@@ -61,6 +62,26 @@ class PremiumCog(commands.GroupCog, name="premium"):
              await interaction.followup.send(self.bot.get_feedback("premium_activate_success_lifetime"), ephemeral=True)
         else:
              await interaction.followup.send(self.bot.get_feedback("premium_activate_success", date=discord_ts), ephemeral=True)
+
+    @app_commands.command(name="buy", description="Purchase premium for this server via Stripe")
+    async def premium_buy(self, interaction: discord.Interaction):
+        guild_id = interaction.guild_id
+        if not guild_id:
+            await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
+            return
+
+        from ui.views.premium_views import PremiumPurchaseView
+        view = PremiumPurchaseView(self.bot, guild_id)
+        
+        embed = discord.Embed(
+            title="Premium Tagság Vásárlása",
+            description=(
+                "Fejleszd a szerveredet prémiummá és oldd fel az összes korlátot!\n\n"
+                "**Válassz egy csomagot:**"
+            ),
+            color=0x40C4FF
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):

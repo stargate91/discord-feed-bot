@@ -218,7 +218,7 @@ class RefreshIntervalModal(discord.ui.Modal):
         self.guild_id = guild_id
         
         # Get limits
-        self.min_m, self.max_m, self.def_m = bot.get_guild_tier_limits(guild_id)
+        self.min_m, self.max_m, self.def_m, _, _, _ = bot.get_guild_tier_limits(guild_id)
         
         super().__init__(title=bot.get_feedback("modal_interval_title", guild_id=guild_id))
         

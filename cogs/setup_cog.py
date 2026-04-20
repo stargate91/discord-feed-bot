@@ -64,7 +64,9 @@ class SetupCog(commands.Cog):
         app_commands.Choice(name="Stream (Twitch/Kick)", value="stream"),
         app_commands.Choice(name="Steam News", value="steam_news"),
         app_commands.Choice(name="Movie", value="movie"),
-        app_commands.Choice(name="TV Series", value="tv_series")
+        app_commands.Choice(name="TV Series", value="tv_series"),
+        app_commands.Choice(name="Crypto", value="crypto"),
+        app_commands.Choice(name="GitHub", value="github")
     ])
     @app_commands.default_permissions(administrator=True)
     async def set_alert_template(self, interaction: discord.Interaction, platform: app_commands.Choice[str], template: str):
@@ -88,7 +90,7 @@ class SetupCog(commands.Cog):
     @app_commands.default_permissions(administrator=True)
     async def set_refresh_interval(self, interaction: discord.Interaction, minutes: int):
         guild_id = interaction.guild_id or 0
-        min_m, max_m, def_m = self.bot.get_guild_tier_limits(guild_id)
+        min_m, max_m, def_m, _, _, _ = self.bot.get_guild_tier_limits(guild_id)
         
         if not (min_m <= minutes <= max_m):
             return await interaction.response.send_message(

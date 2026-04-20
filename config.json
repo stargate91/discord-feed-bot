@@ -7,5 +7,15 @@
     "master_user_ids": [
         1438156842609148006,
         321300698245365761
-    ]
+    ],
+    "stripe_config": {
+        "success_url": "https://your-domain.com/success",
+        "cancel_url": "https://your-domain.com/cancel",
+        "products": {
+            "price_1m_id": {"days": 30, "label": "1 Month Premium"},
+            "price_3m_id": {"days": 90, "label": "3 Months Premium (10% Off)"},
+            "price_6m_id": {"days": 180, "label": "6 Months Premium (20% Off)"},
+            "price_1y_id": {"days": 365, "label": "1 Year Premium (30% Off)"}
+        }
+    }
 }
