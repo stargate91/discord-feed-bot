@@ -40,8 +40,9 @@ async def init_db():
             
             # Automatic DB schema migrations
             try:
-                # Add refresh_interval if it doesn't exist
+                # Add columns if they don't exist
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS refresh_interval INTEGER")
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP")
                 # Drop deprecated master_role_id and admin_channel_id
                 await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS master_role_id")
                 await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS admin_channel_id")
