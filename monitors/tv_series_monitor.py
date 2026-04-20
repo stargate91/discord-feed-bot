@@ -136,12 +136,11 @@ class TVSeriesMonitor(BaseMonitor):
             "url": tmdb_url
         })
 
-        wrapped_overview = textwrap.fill(overview[:1000], width=42)
 
         embed = discord.Embed(
             title=name[:256],
             url=tmdb_url,
-            description=wrapped_overview,
+            
             color=self.get_color(0x3d3f45)
         )
         if poster_url: embed.set_image(url=poster_url)
@@ -318,14 +317,11 @@ class TVSeriesMonitor(BaseMonitor):
         })
         
         # Wrap overview for better readability in Discord
-        wrapped_overview = textwrap.fill(overview[:1000], width=42)
-        if len(overview) > 1000:
-            wrapped_overview += "..."
         
         embed = discord.Embed(
             title=name[:256],
             url=tmdb_url,
-            description=wrapped_overview,
+            
             color=self.get_color(0x3d3f45)
         )
         poster_path = series.get("poster_path")

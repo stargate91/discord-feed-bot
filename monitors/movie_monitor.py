@@ -214,14 +214,10 @@ class MovieMonitor(BaseMonitor):
             "url": tmdb_url
         })
         
-        wrapped_overview = textwrap.fill(overview[:1000], width=42)
-        if len(overview) > 1000:
-            wrapped_overview += "..."
 
         embed = discord.Embed(
             title=title[:256],
             url=tmdb_url,
-            description=wrapped_overview,
             color=self.get_color(0x3d3f45)
         )
         if poster_url:
@@ -337,14 +333,10 @@ class MovieMonitor(BaseMonitor):
         })
         
         # Wrap overview for better readability in Discord
-        wrapped_overview = textwrap.fill(overview[:1000], width=42)
-        if len(overview) > 1000:
-            wrapped_overview += "..."
         
         embed = discord.Embed(
             title=title[:256],
             url=tmdb_url,
-            description=wrapped_overview,
             color=self.get_color()
         )
         poster_path = movie.get("poster_path")

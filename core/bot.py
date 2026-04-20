@@ -6,8 +6,8 @@ import os
 from discord.ext import commands
 from discord import app_commands
 from logger import log
-
 import database
+from datetime import datetime
 
 class FeedBot(commands.Bot):
     def __init__(self, config):
@@ -49,16 +49,17 @@ class FeedBot(commands.Bot):
 
         # Load all guild settings into memory
         try:
-            settings_rows = await database._fetch("SELECT guild_id, language, default_channel_id, default_ping_role_id, admin_role_id, admin_channel_id, master_role_id, alert_templates FROM guild_settings")
+            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until FROM guild_settings")
+            
             for row in settings_rows:
-                self.guild_settings_cache[row[0]] = {
+                g_id = row[0]
+                self.guild_settings_cache[g_id] = {
                     "language": row[1] or "en",
-                    "default_channel_id": row[2],
-                    "default_ping_role_id": row[3],
-                    "admin_role_id": row[4] or 0,
-                    "admin_channel_id": row[5] or 0,
-                    "master_role_id": row[6] or 0,
-                    "alert_templates": json.loads(row[7]) if row[7] else {}
+                    "admin_role_id": row[2] or 0,
+                    "admin_channel_id": row[3] or 0,
+                    "master_role_id": row[4] or 0,
+                    "alert_templates": json.loads(row[5]) if row[5] else {},
+                    "premium_until": row[6]
                 }
         except Exception as e:
             log.error(f"Error loading guild settings cache: {e}")
@@ -94,9 +95,6 @@ class FeedBot(commands.Bot):
                 self.tree.add_command(master_cog.app_command, guild=guild_obj)
                 
 
-        # Migration: Load from config.json if DB is empty
-        await self._migrate_config_to_db()
-
         # Load monitors from DB
         from core.monitor_factory import create_monitor_instance
         db_monitors = await database.get_all_monitors()
@@ -113,22 +111,6 @@ class FeedBot(commands.Bot):
         # Override Tree Error Handler for Slash Commands
         self.tree.on_error = self.on_app_command_error
 
-    async def _migrate_config_to_db(self):
-        """If database is empty, migrate monitors from config.json."""
-        db_monitors = await database.get_all_monitors()
-        if not db_monitors and "monitors" in self.config:
-            log.info("Database empty, migrating monitors from config.json...")
-            master_guild_id = self.config.get("master_guild_ids", [0])[0]
-            for m_config in self.config["monitors"]:
-                await database.add_monitor(m_config, guild_id=master_guild_id)
-            log.info(f"Migrated {len(self.config['monitors'])} monitors to database.")
-
-        # Migrate a single simple default status if empty
-        db_statuses = await database.get_bot_statuses()
-        if not db_statuses:
-            log.info("Populating database with simple default status...")
-            await database.add_bot_status("watching", "{count} feeds")
-            log.info("Default status added to database.")
 
     async def load_all_extensions(self):
         """Locate and load all cogs from the cogs/ directory."""
@@ -216,6 +198,28 @@ class FeedBot(commands.Bot):
                 
         return False
 
+    def is_master(self, guild_id):
+        """Check if a guild is configured as a Master Guild in config.json."""
+        master_guild_ids = self.config.get("master_guild_ids", [])
+        return guild_id in master_guild_ids
+
+    def is_premium(self, guild_id):
+        """Check if a guild has premium status (via JSON config or DB expiration)."""
+        # 1. JSON Sources (Forever)
+        if self.is_master(guild_id):
+            return True
+        if guild_id in self.config.get("premium_guild_ids", []):
+            return True
+            
+        # 2. DB Source (Calculated from expiration date)
+        settings = self.guild_settings_cache.get(guild_id, {})
+        p_until = settings.get("premium_until")
+        if p_until:
+            return p_until > datetime.now()
+            
+        return False
+
+
     def is_master_admin(self, member):
         """Check if a member is a Master Admin (Owner OR specific Master Role)."""
         if not member or not hasattr(member, 'guild'):
@@ -226,8 +230,7 @@ class FeedBot(commands.Bot):
             return True
 
         # 2. Check for Master-only Role
-        master_guilds = self.config.get("master_guild_ids", [])
-        if member.guild.id in master_guilds:
+        if self.is_master(member.guild.id):
             settings = self.guild_settings_cache.get(member.guild.id, {})
             master_role_id = settings.get("master_role_id", 0)
             if master_role_id != 0:

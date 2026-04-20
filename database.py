@@ -43,12 +43,11 @@ async def init_db():
         '''CREATE TABLE IF NOT EXISTS guild_settings (
             guild_id BIGINT PRIMARY KEY,
             language TEXT DEFAULT 'en',
-            default_channel_id BIGINT,
-            default_ping_role_id BIGINT,
             admin_role_id BIGINT DEFAULT 0,
             admin_channel_id BIGINT DEFAULT 0,
             master_role_id BIGINT DEFAULT 0,
-            alert_templates TEXT
+            alert_templates TEXT,
+            premium_until TIMESTAMP
         )''',
         # 4. Monitor stats daily
         '''CREATE TABLE IF NOT EXISTS monitor_stats_daily (
@@ -231,59 +230,58 @@ async def mark_as_published(entry_id, platform, feed_url, guild_id=0, published_
     await pool.execute(q, entry_id, platform, guild_id, feed_url, published_at)
 
 async def get_guild_settings(guild_id):
-    q = "SELECT language, default_channel_id, default_ping_role_id, admin_role_id, admin_channel_id, master_role_id, alert_templates FROM guild_settings WHERE guild_id = $1"
+    q = "SELECT language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until FROM guild_settings WHERE guild_id = $1"
     pool = await get_pool()
     row = await pool.fetchrow(q, guild_id)
     if row:
         templates = {}
-        if row[6]:
-            try: templates = json.loads(row[6])
+        if row[4]:
+            try: templates = json.loads(row[4])
             except: pass
         return {
             "language": row[0] or "en", 
-            "default_channel_id": row[1],
-            "default_ping_role_id": row[2], 
-            "admin_role_id": row[3] or 0,
-            "admin_channel_id": row[4] or 0,
-            "master_role_id": row[5] or 0,
-            "alert_templates": templates
+            "admin_role_id": row[1] or 0,
+            "admin_channel_id": row[2] or 0,
+            "master_role_id": row[3] or 0,
+            "alert_templates": templates,
+            "premium_until": row[5]
         }
     return {
-        "language": "en", "default_channel_id": None, "default_ping_role_id": None, 
-        "admin_role_id": 0, "admin_channel_id": 0, "master_role_id": 0, "alert_templates": {}
+        "language": "en",
+        "admin_role_id": 0, "admin_channel_id": 0, "master_role_id": 0, "alert_templates": {},
+        "premium_until": None
     }
 
-async def update_guild_settings(guild_id, language=None, default_channel_id=None, default_ping_role_id=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, bot=None):
+async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, premium_until=None, bot=None):
     current = await get_guild_settings(guild_id)
     lang = language if language is not None else current["language"]
-    ch_id = default_channel_id if default_channel_id is not None else current["default_channel_id"]
-    role_id = default_ping_role_id if default_ping_role_id is not None else current["default_ping_role_id"]
     a_role = admin_role_id if admin_role_id is not None else current["admin_role_id"]
     a_chan = admin_channel_id if admin_channel_id is not None else current["admin_channel_id"]
     m_role = master_role_id if master_role_id is not None else current["master_role_id"]
     templates = alert_templates if alert_templates is not None else current["alert_templates"]
+    p_until = premium_until if premium_until is not None else current["premium_until"]
     
-    q = '''INSERT INTO guild_settings (guild_id, language, default_channel_id, default_ping_role_id, admin_role_id, admin_channel_id, master_role_id, alert_templates)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT(guild_id) DO UPDATE SET 
-               language=EXCLUDED.language, default_channel_id=EXCLUDED.default_channel_id, 
-               default_ping_role_id=EXCLUDED.default_ping_role_id, admin_role_id=EXCLUDED.admin_role_id,
+               language=EXCLUDED.language, 
+               admin_role_id=EXCLUDED.admin_role_id,
                admin_channel_id=EXCLUDED.admin_channel_id, master_role_id=EXCLUDED.master_role_id, 
-               alert_templates=EXCLUDED.alert_templates'''
+               alert_templates=EXCLUDED.alert_templates,
+               premium_until=EXCLUDED.premium_until'''
 
     pool = await get_pool()
-    await pool.execute(q, guild_id, lang, ch_id, role_id, a_role, a_chan, m_role, json.dumps(templates))
+    await pool.execute(q, guild_id, lang, a_role, a_chan, m_role, json.dumps(templates), p_until)
     
     # Update cache if bot instance provided
     if bot:
         bot.guild_settings_cache[guild_id] = {
             "language": lang,
-            "default_channel_id": ch_id,
-            "default_ping_role_id": role_id,
             "admin_role_id": a_role,
             "admin_channel_id": a_chan,
             "master_role_id": m_role,
-            "alert_templates": templates
+            "alert_templates": templates,
+            "premium_until": p_until
         }
         log.info(f"Updated guild settings cache for {guild_id}")
 

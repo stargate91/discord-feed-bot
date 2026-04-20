@@ -440,16 +440,12 @@ class SetupWizardLayout(discord.ui.LayoutView):
             self.guild_id, 
             language=self.new_lang,
             admin_role_id=self.new_admin_role,
-            default_channel_id=0,   # Wiped out explicitly
-            default_ping_role_id=0, # Wiped out explicitly
             bot=self.bot
         )
         current = self.bot.guild_settings_cache.get(self.guild_id, {})
         current.update({
             "language": self.new_lang, 
-            "admin_role_id": self.new_admin_role,
-            "default_channel_id": 0,
-            "default_ping_role_id": 0
+            "admin_role_id": self.new_admin_role
         })
         self.bot.guild_settings_cache[self.guild_id] = current
         success_view = discord.ui.LayoutView()
