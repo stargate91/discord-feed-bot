@@ -222,7 +222,7 @@ class MovieMonitor(BaseMonitor):
             embed.set_image(url=poster_url)
         
         if genre_text:
-            wrapped_genres = textwrap.fill(genre_text, width=35)
+            wrapped_genres = textwrap.fill(genre_text, width=32)
             embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
         
         embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
@@ -342,7 +342,7 @@ class MovieMonitor(BaseMonitor):
             embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
         
         if genre_text:
-            wrapped_genres = textwrap.fill(genre_text, width=35)
+            wrapped_genres = textwrap.fill(genre_text, width=32)
             embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
         
         embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=release_date, inline=True)
