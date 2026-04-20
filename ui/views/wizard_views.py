@@ -403,7 +403,7 @@ class SetupWizardLayout(discord.ui.LayoutView):
 
         # 3. Interval/Templates/Save options
         i_label, i_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_setup_interval_btn", guild_id=self.guild_id, force_lang=self.new_lang))
-        interval_btn = discord.ui.Button(label=i_label, emoji=i_emoji, style=discord.ButtonStyle.primary)
+        interval_btn = discord.ui.Button(label=i_label, emoji=i_emoji, style=discord.ButtonStyle.secondary)
         interval_btn.callback = self.interval_callback
 
         t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.new_lang))
@@ -483,7 +483,7 @@ class SetupWizardLayout(discord.ui.LayoutView):
             "language": self.new_lang, 
             "admin_role_id": self.new_admin_role
         })
-        self.bot.guild_settings_cache[self.guild_id] = current
         success_view = discord.ui.LayoutView()
-        success_view.add_item(discord.ui.TextDisplay(self.bot.get_feedback("setup_save_success", guild_id=self.guild_id)))
+        success_text = self.bot.get_feedback("setup_save_success", guild_id=self.guild_id)
+        success_view.add_item(discord.ui.Container(discord.ui.TextDisplay(success_text), accent_color=0x43B581))
         await interaction.response.edit_message(view=success_view)

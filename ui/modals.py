@@ -247,9 +247,13 @@ class RefreshIntervalModal(discord.ui.Modal):
             )
             
         # Update dynamically in DB
-        await database.update_guild_settings(self.guild_id, refresh_interval=val, bot=self.bot)
-        
-        await interaction.response.send_message(
-            self.bot.get_feedback("ui_setup_interval_success", val=val, guild_id=self.guild_id),
-            ephemeral=True
-        )
+        try:
+            await database.update_guild_settings(self.guild_id, refresh_interval=val, bot=self.bot)
+            await interaction.response.send_message(
+                self.bot.get_feedback("ui_setup_interval_success", val=val, guild_id=self.guild_id),
+                ephemeral=True
+            )
+        except Exception as e:
+            log.error(f"Error updating refresh interval: {e}")
+            await interaction.response.send_message(f"Exception: {e}", ephemeral=True)
+

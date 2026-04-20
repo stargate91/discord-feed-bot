@@ -280,20 +280,12 @@ class FeedBot(commands.Bot):
         guild_id = guild_id or 0
         settings = self.guild_settings_cache.get(guild_id, {})
         
-        # Identify system keys (admin/master commands)
-        # These should always be English for technical consistency as requested.
-        system_prefixes = ["master_", "status_"]
-        is_system = any(key.startswith(p) for p in system_prefixes)
-        
         # Determine language
         master_guilds = self.config.get("master_guild_ids", [])
         
         # 1. Force Language Override
         if force_lang:
             lang_code = force_lang
-        elif is_system:
-            # System context defaults to English
-            lang_code = "en"
         else:
             # 2. User context: prioritizes guild setting
             lang_code = settings.get("language")
