@@ -200,7 +200,7 @@
     "default_na": "N/A",
     "default_unknown": "Ismeretlen",
     "default_new_item": "Új tartalom",
-    "crypto_price_check": "<:barchartcolorful:1495851131170197716> **Crypto Árfolyam Ellenőrzés: {name}**",
+    "crypto_price_check": "<:barchartlinecolorful:1495853051569901629> **Crypto Árfolyam Ellenőrzés: {name}**",
     "genre_28": "Akció",
     "genre_12": "Kaland",
     "genre_16": "Animáció",

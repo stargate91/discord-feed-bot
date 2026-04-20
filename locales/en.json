@@ -202,7 +202,7 @@
     "default_na": "N/A",
     "default_unknown": "Unknown",
     "default_new_item": "New item",
-    "crypto_price_check": "<:barchartcolorful:1495851131170197716> **Crypto Price Check: {name}**",
+    "crypto_price_check": "<:barchartlinecolorful:1495853051569901629> **Crypto Price Check: {name}**",
     "genre_28": "Action",
     "genre_12": "Adventure",
     "genre_16": "Animation",
