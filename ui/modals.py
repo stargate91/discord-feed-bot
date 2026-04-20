@@ -182,7 +182,7 @@ class EditMonitorModal(discord.ui.Modal):
                     new_monitor = create_monitor_instance(self.bot, curr_db_data)
                     if new_monitor:
                         self.bot.monitor_manager.add_monitor(new_monitor)
-                        log.info(f"[EDIT DEBUG] Step 5: New instance created. id={new_monitor.id}, ch={new_monitor.discord_channel_id}, name={new_monitor.name}")
+                        log.info(f"[EDIT DEBUG] Step 5: New instance created. id={new_monitor.id}, ch={new_monitor.target_channels}, name={new_monitor.name}")
                     else:
                         log.error(f"[EDIT DEBUG] Step 5 FAILED: create_monitor_instance returned None!")
                 else:

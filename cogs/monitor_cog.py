@@ -190,7 +190,10 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             status_key = "ui_status_enabled" if m_cfg.get("enabled", True) else "ui_status_disabled"
             status_text = self.bot.get_feedback(status_key, guild_id=guild_id)
             
-            lines.append(f"**{emoji} {m_cfg.get('name', '??')}**\n{status_text} • `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>")
+            ch_str = " ".join([f"<#{c}>" for c in m_cfg.get("target_channels", [])])
+            if not ch_str:
+                ch_str = self.bot.get_feedback("ui_status_not_selected", guild_id=guild_id)
+            lines.append(f"**{emoji} {m_cfg.get('name', '??')}**\n{status_text} • `{m_type}` • {ch_str}")
             
         pages_data = []
         chunk_size = 10

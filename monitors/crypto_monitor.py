@@ -207,8 +207,9 @@ class CryptoMonitor(BaseMonitor):
         )
 
         color = self.get_color()
+        title = self.bot.get_feedback("ui_crypto_alert_title", sym=symbol, guild_id=self.guild_id)
         embed = discord.Embed(
-            title=f"Crypto Alert: {symbol}",
+            title=title,
             description=msg,
             color=color
         )
@@ -241,22 +242,31 @@ class CryptoMonitor(BaseMonitor):
                     if resp.status == 200:
                         prices_data = await resp.json()
                         
+                        title = self.bot.get_feedback("ui_crypto_status_title", name=self.name, guild_id=self.guild_id)
                         embed = discord.Embed(
-                            title=f"Crypto Status: {self.name}",
+                            title=title,
                             color=self.get_color()
                         )
                         
                         summary_lines = []
                         valid_count = 0
+                        field_price = self.bot.get_feedback("ui_crypto_field_price", guild_id=self.guild_id)
+                        field_target = self.bot.get_feedback("ui_crypto_field_target", guild_id=self.guild_id)
+                        field_diff = self.bot.get_feedback("ui_crypto_field_diff", guild_id=self.guild_id)
+                        
                         for sym, threshold in self.targets.items():
                             cid = self.coin_id_map.get(sym)
                             if cid and cid in prices_data:
                                 current_price = float(prices_data[cid]["usd"])
                                 diff = ((current_price - threshold) / threshold) * 100
                                 color_emoji = "🟢" if current_price >= threshold else "🔴"
-                                line = f"{color_emoji} **{sym}**: {current_price:,.2f} USD ({diff:+.2f}% to threshold)"
+                                
+                                fmt_price = f"{current_price:,.2f}"
+                                fmt_diff = f"{diff:+.2f}"
+                                
+                                line = self.bot.get_feedback("ui_crypto_status_line", emoji=color_emoji, sym=sym, price=fmt_price, diff=fmt_diff, guild_id=self.guild_id)
                                 summary_lines.append(line)
-                                embed.add_field(name=sym, value=f"Price: **{current_price:,.2f} USD**\nTarget: **{threshold:,.2f} USD**\nDiff: **{diff:+.2f}%**", inline=True)
+                                embed.add_field(name=sym, value=f"{field_price}: **{fmt_price} USD**\n{field_target}: **{threshold:,.2f} USD**\n{field_diff}: **{fmt_diff}%**", inline=True)
                                 valid_count += 1
                         
                         if valid_count == 0:
