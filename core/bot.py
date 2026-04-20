@@ -41,16 +41,15 @@ class FeedBot(commands.Bot):
 
         # Load all guild settings into memory
         try:
-            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, admin_channel_id, alert_templates, premium_until FROM guild_settings")
+            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, alert_templates, premium_until FROM guild_settings")
             
             for row in settings_rows:
                 g_id = row[0]
                 self.guild_settings_cache[g_id] = {
                     "language": row[1] or "en",
                     "admin_role_id": row[2] or 0,
-                    "admin_channel_id": row[3] or 0,
-                    "alert_templates": json.loads(row[4]) if row[4] else {},
-                    "premium_until": row[5]
+                    "alert_templates": json.loads(row[3]) if row[3] else {},
+                    "premium_until": row[4]
                 }
         except Exception as e:
             log.error(f"Error loading guild settings cache: {e}")
@@ -148,20 +147,17 @@ class FeedBot(commands.Bot):
                     else:
                         message.content = clean_command
 
-            guild_id = message.guild.id if message.guild else 0
-            master_guilds = self.config.get("master_guild_ids", [])
+            master_guilds = self.config.get("master_guilds", {})
             
-            # Restriction for Master Guilds: Check Admin Channel
-            if guild_id in master_guilds:
-                settings = self.guild_settings_cache.get(guild_id, {})
-                admin_channel_id = settings.get("admin_channel_id", 0)
-                if admin_channel_id != 0 and message.channel.id != admin_channel_id:
-                    # Ignore command if not in admin channel
+            if master_guilds and message.guild:
+                guild_id_str = str(message.guild.id)
+                # Universal Restriction: Master guilds can limit prefix commands to themselves
+                if guild_id_str not in master_guilds:
                     return
-            
-            # Universal Restriction: Master guilds can limit prefix commands to themselves
-            if master_guilds and message.guild and message.guild.id not in master_guilds:
-                return
+                # Restriction for Master Guilds: Check Admin Channel
+                admin_channel_id = master_guilds.get(guild_id_str, 0)
+                if admin_channel_id != 0 and message.channel.id != admin_channel_id:
+                    return
         
         await self.process_commands(message)
 
@@ -191,8 +187,8 @@ class FeedBot(commands.Bot):
 
     def is_master(self, guild_id):
         """Check if a guild is configured as a Master Guild in config.json."""
-        master_guild_ids = self.config.get("master_guild_ids", [])
-        return guild_id in master_guild_ids
+        master_guilds = self.config.get("master_guilds", {})
+        return str(guild_id) in master_guilds
 
     def is_premium(self, guild_id):
         """Check if a guild has premium status (via DB expiration or Master status)."""

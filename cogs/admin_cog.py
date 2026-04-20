@@ -10,9 +10,11 @@ def is_admin():
             await ctx.send(ctx.bot.get_feedback("error_no_permission", guild_id=ctx.guild.id))
             return False
             
-        admin_ch_id = ctx.bot.config.get("admin_channel_id", 0)
-        if admin_ch_id and ctx.channel.id != admin_ch_id:
-            return False
+        master_guilds = ctx.bot.config.get("master_guilds", {})
+        if str(ctx.guild.id) in master_guilds:
+            admin_ch_id = master_guilds.get(str(ctx.guild.id), 0)
+            if admin_ch_id != 0 and ctx.channel.id != admin_ch_id:
+                return False
             
         return True
     return commands.check(predicate)
@@ -162,20 +164,6 @@ class MasterCog(commands.GroupCog, name="master"):
     def __init__(self, bot):
         self.bot = bot
         super().__init__()
-
-    @app_commands.command(name="admin-channel", description="Set the global admin log channel")
-    @app_commands.describe(channel="Target channel (defaults to current if empty)")
-    async def master_admin_channel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-            
-        target_channel = channel or interaction.channel
-        
-        self.bot.config["admin_channel_id"] = target_channel.id
-        await database.set_bot_setting("admin_channel_id", target_channel.id)
-        
-        await interaction.response.send_message(self.bot.get_feedback("master_admin_ch_success", id=target_channel.id, guild_id=interaction.guild_id), ephemeral=True)
 
 
 
