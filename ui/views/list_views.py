@@ -30,12 +30,12 @@ class MonitorListPaginatedView(discord.ui.LayoutView):
         ]
         
         if len(self.pages_data) > 1:
-            prev_label = self.bot.get_feedback("ui_btn_prev", guild_id=self.guild_id)
-            self.btn_prev = discord.ui.Button(label=prev_label, style=discord.ButtonStyle.secondary, disabled=(self.current_page == 0))
+            p_label, p_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_prev", guild_id=self.guild_id))
+            self.btn_prev = discord.ui.Button(label=p_label, emoji=p_emoji, style=discord.ButtonStyle.secondary, disabled=(self.current_page == 0))
             self.btn_prev.callback = self.prev_callback
             
-            next_label = self.bot.get_feedback("ui_btn_next", guild_id=self.guild_id)
-            self.btn_next = discord.ui.Button(label=next_label, style=discord.ButtonStyle.secondary, disabled=(self.current_page == len(self.pages_data)-1))
+            n_label, n_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_next", guild_id=self.guild_id))
+            self.btn_next = discord.ui.Button(label=n_label, emoji=n_emoji, style=discord.ButtonStyle.secondary, disabled=(self.current_page == len(self.pages_data)-1))
             self.btn_next.callback = self.next_callback
             container_items.append(discord.ui.ActionRow(self.btn_prev, self.btn_next))
             

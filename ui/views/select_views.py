@@ -16,19 +16,29 @@ class AlertTemplateSelectLayout(discord.ui.LayoutView):
         self.force_lang = force_lang
         self.current_templates = settings.get("alert_templates", {})
 
-        options = [
-            discord.SelectOption(label="YouTube", value="youtube", emoji=TYPE_YOUTUBE),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_rss", guild_id=self.guild_id, force_lang=self.force_lang), value="rss", emoji=TYPE_RSS),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_game", guild_id=self.guild_id, force_lang=self.force_lang), value="steam_news", emoji=TYPE_STEAM),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_stream", guild_id=self.guild_id, force_lang=self.force_lang), value="stream", emoji=TYPE_STREAM),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_epic", guild_id=self.guild_id, force_lang=self.force_lang), value="epic_games", emoji=TYPE_EPIC),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_steam_free", guild_id=self.guild_id, force_lang=self.force_lang), value="steam_free", emoji=TYPE_STEAM),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_gog_free", guild_id=self.guild_id, force_lang=self.force_lang), value="gog_free", emoji=TYPE_GOG),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_movie", guild_id=self.guild_id, force_lang=self.force_lang), value="movie", emoji=TYPE_TMDB_MOVIE),
-            discord.SelectOption(label=self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id, force_lang=self.force_lang), value="tv_series", emoji=TYPE_TMDB_TV),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto", guild_id=self.guild_id, force_lang=self.force_lang), value="crypto", emoji=TYPE_CRYPTO),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_github", guild_id=self.guild_id, force_lang=self.force_lang), value="github", emoji=TYPE_GITHUB),
+        platforms = [
+            ("YouTube", "youtube", TYPE_YOUTUBE),
+            ("monitor_platform_rss", "rss", TYPE_RSS),
+            ("ui_platform_steam_game", "steam_news", TYPE_STEAM),
+            ("monitor_platform_stream", "stream", TYPE_STREAM),
+            ("monitor_platform_epic", "epic_games", TYPE_EPIC),
+            ("monitor_platform_steam_free", "steam_free", TYPE_STEAM),
+            ("monitor_platform_gog_free", "gog_free", TYPE_GOG),
+            ("monitor_platform_movie", "movie", TYPE_TMDB_MOVIE),
+            ("monitor_platform_tv", "tv_series", TYPE_TMDB_TV),
+            ("ui_platform_crypto", "crypto", TYPE_CRYPTO),
+            ("ui_platform_github", "github", TYPE_GITHUB),
         ]
+
+        options = []
+        for loc_key, val, icon in platforms:
+            if loc_key == "YouTube":
+                label = "YouTube"
+            else:
+                label = self.bot.get_feedback(loc_key, guild_id=self.guild_id, force_lang=self.force_lang)
+            
+            clean_label, _ = self.bot.parse_emoji_text(label)
+            options.append(discord.SelectOption(label=clean_label, value=val, emoji=icon))
 
         self.select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_setup_template_ph", guild_id=self.guild_id, force_lang=self.force_lang), options=options)
         self.select.callback = self.select_callback

@@ -46,27 +46,24 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         )
         self.role_select.callback = self.role_callback
 
-        # 3. Platform Select (Original options preserved)
+        # 3. Platform Select (Parsed for emojis)
         premium_badge = f" {self.bot.get_feedback('ui_premium_only_badge', guild_id=self.guild_id)}"
         
-        platform_options = [
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube", guild_id=self.guild_id), value="youtube"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss", guild_id=self.guild_id), value="rss"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_epic_games", guild_id=self.guild_id), value="epic_games"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_free", guild_id=self.guild_id), value="steam_free"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_gog_free", guild_id=self.guild_id), value="gog_free"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_stream", guild_id=self.guild_id), value="stream"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news", guild_id=self.guild_id), value="steam_news"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie", guild_id=self.guild_id), value="movie"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series", guild_id=self.guild_id), value="tv_series"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto", guild_id=self.guild_id) + (premium_badge if not is_premium else ""), value="crypto"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_github", guild_id=self.guild_id), value="github"),
-        ]
+        platform_options = []
+        platforms = ["youtube", "rss", "epic_games", "steam_free", "gog_free", "stream", "steam_news", "movie", "tv_series", "crypto", "github"]
+        for p_type in platforms:
+            raw_label = self.bot.get_feedback(f"ui_platform_{p_type}", guild_id=self.guild_id)
+            if p_type == "crypto" and not is_premium:
+                raw_label += premium_badge
+            
+            label, emoji = self.bot.parse_emoji_text(raw_label)
+            platform_options.append(discord.SelectOption(label=label, value=p_type, emoji=emoji))
         self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform", guild_id=self.guild_id), options=platform_options)
         self.type_select.callback = self.type_callback
 
         # 4. Next Button
-        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_settings", guild_id=self.guild_id), style=discord.ButtonStyle.success, disabled=True)
+        n_label, n_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_monitor_next_settings", guild_id=self.guild_id))
+        self.next_btn = discord.ui.Button(label=n_label, emoji=n_emoji, style=discord.ButtonStyle.success, disabled=True)
         self.next_btn.callback = self.next_callback
 
         title_text = self.bot.get_feedback("ui_monitor_add_step_1", guild_id=self.guild_id)
@@ -249,7 +246,8 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         self.clear_role_btn = discord.ui.Button(label="Ping Törlése 🗑️", style=discord.ButtonStyle.danger)
         self.clear_role_btn.callback = self.clear_role_callback
 
-        self.next_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id), style=discord.ButtonStyle.primary, disabled=False)
+        next_label, next_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id))
+        self.next_btn = discord.ui.Button(label=next_label, emoji=next_emoji, style=discord.ButtonStyle.primary, disabled=False)
         self.next_btn.callback = self.next_btn_callback
         
         title_text = self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name, guild_id=self.guild_id)
@@ -404,13 +402,16 @@ class SetupWizardLayout(discord.ui.LayoutView):
         self.admin_role_select.callback = self.admin_role_callback
 
         # 3. Interval/Templates/Save options
-        interval_btn = discord.ui.Button(label=self.bot.get_feedback("ui_setup_interval_btn", guild_id=self.guild_id, force_lang=self.new_lang), style=discord.ButtonStyle.primary)
+        i_label, i_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_setup_interval_btn", guild_id=self.guild_id, force_lang=self.new_lang))
+        interval_btn = discord.ui.Button(label=i_label, emoji=i_emoji, style=discord.ButtonStyle.primary)
         interval_btn.callback = self.interval_callback
 
-        template_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.new_lang), style=discord.ButtonStyle.secondary)
+        t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.new_lang))
+        template_btn = discord.ui.Button(label=t_label, emoji=t_emoji, style=discord.ButtonStyle.secondary)
         template_btn.callback = self.template_callback
 
-        save_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_save", guild_id=self.guild_id, force_lang=self.new_lang), style=discord.ButtonStyle.success)
+        s_label, s_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_save", guild_id=self.guild_id, force_lang=self.new_lang))
+        save_btn = discord.ui.Button(label=s_label, emoji=s_emoji, style=discord.ButtonStyle.success)
         save_btn.callback = self.save_callback
 
         # Build Container layout items

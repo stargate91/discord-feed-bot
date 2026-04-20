@@ -156,7 +156,8 @@ class TVSeriesMonitor(BaseMonitor):
         btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
         view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
         if trailer_url:
-            view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+            t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id))
+            view.add_item(discord.ui.Button(label=t_label, emoji=t_emoji, url=trailer_url, style=discord.ButtonStyle.link))
 
         await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
 
@@ -335,7 +336,8 @@ class TVSeriesMonitor(BaseMonitor):
         view = discord.ui.View()
         view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id), url=tmdb_url, style=discord.ButtonStyle.link))
         if trailer_url:
-            view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id), url=trailer_url, style=discord.ButtonStyle.link))
+            t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id))
+            view.add_item(discord.ui.Button(label=t_label, emoji=t_emoji, url=trailer_url, style=discord.ButtonStyle.link))
         
         return {
             "content": f"{alert_text}\n{tmdb_url}",

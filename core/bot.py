@@ -3,6 +3,7 @@ import logging
 import discord
 import json
 import os
+import re
 from discord.ext import commands
 from discord import app_commands
 from logger import log
@@ -312,6 +313,26 @@ class FeedBot(commands.Bot):
         for k, v in kwargs.items():
             text = text.replace(f"{{{k}}}", str(v))
         return text
+
+    def parse_emoji_text(self, text: str):
+        """
+        Parses a string for custom Discord emojis (<:name:ID> or <a:name:ID>).
+        Removes the emoji from the text and returns (clean_text, emoji_str).
+        """
+        if not isinstance(text, str):
+            return text, None
+            
+        # Regex for custom Discord emojis (animated or static)
+        emoji_pattern = r"(<a?:[a-zA-Z0-9_]+:[0-9]+>)"
+        
+        match = re.search(emoji_pattern, text)
+        if match:
+            emoji_str = match.group(1)
+            # Remove emoji and strip extra spaces
+            clean_text = text.replace(emoji_str, "").strip()
+            return clean_text, emoji_str
+        
+        return text, None
 
     def save_config(self):
         """Persist config.json to disk."""
