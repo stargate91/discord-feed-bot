@@ -257,7 +257,7 @@ class FeedBot(commands.Bot):
         
         # Identify system keys (admin/master commands)
         # These should always be English for technical consistency as requested.
-        system_prefixes = ["master_", "sync_", "clear_commands_", "status_", "purge_"]
+        system_prefixes = ["master_", "sync_", "clear_commands_", "status_"]
         is_system = any(key.startswith(p) for p in system_prefixes)
         
         # Determine language
