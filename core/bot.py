@@ -196,11 +196,9 @@ class FeedBot(commands.Bot):
         return guild_id in master_guild_ids
 
     def is_premium(self, guild_id):
-        """Check if a guild has premium status (via JSON config or DB expiration)."""
-        # 1. JSON Sources (Forever)
+        """Check if a guild has premium status (via DB expiration or Master status)."""
+        # 1. Master Guils are automatically Premium Forever
         if self.is_master(guild_id):
-            return True
-        if guild_id in self.config.get("premium_guild_ids", []):
             return True
             
         # 2. DB Source (Calculated from expiration date)
