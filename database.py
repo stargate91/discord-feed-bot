@@ -68,6 +68,14 @@ async def init_db():
         '''CREATE TABLE IF NOT EXISTS bot_settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
+        )''',
+        # 7. Premium Codes
+        '''CREATE TABLE IF NOT EXISTS premium_codes (
+            code TEXT PRIMARY KEY,
+            duration_days INTEGER NOT NULL,
+            max_uses INTEGER NOT NULL DEFAULT 1,
+            used_count INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP
         )'''
     ]
 
@@ -358,6 +366,60 @@ async def _fetchrow(query, *args):
     """Internal helper to match legacy Bot logic while moving to pool."""
     pool = await get_pool()
     return await pool.fetchrow(query, *args)
+
+# --- Premium Codes ---
+
+async def create_premium_code(code: str, duration_days: int, max_uses: int = 1):
+    q = "INSERT INTO premium_codes (code, duration_days, max_uses, created_at) VALUES ($1, $2, $3, $4)"
+    pool = await get_pool()
+    await pool.execute(q, code, duration_days, max_uses, datetime.now())
+
+async def get_premium_code(code: str):
+    q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE code = $1"
+    pool = await get_pool()
+    return await pool.fetchrow(q, code)
+
+async def redeem_premium_code(code: str, guild_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Check code validity with a lock
+            row = await conn.fetchrow("SELECT duration_days, max_uses, used_count FROM premium_codes WHERE code = $1 FOR UPDATE", code)
+            if not row:
+                return False, "Invalid Code"
+            
+            duration_days = row['duration_days']
+            max_uses = row['max_uses']
+            used_count = row['used_count']
+            
+            if used_count >= max_uses:
+                return False, "Code already used"
+                
+            # Valid code, increment used_count
+            await conn.execute("UPDATE premium_codes SET used_count = used_count + 1 WHERE code = $1", code)
+            
+            # Fetch current guild premium settings
+            g_row = await conn.fetchrow("SELECT premium_until FROM guild_settings WHERE guild_id = $1", guild_id)
+            current_until = g_row['premium_until'] if g_row else None
+            
+            from datetime import timedelta
+            now = datetime.now()
+            
+            # Lifetime logic
+            if duration_days == 0:
+                new_until = datetime(2099, 12, 31)
+            else:
+                if current_until and current_until > now:
+                    new_until = current_until + timedelta(days=duration_days)
+                else:
+                    new_until = now + timedelta(days=duration_days)
+                    
+            # Insert or Update guild settings directly inside existing transaction
+            q_update = '''INSERT INTO guild_settings (guild_id, premium_until) VALUES ($1, $2)
+                          ON CONFLICT (guild_id) DO UPDATE SET premium_until = EXCLUDED.premium_until'''
+            await conn.execute(q_update, guild_id, new_until)
+            
+            return True, new_until
 
 async def close():
     global _pool

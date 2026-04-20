@@ -211,5 +211,12 @@
     "modal_interval_label": "Minutes",
     "modal_interval_ph": "e.g., 20",
     "modal_interval_error": "❌ Only values between {min} and {max} are allowed for your tier!",
-    "ui_setup_interval_success": "✅ Refresh interval configured successfully to {val} minutes."
+    "ui_setup_interval_success": "✅ Refresh interval configured successfully to {val} minutes.",
+    "master_premium_gen_success": "✅ Premium code generated: **{code}**\nDuration: {days} days\nUses: {uses}",
+    "premium_check_lifetime": "🌟 This server has **Lifetime Premium**! All premium features are unlocked forever.",
+    "premium_check_active": "🌟 This server has Active Premium until {date}.",
+    "premium_check_inactive": "📊 This server is currently on the **Free Tier**.\n\n**Premium Benefits:**\n- 5 minute refresh intervals (instead of 20)\n- Custom Embed Colors\n- No limits on feeds\n\n*Support the project via Patreon or check our Discord for giveaways to receive a premium code!*",
+    "premium_activate_error": "❌ The premium code you entered is invalid or has already been used.",
+    "premium_activate_success_lifetime": "🎉 **Success!** This server now has **Lifetime Premium** activated!",
+    "premium_activate_success": "🎉 **Success!** Premium activated. Valid until: {date}."
 }

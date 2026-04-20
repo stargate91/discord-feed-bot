@@ -204,6 +204,24 @@ class MasterCog(commands.GroupCog, name="master"):
 
 
 
+    @app_commands.command(name="generate-premium", description="Generate a new premium code (Master Admin only)")
+    @app_commands.describe(days="Duration in days (0 for lifetime)", uses="How many times can it be redeemed?")
+    async def master_generate_premium(self, interaction: discord.Interaction, days: int, uses: int = 1):
+        if not self.bot.is_master_admin(interaction.user):
+            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
+            return
+            
+        import secrets
+        import string
+        
+        # Generate format PREM-XXXX-YYYY-ZZZZ-WWWW
+        chars = string.ascii_uppercase + string.digits
+        parts = [''.join(secrets.choice(chars) for _ in range(4)) for _ in range(4)]
+        code = "PREM-" + "-".join(parts)
+        
+        await database.create_premium_code(code, days, uses)
+        await interaction.response.send_message(self.bot.get_feedback("master_premium_gen_success", code=code, days=days, uses=uses), ephemeral=True)
+
     # --- Status Commands ---
     
     status_group = app_commands.Group(name="status", description="Bot rich presence configuration (master)")
