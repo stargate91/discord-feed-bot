@@ -4,32 +4,28 @@ This allows for easy modification of the bot's visual style from a single locati
 """
 
 # UI Navigation and Action Icons
-ICON_LOCATION = "📍"     # Used in channel selection (Current Channel)
-ICON_SETTINGS = "⚙️"      # Used for default settings options
-ICON_ADD = "➕"           # Used for 'Create New' actions
-ICON_ID = "🆔"           # Used for manual ID/Name input options
-ICON_MUTE = "🔇"          # Used for 'No Ping' or 'None' role options
-ICON_DOT = "⏺️"           # Used for 'Keep Unchanged' options
-ICON_CLOSE = "❌"         # Used for 'Cancel' or 'None' channel selections
-ICON_LIST = "📋"          # Header icon for monitor list embeds
-ICON_STAR = "⭐"           # Used for ratings/scores (e.g., TMDB)
+# Icons for /monitor list and select menus
+TYPE_YOUTUBE = "<:youtube:1495845103447576807>"
+TYPE_RSS = "<:rss:1495845175753314465>"
+TYPE_EPIC = "<:epicgames:1495845172913639575>"
+TYPE_STEAM = "<:steam2:1495845362441650196>"
+TYPE_GOG = "<:gog2:1495845360684372170>"
+TYPE_STREAM = "<:twitch:1495846084352934139>"
+TYPE_TMDB_MOVIE = "<:tmdb:1495845178945044590>"
+TYPE_TMDB_TV = "<:tmdb:1495845178945044590>"
+TYPE_CRYPTO = "<:crypto:1495846010197381160>"
+TYPE_GITHUB = "<:gitgub:1495845732874321980>"
+TYPE_UNKNOWN = "<:unknown:1495845180421570700>"
 
-# Platform and Feed Type Icons
-# Used in Wizard platform selection, /monitor list, and Feed Embeds
-TYPE_YOUTUBE = "📺"
-TYPE_RSS = "🔗"
-TYPE_GAME = "🎮"          # Steam News, Epic Games, TMDB Movies/TV
-TYPE_STREAM = "📡"         # Twitch, Kick
-TYPE_STEAM_FREE = "♨️"     # Specialized Steam Free monitor
-TYPE_GOG_FREE = "💜"       # Specialized GOG Free monitor
-TYPE_UNKNOWN = "❓"        # Fallback for undefined types
+ICON_CLOSE = "<:xfilledcircle:1495830088523059341>"         # Újraküldésnél / Csatorna törlésnél
+ICON_STAR = "<:starrating:1495846370932691057>"           # Értékelések (TV/Movie)
 
 # General Status Markers
 # Consistent feedback markers used in bot messages
-STATUS_SUCCESS = "✅"
-STATUS_ERROR = "❌"
-STATUS_WARNING = "⚠️"
-STATUS_INFO = "ℹ️"
+STATUS_SUCCESS = "<:checkfilledcircle:1495829946248200414>"
+STATUS_ERROR = "<:xfilledcircle:1495830088523059341>"
+STATUS_WARNING = "<:warningfilledcircle:1495831204208050369>"
+STATUS_INFO = "<:infofilledcircle:1495831063597940998>"
 
 # Custom Discord Emoji URLs (Thumbnails)
 # Custom icons hosted on Discord CDN for specific specialized monitor embeds

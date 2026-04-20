@@ -5,9 +5,11 @@ from ui.views.wizard_views import AddMonitorWizardLayout, EditMonitorWizardLayou
 from logger import log
 import database
 from core.emojis import (
-    TYPE_YOUTUBE, TYPE_RSS, 
-    TYPE_GAME, TYPE_STEAM_FREE, TYPE_GOG_FREE, 
-    TYPE_STREAM, TYPE_UNKNOWN, STATUS_SUCCESS, STATUS_ERROR
+    TYPE_YOUTUBE, TYPE_RSS,
+    TYPE_EPIC, TYPE_STEAM, TYPE_GOG,
+    TYPE_STREAM, TYPE_TMDB_MOVIE, TYPE_TMDB_TV,
+    TYPE_CRYPTO, TYPE_GITHUB, TYPE_UNKNOWN,
+    STATUS_SUCCESS, STATUS_ERROR
 )
 
 class MonitorCog(commands.GroupCog, name="monitor"):
@@ -167,15 +169,17 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             return
         
         type_emojis = {
-            "youtube": TYPE_YOUTUBE, 
-            "rss": TYPE_RSS, 
-            "epic_games": TYPE_GAME, 
-            "steam_free": TYPE_STEAM_FREE, 
-            "gog_free": TYPE_GOG_FREE, 
+            "youtube": TYPE_YOUTUBE,
+            "rss": TYPE_RSS,
+            "epic_games": TYPE_EPIC,
+            "steam_free": TYPE_STEAM,
+            "gog_free": TYPE_GOG,
             "stream": TYPE_STREAM,
-            "steam_news": TYPE_GAME,
-            "movie": TYPE_GAME,
-            "tv_series": TYPE_GAME
+            "steam_news": TYPE_STEAM,
+            "movie": TYPE_TMDB_MOVIE,
+            "tv_series": TYPE_TMDB_TV,
+            "crypto": TYPE_CRYPTO,
+            "github": TYPE_GITHUB
         }
         
         lines = []
