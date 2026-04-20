@@ -415,6 +415,25 @@ async def redeem_premium_code(code: str, guild_id: int):
             
             return True, new_until
 
+async def get_premium_codes(filter_type: str = "all"):
+    pool = await get_pool()
+    if filter_type == "used":
+        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE used_count >= max_uses ORDER BY created_at DESC"
+    elif filter_type == "unused":
+        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE used_count < max_uses ORDER BY created_at DESC"
+    else:
+        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes ORDER BY created_at DESC"
+    return await pool.fetch(q)
+
+async def delete_premium_code(code: str):
+    pool = await get_pool()
+    await pool.execute("DELETE FROM premium_codes WHERE code = $1", code)
+
+async def revoke_guild_premium(guild_id: int):
+    pool = await get_pool()
+    q = "UPDATE guild_settings SET premium_until = NULL WHERE guild_id = $1"
+    await pool.execute(q, guild_id)
+
 async def close():
     global _pool
     if _pool:

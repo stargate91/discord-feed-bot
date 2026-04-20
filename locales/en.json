@@ -218,5 +218,11 @@
     "premium_check_inactive": "📊 This server is currently on the **Free Tier**.\n\n**Premium Benefits:**\n- 5 minute refresh intervals (instead of 20)\n- Custom Embed Colors\n- No limits on feeds\n\n*Support the project via Patreon or check our Discord for giveaways to receive a premium code!*",
     "premium_activate_error": "❌ The premium code you entered is invalid or has already been used.",
     "premium_activate_success_lifetime": "🎉 **Success!** This server now has **Lifetime Premium** activated!",
-    "premium_activate_success": "🎉 **Success!** Premium activated. Valid until: {date}."
+    "premium_activate_success": "🎉 **Success!** Premium activated. Valid until: {date}.",
+    "master_premium_delete_success": "🗑️ Premium code `{code}` deleted successfully.",
+    "master_premium_revoke_error": "❌ Invalid Guild ID for revoke.",
+    "master_premium_revoke_success": "🛑 Premium access for server `{guild_id}` has been revoked.",
+    "master_premium_list_title": "### 🎟️ Premium Codes ({filter})",
+    "master_premium_list_empty": "ℹ️ No premium codes found for this filter.",
+    "premium_cooldown_error": "⏳ Please wait! You can try entering a code again in {retry_after} seconds."
 }

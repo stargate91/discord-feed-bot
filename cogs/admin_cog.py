@@ -203,6 +203,65 @@ class MasterCog(commands.GroupCog, name="master"):
         await database.create_premium_code(code, days, uses)
         await interaction.response.send_message(self.bot.get_feedback("master_premium_gen_success", code=code, days=days, uses=uses), ephemeral=True)
 
+    @app_commands.command(name="list-premium", description="List generated premium codes (Master Admin only)")
+    @app_commands.describe(filter_type="Filter by usage")
+    @app_commands.choices(filter_type=[
+        app_commands.Choice(name="All", value="all"),
+        app_commands.Choice(name="Used", value="used"),
+        app_commands.Choice(name="Unused", value="unused")
+    ])
+    @is_master_only()
+    async def master_list_premium(self, interaction: discord.Interaction, filter_type: app_commands.Choice[str]):
+        codes = await database.get_premium_codes(filter_type.value)
+        if not codes:
+            await interaction.response.send_message(self.bot.get_feedback("master_premium_list_empty"), ephemeral=True)
+            return
+
+        lines = []
+        for r in codes:
+            code, days, max_uses, used_count, created_at = r
+            duration = "Lifetime" if days == 0 else f"{days} days"
+            lines.append(f"`{code}` | {duration} | Uses: {used_count}/{max_uses}")
+
+        msg = self.bot.get_feedback("master_premium_list_title", filter=filter_type.name) + "\n" + "\n".join(lines)
+        if len(msg) > 2000:
+            msg = msg[:1996] + "..."
+        await interaction.response.send_message(msg, ephemeral=True)
+
+    async def autocomplete_premium_code(self, interaction: discord.Interaction, current: str):
+        codes = await database.get_premium_codes("all")
+        choices = []
+        for r in codes:
+            code = r['code']
+            if current.lower() in code.lower():
+                choices.append(app_commands.Choice(name=code, value=code))
+        return choices[:25]
+
+    @app_commands.command(name="delete-premium", description="Delete a premium code completely (Master Admin only)")
+    @app_commands.describe(code="Premium code to delete")
+    @app_commands.autocomplete(code=autocomplete_premium_code)
+    @is_master_only()
+    async def master_delete_premium(self, interaction: discord.Interaction, code: str):
+        await database.delete_premium_code(code)
+        await interaction.response.send_message(self.bot.get_feedback("master_premium_delete_success", code=code), ephemeral=True)
+
+    @app_commands.command(name="revoke-premium", description="Revoke premium access from a server (Master Admin only)")
+    @app_commands.describe(guild_id="Guild ID to revoke premium from")
+    @is_master_only()
+    async def master_revoke_premium(self, interaction: discord.Interaction, guild_id: str):
+        if not guild_id.isdigit():
+            await interaction.response.send_message(self.bot.get_feedback("master_premium_revoke_error"), ephemeral=True)
+            return
+            
+        g_id = int(guild_id)
+        await database.revoke_guild_premium(g_id)
+        
+        # Invalidate cache
+        if g_id in self.bot.guild_settings_cache:
+            self.bot.guild_settings_cache[g_id]["premium_until"] = None
+            
+        await interaction.response.send_message(self.bot.get_feedback("master_premium_revoke_success", guild_id=guild_id), ephemeral=True)
+
     # --- Status Commands ---
     
     status_group = app_commands.Group(name="status", description="Bot rich presence configuration (master)")

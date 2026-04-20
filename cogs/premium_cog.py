@@ -35,6 +35,7 @@ class PremiumCog(commands.GroupCog, name="premium"):
     @app_commands.command(name="activate", description="Activate a premium code for this server")
     @app_commands.describe(code="Premium code (e.g. PREM-XXXX...)")
     @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.cooldown(5, 600.0, key=lambda i: i.guild_id)
     async def premium_activate(self, interaction: discord.Interaction, code: str):
         guild_id = interaction.guild_id
         if not guild_id:
@@ -61,6 +62,18 @@ class PremiumCog(commands.GroupCog, name="premium"):
         else:
              await interaction.followup.send(self.bot.get_feedback("premium_activate_success", date=discord_ts), ephemeral=True)
 
+    async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            msg = self.bot.get_feedback("premium_cooldown_error", retry_after=int(error.retry_after))
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+        else:
+            log.error(f"Error in PremiumCog: {error}")
+            fallback = self.bot.get_feedback("error_generic") if hasattr(self.bot, "get_feedback") else "An error occurred."
+            if not interaction.response.is_done():
+                await interaction.response.send_message(fallback, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(PremiumCog(bot))
