@@ -36,16 +36,8 @@ class FeedBot(commands.Bot):
                     except Exception as e:
                         log.error(f"Failed to load language file {filename}: {e}")
         
-        default_lang_code = self.config.get("master_language", "en")
-        
-        # Override with DB language if possible
-        db_lang = await database.get_bot_setting("master_language")
-        if db_lang:
-            default_lang_code = db_lang
-            self.config["master_language"] = default_lang_code
-            
-        self.language_data = self.locales.get(default_lang_code, {})
-        log.info(f"Loaded {len(self.locales)} language packs (Master: {default_lang_code}).")
+        self.language_data = self.locales.get("en", {})
+        log.info(f"Loaded {len(self.locales)} language packs (Default: EN).")
 
         # Load all guild settings into memory
         try:
@@ -265,7 +257,6 @@ class FeedBot(commands.Bot):
         
         # Determine language
         master_guilds = self.config.get("master_guild_ids", [])
-        master_lang = self.config.get("master_language", "en")
         
         # 1. Force Language Override
         if force_lang:
@@ -276,11 +267,9 @@ class FeedBot(commands.Bot):
             
             # 3. Master/Global Fallback
             if not lang_code:
-                if guild_id == 0 or guild_id in master_guilds:
-                    lang_code = master_lang
-                else:
-                    # Normal guilds default to EN if nothing else is set
-                    lang_code = "en"
+                # If we are in a master guild context, we STILL use the guild setting if available,
+                # but if no setting exists, we default to English (removing master_lang logic).
+                lang_code = "en"
 
         lang_data = self.locales.get(lang_code, self.locales.get("en", self.language_data))
 

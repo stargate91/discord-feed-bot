@@ -202,30 +202,7 @@ class MasterCog(commands.GroupCog, name="master"):
         
         await interaction.response.send_message(self.bot.get_feedback("master_refresh_interval_success", val=minutes), ephemeral=True)
 
-    async def autocomplete_language(self, interaction: discord.Interaction, current: str):
-        choices = []
-        for lang_code in self.bot.locales.keys():
-            if current.lower() in lang_code.lower():
-                choices.append(app_commands.Choice(name=lang_code.upper(), value=lang_code))
-        return choices[:25]
 
-    @app_commands.command(name="language", description="Set the global master feedback language")
-    @app_commands.describe(lang_code="Language code (e.g., hu, en)")
-    @app_commands.autocomplete(lang_code=autocomplete_language)
-    async def master_language(self, interaction: discord.Interaction, lang_code: str):
-        if not self.bot.is_master_admin(interaction.user):
-            await interaction.response.send_message(self.bot.get_feedback("error_no_permission"), ephemeral=True)
-            return
-
-        lang_code = lang_code.lower()
-        if lang_code not in self.bot.locales:
-            return await interaction.response.send_message(self.bot.get_feedback("master_lang_unknown", list=', '.join(self.bot.locales.keys())), ephemeral=True)
-
-        self.bot.config["master_language"] = lang_code
-        self.bot.language_data = self.bot.locales[lang_code]
-        await database.set_bot_setting("master_language", lang_code)
-
-        await interaction.response.send_message(self.bot.get_feedback("master_lang_success", lang_code=lang_code.upper()), ephemeral=True)
 
     # --- Status Commands ---
     

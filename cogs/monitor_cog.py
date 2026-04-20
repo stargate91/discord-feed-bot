@@ -36,8 +36,12 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         if self.bot.monitor_manager:
             for m in self.bot.monitor_manager.monitors:
                 if m.name == monitor_name:
-                    target_monitor = m
-                    break
+                    m_guild_id = getattr(m, 'guild_id', 0)
+                    if m_guild_id == interaction.guild_id:
+                        target_monitor = m
+                        break
+                    elif m_guild_id == 0:
+                        target_monitor = m
         
         if not target_monitor:
             await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
@@ -84,8 +88,12 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         if self.bot.monitor_manager:
             for m in self.bot.monitor_manager.monitors:
                 if m.name == monitor_name:
-                    target_monitor = m
-                    break
+                    m_guild_id = getattr(m, 'guild_id', 0)
+                    if m_guild_id == interaction.guild_id:
+                        target_monitor = m
+                        break
+                    elif m_guild_id == 0:
+                        target_monitor = m
         
         if not target_monitor:
             await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
