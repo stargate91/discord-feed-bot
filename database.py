@@ -75,6 +75,15 @@ async def init_db():
         async with conn.transaction():
             for q in queries:
                 await conn.execute(q)
+            
+            # Automatic DB schema migrations
+            try:
+                # Add refresh_interval if it doesn't exist
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS refresh_interval INTEGER")
+                log.info("DB Migration: ensuring 'refresh_interval' column exists in guild_settings.")
+            except Exception as e:
+                log.warning(f"DB Migration Issue (safe to ignore if already exists): {e}")
+
     log.info("Database tables initialized.")
 
 # --- API Methods ---
