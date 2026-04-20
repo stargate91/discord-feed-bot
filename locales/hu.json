@@ -197,9 +197,16 @@
     "master_premium_gen_success": "✅ Prémium kód legenerálva: **{code}**\nIdőtartam: {days} nap\nFelhasználhatóság: {uses}",
     "premium_check_lifetime": "🌟 Ez a szerver **Örökös Prémium** státusszal rendelkezik! Minden funkció korlátlanul elérhető.",
     "premium_check_active": "🌟 Ez a szerver Prémium státuszban van eddig: {date}.",
-    "premium_check_inactive": "📊 Ez a szerver jelenleg a **Free (Ingyenes)** szinten van.\n\n**A Prémium előnyei:**\n- 5 perces frissítési idők (20 helyett)\n- Egyedi Embed színek\n- Korlátlan mennyiségű feed\n\n*Támogasd a projektet Patreonon, vagy szerezz egy prémium kódot a hivatalos Discord szerveren nálunk!*",
+    "premium_check_inactive": "📊 Ez a szerver jelenleg a **Free (Ingyenes)** szinten van.\n\n**A Prémium előnyei:**\n- 2-5 perces frissítési idők (15 helyett)\n- Egyedi Embed színek és Üzenet sablonok\n- Akár 100 monitor (3 helyett)\n- Akár 10 célcsatorna és ping rang monitoronként\n- Crypto monitor és Repost funkció\n\n*Támogasd a projektet Patreonon, vagy szerezz egy prémium kódot a hivatalos Discord szerveren nálunk!*",
     "premium_activate_error": "❌ A megadott prémium kód érvénytelen vagy már felhasználták.",
     "premium_activate_success_lifetime": "🎉 **Sikeres indulás!** Ez a szerver mostantól **Örökös Prémium** előnyökkel rendelkezik!",
     "premium_activate_success": "🎉 **Sikeres aktiválás!** A Prémium státusz érvényes eddig: {date}.",
-    "premium_cooldown_error": "⏳ Kérlek várj! Új kódot {retry_after} másodperc múlva próbálhatsz meg beírni."
+    "premium_cooldown_error": "⏳ Kérlek várj! Új kódot {retry_after} másodperc múlva próbálhatsz meg beírni.",
+    "error_premium_limit_monitors": "❌ Elérted a limitet! Az Ingyenes szinten maximum **{limit}** monitort adhatsz hozzá.",
+    "error_premium_only_crypto": "❌ A Crypto monitor egy **Prémium** funkció. Frissíts a használatához!",
+    "error_premium_only_repost": "❌ A Repost funkció csak a **Prémium** szerverek számára elérhető.",
+    "error_premium_only_feature": "❌ Ez egy **Prémium** funkció (pl. egyedi színek, műfaj szűrés).",
+    "ui_premium_only_badge": "⭐ PRÉMIUM ⭐",
+    "remove_all_monitors_success": "✅ A szerver összes monitora sikeresen eltávolítva.",
+    "error_remove_missing_target": "❌ Meg kell adnod egy monitor nevét, vagy használd az `all_monitors` kapcsolót!"
 }

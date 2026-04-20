@@ -215,7 +215,7 @@
     "master_premium_gen_success": "✅ Premium code generated: **{code}**\nDuration: {days} days\nUses: {uses}",
     "premium_check_lifetime": "🌟 This server has **Lifetime Premium**! All premium features are unlocked forever.",
     "premium_check_active": "🌟 This server has Active Premium until {date}.",
-    "premium_check_inactive": "📊 This server is currently on the **Free Tier**.\n\n**Premium Benefits:**\n- 5 minute refresh intervals (instead of 20)\n- Custom Embed Colors\n- No limits on feeds\n\n*Support the project via Patreon or check our Discord for giveaways to receive a premium code!*",
+    "premium_check_inactive": "📊 This server is currently on the **Free Tier**.\n\n**Premium Benefits:**\n- 2-5 minute refresh intervals (instead of 15)\n- Custom Embed Colors & Alert Templates\n- Up to 100 monitors (instead of 3)\n- Up to 10 target channels & ping roles per monitor\n- Crypto Monitor & Repost feature\n\n*Support the project via Patreon or check our Discord for giveaways to receive a premium code!*",
     "premium_activate_error": "❌ The premium code you entered is invalid or has already been used.",
     "premium_activate_success_lifetime": "🎉 **Success!** This server now has **Lifetime Premium** activated!",
     "premium_activate_success": "🎉 **Success!** Premium activated. Valid until: {date}.",
@@ -224,5 +224,13 @@
     "master_premium_revoke_success": "🛑 Premium access for server `{guild_id}` has been revoked.",
     "master_premium_list_title": "### 🎟️ Premium Codes ({filter})",
     "master_premium_list_empty": "ℹ️ No premium codes found for this filter.",
-    "premium_cooldown_error": "⏳ Please wait! You can try entering a code again in {retry_after} seconds."
+    "premium_cooldown_error": "⏳ Please wait! You can try entering a code again in {retry_after} seconds.",
+    "error_premium_limit_monitors": "❌ Limit reached! On the Free Tier, you can add a maximum of **{limit}** monitors.",
+    "error_premium_only_crypto": "❌ The Crypto monitor is a **Premium** feature. Upgrade to use it!",
+    "error_premium_only_repost": "❌ The Repost feature is only available for **Premium** servers.",
+    "error_premium_only_feature": "❌ This is a **Premium** feature (e.g., custom colors, genre filtering).",
+    "ui_premium_only_badge": "⭐ PREMIUM ⭐",
+    "remove_all_monitors_success": "✅ All monitors for this server have been successfully removed.",
+    "error_remove_missing_target": "❌ You must specify a monitor name or use the `all_monitors` flag."
 }
+

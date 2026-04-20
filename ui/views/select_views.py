@@ -41,6 +41,10 @@ class AlertTemplateSelectLayout(discord.ui.LayoutView):
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
 
     async def select_callback(self, interaction: discord.Interaction):
+        if not self.bot.has_feature(self.guild_id, "alert_template"):
+            await interaction.response.send_message(self.bot.get_feedback("error_premium_only_feature", guild_id=self.guild_id), ephemeral=True)
+            return
+
         platform = self.select.values[0]
         current = self.current_templates.get(platform, "")
         modal = AlertTemplateModal(self.bot, platform, current)

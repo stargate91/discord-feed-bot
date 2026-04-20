@@ -100,11 +100,21 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             elif self.monitor_type == "steam_free":
                 m_config["include_dlc"] = False
 
+            guild_id = interaction.guild_id or 0
+            
             color_val = self.color_input.value.strip() if self.color_input.value else ""
-            if color_val: m_config["embed_color"] = color_val
+            if color_val:
+                if self.bot.has_feature(guild_id, "custom_color"):
+                    m_config["embed_color"] = color_val
+                else:
+                    log.warning(f"Prevented custom color for non-premium guild {guild_id}")
 
             alert_val = self.alert_input.value.strip() if self.alert_input.value else ""
-            if alert_val: m_config["custom_alert"] = alert_val
+            if alert_val:
+                if self.bot.has_feature(guild_id, "alert_template"):
+                    m_config["custom_alert"] = alert_val
+                else:
+                    log.warning(f"Prevented custom alert for non-premium guild {guild_id}")
             
             guild_id = interaction.guild_id or 0
             await database.add_monitor(m_config, guild_id=guild_id)
@@ -145,6 +155,11 @@ class EditMonitorModal(discord.ui.Modal):
             new_name = self.name_input.value
             color_val = self.color_input.value.strip() if self.color_input.value else ""
             
+            # Enforce Color Limit
+            if color_val and not self.bot.has_feature(guild_id, "custom_color"):
+                color_val = "" # Reset if non-premium tries to hack it
+                log.warning(f"Blocked manual hex inject for guild {guild_id}")
+
             log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_chs={self.target_channels}, new_roles={self.target_roles}, color={color_val}, steam_patch={self.steam_patch_only}")
             
             await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only, target_genres=self.target_genres)

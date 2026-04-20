@@ -205,16 +205,31 @@ class FeedBot(commands.Bot):
         return False
 
     def get_guild_tier_limits(self, guild_id):
-        """Returns (min_minutes, max_minutes, default_minutes) based on tier."""
+        """Returns (min_refresh_min, max_refresh_min, default_refresh_min, max_monitors, max_channels, max_roles) based on tier."""
         if self.is_master(guild_id):
-            return (1, 1440, 5)
+            return (1, 1440, 5, 1000, 20, 20)
         if self.is_premium(guild_id):
-            return (2, 1440, 5)
-        return (15, 1440, 20)
+            return (2, 1440, 5, 100, 10, 10)
+        return (15, 1440, 20, 3, 1, 1)
+
+    def has_feature(self, guild_id, feature_name):
+        """Check if a guild has access to a specific premium feature."""
+        # Masters have everything
+        if self.is_master(guild_id):
+            return True
+            
+        premium = self.is_premium(guild_id)
+        
+        # Premium-only features
+        premium_only = ["crypto", "repost", "custom_color", "alert_template", "genre_filter", "bulk_delete"]
+        if feature_name in premium_only:
+            return premium
+            
+        return True
 
     def get_guild_refresh_interval(self, guild_id):
         """Returns the configured refresh interval in minutes, validated against tier limits."""
-        min_m, max_m, def_m = self.get_guild_tier_limits(guild_id)
+        min_m, max_m, def_m, _, _, _ = self.get_guild_tier_limits(guild_id)
         settings = self.guild_settings_cache.get(guild_id, {})
         
         ri = settings.get("refresh_interval")
@@ -223,6 +238,7 @@ class FeedBot(commands.Bot):
             clamped = max(min_m, min(max_m, ri))
             return clamped
         return def_m
+
 
 
     def is_master_admin(self, member):

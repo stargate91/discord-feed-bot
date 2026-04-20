@@ -22,6 +22,15 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
             
+        # Tier Limit Check
+        guild_id = interaction.guild_id or 0
+        _, _, _, max_monitors, _, _ = self.bot.get_guild_tier_limits(guild_id)
+        current_monitors = await database.get_monitors_for_guild(guild_id)
+        
+        if len(current_monitors) >= max_monitors:
+            await interaction.response.send_message(self.bot.get_feedback("error_premium_limit_monitors", limit=max_monitors, guild_id=guild_id), ephemeral=True)
+            return
+
         view = AddMonitorWizardLayout(self.bot, interaction)
         await interaction.response.send_message(view=view, ephemeral=True)
 
@@ -83,6 +92,11 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
             
+        guild_id = interaction.guild_id or 0
+        if not self.bot.has_feature(guild_id, "repost"):
+            await interaction.response.send_message(self.bot.get_feedback("error_premium_only_repost", guild_id=guild_id), ephemeral=True)
+            return
+
         count = max(1, min(count, 10))
         target_monitor = None
         if self.bot.monitor_manager:
@@ -223,12 +237,35 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         await interaction.response.send_message(self.bot.get_feedback("ui_monitor_restart_msg", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
 
     @app_commands.command(name="remove", description="Remove a monitor from the system")
-    @app_commands.describe(monitor_name="Which monitor should be removed?")
-    async def monitor_remove(self, interaction: discord.Interaction, monitor_name: str):
+    @app_commands.describe(
+        monitor_name="Which monitor should be removed?", 
+        all_monitors="Remove ALL monitors for this server? (Premium Only)"
+    )
+    async def monitor_remove(self, interaction: discord.Interaction, monitor_name: str = None, all_monitors: bool = False):
         if not self.bot.is_bot_admin(interaction.user):
             await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
             return
+
         guild_id = interaction.guild_id or 0
+
+        # Handle Bulk Remove
+        if all_monitors:
+            if not self.bot.has_feature(guild_id, "bulk_delete"):
+                await interaction.response.send_message(self.bot.get_feedback("error_premium_only_feature", guild_id=guild_id), ephemeral=True)
+                return
+            
+            await database.remove_all_monitors(guild_id)
+            if self.bot.monitor_manager:
+                self.bot.monitor_manager.monitors = [m for m in self.bot.monitor_manager.monitors if getattr(m, 'guild_id', None) != guild_id]
+            
+            await interaction.response.send_message(self.bot.get_feedback("remove_all_monitors_success", guild_id=guild_id), ephemeral=True)
+            return
+
+        # Handle Single Remove
+        if not monitor_name:
+            await interaction.response.send_message(self.bot.get_feedback("error_remove_missing_target", guild_id=guild_id), ephemeral=True)
+            return
+
         monitors_cfg = await database.get_monitors_for_guild(guild_id)
         target = next((m for m in monitors_cfg if m.get("name") == monitor_name), None)
         

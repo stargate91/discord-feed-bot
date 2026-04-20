@@ -27,22 +27,28 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
     def update_components(self):
         self.clear_items()
         
+        # Tier Limits
+        _, _, _, _, max_channels, max_roles = self.bot.get_guild_tier_limits(self.guild_id)
+        is_premium = self.bot.is_premium(self.guild_id)
+
         # 1. Native Channel Select
         self.channel_select = discord.ui.ChannelSelect(
             placeholder=self.bot.get_feedback("add_monitor_channel_select", guild_id=self.guild_id),
             channel_types=[discord.ChannelType.text, discord.ChannelType.news],
-            min_values=0, max_values=10
+            min_values=0, max_values=max_channels
         )
         self.channel_select.callback = self.channel_callback
 
         # 2. Native Role Select
         self.role_select = discord.ui.RoleSelect(
             placeholder=self.bot.get_feedback("add_monitor_role_select", guild_id=self.guild_id),
-            min_values=0, max_values=10
+            min_values=0, max_values=max_roles
         )
         self.role_select.callback = self.role_callback
 
         # 3. Platform Select (Original options preserved)
+        premium_badge = f" {self.bot.get_feedback('ui_premium_only_badge', guild_id=self.guild_id)}"
+        
         platform_options = [
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_youtube", guild_id=self.guild_id), value="youtube"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_rss", guild_id=self.guild_id), value="rss"),
@@ -53,7 +59,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_steam_news", guild_id=self.guild_id), value="steam_news"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_movie", guild_id=self.guild_id), value="movie"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_tv_series", guild_id=self.guild_id), value="tv_series"),
-            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto", guild_id=self.guild_id), value="crypto"),
+            discord.SelectOption(label=self.bot.get_feedback("ui_platform_crypto", guild_id=self.guild_id) + (premium_badge if not is_premium else ""), value="crypto"),
             discord.SelectOption(label=self.bot.get_feedback("ui_platform_github", guild_id=self.guild_id), value="github"),
         ]
         self.type_select = discord.ui.Select(placeholder=self.bot.get_feedback("ui_ph_platform", guild_id=self.guild_id), options=platform_options)
@@ -104,6 +110,8 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         if self.selected_type in ["movie", "tv_series"]:
             options = []
             genre_dict = MOVIE_GENRES if self.selected_type == "movie" else TV_GENRES
+            has_genres = self.bot.has_feature(self.guild_id, "genre_filter")
+            
             for gid, gname in genre_dict.items():
                 loc_key = f"genre_{gid}"
                 label = self.bot.get_feedback(loc_key, guild_id=self.guild_id)
@@ -111,18 +119,23 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
                     label = gname
                 options.append(discord.SelectOption(label=label, value=str(gid)))
             
+            ph = self.bot.get_feedback("ui_ph_genres", guild_id=self.guild_id)
+            if not has_genres:
+                ph = f"{ph} ({self.bot.get_feedback('ui_premium_only_badge', guild_id=self.guild_id)})"
+
             self.genre_select = discord.ui.Select(
-                placeholder=self.bot.get_feedback("ui_ph_genres", guild_id=self.guild_id),
+                placeholder=ph,
                 options=options,
                 min_values=0,
-                max_values=len(options)
+                max_values=len(options) if has_genres else 0,
+                disabled=not has_genres
             )
             self.genre_select.callback = self.genre_callback
             
             # Restore previously selected genres if any exist and are still valid
             valid_values = [str(g) for g in genre_dict.keys()]
             self.selected_genres = [g for g in self.selected_genres if g in valid_values]
-            if self.selected_genres:
+            if self.selected_genres and has_genres:
                 for option in self.genre_select.options:
                     if option.value in self.selected_genres:
                         option.default = True
@@ -171,6 +184,13 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
 
     async def type_callback(self, interaction: discord.Interaction):
         self.selected_type = self.type_select.values[0]
+        
+        # Crypto Gate
+        if self.selected_type == "crypto" and not self.bot.has_feature(self.guild_id, "crypto"):
+            await interaction.response.send_message(self.bot.get_feedback("error_premium_only_crypto", guild_id=self.guild_id), ephemeral=True)
+            self.selected_type = None
+            return
+
         await self.check_readiness(interaction)
 
     async def next_callback(self, interaction: discord.Interaction):
@@ -207,16 +227,19 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
     def update_components(self):
         self.clear_items()
         
+        # Tier Limits
+        _, _, _, _, max_channels, max_roles = self.bot.get_guild_tier_limits(self.guild_id)
+
         self.channel_select = discord.ui.ChannelSelect(
             placeholder=self.bot.get_feedback("ui_ph_edit_ch_short", guild_id=self.guild_id),
             channel_types=[discord.ChannelType.text, discord.ChannelType.news],
-            min_values=0, max_values=10
+            min_values=0, max_values=max_channels
         )
         self.channel_select.callback = self.channel_callback
 
         self.role_select = discord.ui.RoleSelect(
             placeholder=self.bot.get_feedback("ui_ph_edit_role_short", guild_id=self.guild_id),
-            min_values=0, max_values=10
+            min_values=0, max_values=max_roles
         )
         self.role_select.callback = self.role_callback
 

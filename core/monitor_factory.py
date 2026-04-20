@@ -35,7 +35,9 @@ def create_monitor_instance(bot, m_config):
     elif m_type == "stream":
         return StreamMonitor(bot, m_config)
     elif m_type == "crypto":
-        return CryptoMonitor(bot, m_config)
+        if bot.has_feature(m_config.get("guild_id", 0), "crypto"):
+            return CryptoMonitor(bot, m_config)
+        return None
     elif m_type == "github":
         return GitHubMonitor(bot, m_config)
     return None

@@ -232,6 +232,11 @@ async def remove_monitor(monitor_id, guild_id):
     pool = await get_pool()
     await pool.execute(q, monitor_id, guild_id)
 
+async def remove_all_monitors(guild_id):
+    q = "DELETE FROM monitors WHERE guild_id = $1"
+    pool = await get_pool()
+    await pool.execute(q, guild_id)
+
 async def is_published(entry_id, platform, guild_id=0):
     q = "SELECT 1 FROM published_entries_v2 WHERE entry_id = $1 AND platform = $2 AND guild_id = $3"
     pool = await get_pool()
