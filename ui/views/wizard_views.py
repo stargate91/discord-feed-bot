@@ -484,6 +484,6 @@ class SetupWizardLayout(discord.ui.LayoutView):
             "admin_role_id": self.new_admin_role
         })
         success_view = discord.ui.LayoutView()
-        success_text = self.bot.get_feedback("setup_save_success", guild_id=self.guild_id)
+        success_text = self.bot.get_feedback("ui_setup_save_success", guild_id=self.guild_id)
         success_view.add_item(discord.ui.Container(discord.ui.TextDisplay(success_text), accent_color=0x43B581))
         await interaction.response.edit_message(view=success_view)
