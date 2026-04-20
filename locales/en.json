@@ -204,5 +204,12 @@
     "genre_10766": "Soap",
     "genre_10767": "Talk",
     "genre_10768": "War & Politics",
-    "genre_9999": "Anime"
+    "genre_9999": "Anime",
+    "ui_setup_interval_btn": "⏱️ Refresh Interval",
+    "ui_setup_interval_label": "Refresh Interval (min)",
+    "modal_interval_title": "Set Refresh Interval",
+    "modal_interval_label": "Minutes",
+    "modal_interval_ph": "e.g., 20",
+    "modal_interval_error": "❌ Only values between {min} and {max} are allowed for your tier!",
+    "ui_setup_interval_success": "✅ Refresh interval configured successfully to {val} minutes."
 }

@@ -6,18 +6,19 @@ class MonitorManager:
         self.bot = bot
         self.config = config
         self.monitors = []
-        self.refresh_interval = config.get("refresh_interval_minutes", 10) * 60
         self.is_running = False
         self._shared_cache = {} # Key: source_id, Value: (timestamp, data)
         self.tmdb_genres_cache = {} # Key: lang_code, Value: {id: name}
+        self.group_last_checked = {}
+        self.unshared_last_checked = {}
 
-    def get_shared_data(self, key):
+    def get_shared_data(self, key, max_age_seconds=120):
         """Get shared data from cache if it's still fresh."""
         import time
         if key in self._shared_cache:
             ts, data = self._shared_cache[key]
-            # Consider data fresh for half of the refresh interval
-            if time.time() - ts < (self.refresh_interval / 2):
+            # Consider data fresh for max_age_seconds
+            if time.time() - ts < max_age_seconds:
                 return data
         return None
 
@@ -37,9 +38,11 @@ class MonitorManager:
             return
         
         self.is_running = True
-        log.info(f"Starting monitor loop (Interval: {self.refresh_interval // 60}m) in Centralized Poller mode")
+        log.info(f"Starting monitor loop in Centralized Poller mode with dynamic intervals")
         
         await self.bot.wait_until_ready()
+        
+        import time
         
         while self.is_running and not self.bot.is_closed():
             # 1. Group monitors by shared feed key to avoid redundant API polling
@@ -59,13 +62,25 @@ class MonitorManager:
                     log.error(f"Error getting shared key for {monitor.name}: {e}")
                     
             # 2. Process Shared Groups Centrally
+            now = time.time()
             for key, monitors_in_group in groups.items():
                 if not self.is_running or self.bot.is_closed(): break
+                
+                # Determine min refresh interval for this shared group
+                min_interval_mins = min(self.bot.get_guild_refresh_interval(m.guild_id) for m in monitors_in_group)
+                min_interval_secs = min_interval_mins * 60
+                
+                last_checked = self.group_last_checked.get(key, 0)
+                if now - last_checked < min_interval_secs:
+                    continue # Not due yet for this group
+                    
+                self.group_last_checked[key] = now
+                
                 primary = monitors_in_group[0]
                 try:
                     # Transitional backwards compatibility check
                     if hasattr(primary, 'fetch_new_items'):
-                        log.debug(f"[Centralized] Fetching new items for {len(monitors_in_group)} monitors tracking '{key}'")
+                        log.debug(f"[Centralized] Fetching new items for {len(monitors_in_group)} monitors tracking '{key}' (Interval: {min_interval_mins}m)")
                         new_items = await primary.fetch_new_items()
                         if new_items:
                             # Process and send to all subscribers
@@ -89,8 +104,17 @@ class MonitorManager:
             # 3. Process unshared ones (Fallback)
             for monitor in unshared:
                 if not self.is_running or self.bot.is_closed(): break
+                
+                interval_secs = self.bot.get_guild_refresh_interval(monitor.guild_id) * 60
+                last_checked = self.unshared_last_checked.get(monitor.id, 0)
+                
+                if now - last_checked < interval_secs:
+                    continue
+                    
+                self.unshared_last_checked[monitor.id] = now
+                
                 try:
-                    log.debug(f"[Unshared] Checking monitor: {monitor.name}")
+                    log.debug(f"[Unshared] Checking monitor: {monitor.name} (Interval: {interval_secs//60}m)")
                     if hasattr(monitor, 'fetch_new_items'):
                         new_items = await monitor.fetch_new_items()
                         if new_items:
@@ -102,9 +126,9 @@ class MonitorManager:
                 except Exception as e:
                     log.error(f"Error checking unshared monitor {monitor.name}: {e}", exc_info=True)
             
-            # Wait for next check cycle
+            # Central heartbeat: wait 60 seconds before checking again
             try:
-                await asyncio.sleep(self.refresh_interval)
+                await asyncio.sleep(60)
             except asyncio.CancelledError:
                 break
 

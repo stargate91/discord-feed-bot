@@ -211,6 +211,26 @@ class FeedBot(commands.Bot):
             
         return False
 
+    def get_guild_tier_limits(self, guild_id):
+        """Returns (min_minutes, max_minutes, default_minutes) based on tier."""
+        if self.is_master(guild_id):
+            return (1, 1440, 5)
+        if self.is_premium(guild_id):
+            return (2, 1440, 5)
+        return (15, 1440, 20)
+
+    def get_guild_refresh_interval(self, guild_id):
+        """Returns the configured refresh interval in minutes, validated against tier limits."""
+        min_m, max_m, def_m = self.get_guild_tier_limits(guild_id)
+        settings = self.guild_settings_cache.get(guild_id, {})
+        
+        ri = settings.get("refresh_interval")
+        if ri is not None and isinstance(ri, int):
+            # Clamp value strictly to limits
+            clamped = max(min_m, min(max_m, ri))
+            return clamped
+        return def_m
+
 
     def is_master_admin(self, member):
         """Check if a member is a Master Admin (Owner OR specific Master Role)."""

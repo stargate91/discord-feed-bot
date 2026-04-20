@@ -186,5 +186,12 @@
     "genre_10766": "Szappanopera",
     "genre_10767": "Talkshow",
     "genre_10768": "Háborús & Politika",
-    "genre_9999": "Anime"
+    "genre_9999": "Anime",
+    "ui_setup_interval_btn": "⏱️ Frissítési Idő",
+    "ui_setup_interval_label": "Frissítési Idő (perc)",
+    "modal_interval_title": "Frissítési Idő Beállítása",
+    "modal_interval_label": "Percek Száma",
+    "modal_interval_ph": "pl. 20",
+    "modal_interval_error": "❌ A te szinteden csak {min} és {max} közötti érték megengedett!",
+    "ui_setup_interval_success": "✅ A frissítési idő sikeresen beállítva {val} percre."
 }

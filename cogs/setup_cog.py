@@ -83,5 +83,24 @@ class SetupCog(commands.Cog):
         await database.update_guild_settings(guild_id, alert_templates=current_templates, bot=self.bot)
         await interaction.response.send_message(self.bot.get_feedback("ui_setup_template_success", platform=platform.name), ephemeral=True)
 
+    @set_group.command(name="refresh-interval", description="Set the monitor refresh interval (in minutes) for this server")
+    @app_commands.describe(minutes="Interval in minutes (depends on your server tier)")
+    @app_commands.default_permissions(administrator=True)
+    async def set_refresh_interval(self, interaction: discord.Interaction, minutes: int):
+        guild_id = interaction.guild_id or 0
+        min_m, max_m, def_m = self.bot.get_guild_tier_limits(guild_id)
+        
+        if not (min_m <= minutes <= max_m):
+            return await interaction.response.send_message(
+                self.bot.get_feedback("modal_interval_error", guild_id=guild_id, min=min_m, max=max_m),
+                ephemeral=True
+            )
+            
+        await database.update_guild_settings(guild_id, refresh_interval=minutes, bot=self.bot)
+        await interaction.response.send_message(
+            self.bot.get_feedback("ui_setup_interval_success", guild_id=guild_id, val=minutes),
+            ephemeral=True
+        )
+
 async def setup(bot):
     await bot.add_cog(SetupCog(bot))

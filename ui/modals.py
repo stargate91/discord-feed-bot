@@ -197,3 +197,44 @@ class AlertTemplateModal(discord.ui.Modal):
         await interaction.response.defer()
 
 
+class RefreshIntervalModal(discord.ui.Modal):
+    def __init__(self, bot, guild_id):
+        self.bot = bot
+        self.guild_id = guild_id
+        
+        # Get limits
+        self.min_m, self.max_m, self.def_m = bot.get_guild_tier_limits(guild_id)
+        
+        super().__init__(title=bot.get_feedback("modal_interval_title", guild_id=guild_id))
+        
+        self.interval_input = discord.ui.TextInput(
+            label=bot.get_feedback("modal_interval_label", guild_id=guild_id),
+            placeholder=bot.get_feedback("modal_interval_ph", guild_id=guild_id),
+            required=True,
+            default=str(self.def_m),
+            max_length=4
+        )
+        self.add_item(self.interval_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            val = int(self.interval_input.value.strip())
+        except ValueError:
+            return await interaction.response.send_message(
+                self.bot.get_feedback("modal_interval_error", min=self.min_m, max=self.max_m, guild_id=self.guild_id),
+                ephemeral=True
+            )
+            
+        if not (self.min_m <= val <= self.max_m):
+            return await interaction.response.send_message(
+                self.bot.get_feedback("modal_interval_error", min=self.min_m, max=self.max_m, guild_id=self.guild_id),
+                ephemeral=True
+            )
+            
+        # Update dynamically in DB
+        await database.update_guild_settings(self.guild_id, refresh_interval=val, bot=self.bot)
+        
+        await interaction.response.send_message(
+            self.bot.get_feedback("ui_setup_interval_success", val=val, guild_id=self.guild_id),
+            ephemeral=True
+        )

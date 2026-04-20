@@ -380,7 +380,10 @@ class SetupWizardLayout(discord.ui.LayoutView):
         )
         self.admin_role_select.callback = self.admin_role_callback
 
-        # 3. Templates/Save footer
+        # 3. Interval/Templates/Save options
+        interval_btn = discord.ui.Button(label=self.bot.get_feedback("ui_setup_interval_btn", guild_id=self.guild_id, force_lang=self.new_lang), style=discord.ButtonStyle.primary)
+        interval_btn.callback = self.interval_callback
+
         template_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.new_lang), style=discord.ButtonStyle.secondary)
         template_btn.callback = self.template_callback
 
@@ -392,10 +395,14 @@ class SetupWizardLayout(discord.ui.LayoutView):
         if title_text == "ui_setup_title":
             title_text = "Bot Setup" # Fallback if missing
             
+        current_interval = self.bot.get_guild_refresh_interval(self.guild_id)
+        interval_label = self.bot.get_feedback('ui_setup_interval_label', guild_id=self.guild_id, force_lang=self.new_lang)
+        
         settings_text = (
             f"### **{title_text}**\n"
             f"**{self.bot.get_feedback('ui_setup_lang_label', guild_id=self.guild_id, force_lang=self.new_lang)}:** {self.new_lang.upper()}\n"
-            f"**{self.bot.get_feedback('ui_setup_admin_role_label', guild_id=self.guild_id, force_lang=self.new_lang)}:** {self.admin_role_display_name}"
+            f"**{self.bot.get_feedback('ui_setup_admin_role_label', guild_id=self.guild_id, force_lang=self.new_lang)}:** {self.admin_role_display_name}\n"
+            f"**{interval_label}:** {current_interval}"
         )
         
         container_items = [
@@ -403,7 +410,7 @@ class SetupWizardLayout(discord.ui.LayoutView):
             discord.ui.Separator(),
             discord.ui.ActionRow(self.lang_select),
             discord.ui.ActionRow(self.admin_role_select),
-            discord.ui.ActionRow(template_btn, save_btn)
+            discord.ui.ActionRow(interval_btn, template_btn, save_btn)
         ]
         
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
@@ -434,6 +441,11 @@ class SetupWizardLayout(discord.ui.LayoutView):
         from ui.views.select_views import AlertTemplateSelectLayout
         view = AlertTemplateSelectLayout(self.bot, self.guild_id, self.settings, force_lang=self.new_lang)
         await interaction.response.send_message(view=view, ephemeral=True)
+
+    async def interval_callback(self, interaction: discord.Interaction):
+        from ui.modals import RefreshIntervalModal
+        modal = RefreshIntervalModal(self.bot, self.guild_id)
+        await interaction.response.send_modal(modal)
 
     async def save_callback(self, interaction: discord.Interaction):
         await database.update_guild_settings(

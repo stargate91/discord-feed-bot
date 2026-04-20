@@ -47,7 +47,8 @@ async def init_db():
             admin_channel_id BIGINT DEFAULT 0,
             master_role_id BIGINT DEFAULT 0,
             alert_templates TEXT,
-            premium_until TIMESTAMP
+            premium_until TIMESTAMP,
+            refresh_interval INTEGER
         )''',
         # 4. Monitor stats daily
         '''CREATE TABLE IF NOT EXISTS monitor_stats_daily (
@@ -230,7 +231,7 @@ async def mark_as_published(entry_id, platform, feed_url, guild_id=0, published_
     await pool.execute(q, entry_id, platform, guild_id, feed_url, published_at)
 
 async def get_guild_settings(guild_id):
-    q = "SELECT language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until FROM guild_settings WHERE guild_id = $1"
+    q = "SELECT language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until, refresh_interval FROM guild_settings WHERE guild_id = $1"
     pool = await get_pool()
     row = await pool.fetchrow(q, guild_id)
     if row:
@@ -244,15 +245,16 @@ async def get_guild_settings(guild_id):
             "admin_channel_id": row[2] or 0,
             "master_role_id": row[3] or 0,
             "alert_templates": templates,
-            "premium_until": row[5]
+            "premium_until": row[5],
+            "refresh_interval": row[6]
         }
     return {
         "language": "en",
         "admin_role_id": 0, "admin_channel_id": 0, "master_role_id": 0, "alert_templates": {},
-        "premium_until": None
+        "premium_until": None, "refresh_interval": None
     }
 
-async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, premium_until=None, bot=None):
+async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, premium_until=None, refresh_interval=None, bot=None):
     current = await get_guild_settings(guild_id)
     lang = language if language is not None else current["language"]
     a_role = admin_role_id if admin_role_id is not None else current["admin_role_id"]
@@ -260,18 +262,20 @@ async def update_guild_settings(guild_id, language=None, alert_templates=None, a
     m_role = master_role_id if master_role_id is not None else current["master_role_id"]
     templates = alert_templates if alert_templates is not None else current["alert_templates"]
     p_until = premium_until if premium_until is not None else current["premium_until"]
+    r_int = refresh_interval if refresh_interval is not None else current["refresh_interval"]
     
-    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until, refresh_interval)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            ON CONFLICT(guild_id) DO UPDATE SET 
                language=EXCLUDED.language, 
                admin_role_id=EXCLUDED.admin_role_id,
                admin_channel_id=EXCLUDED.admin_channel_id, master_role_id=EXCLUDED.master_role_id, 
                alert_templates=EXCLUDED.alert_templates,
-               premium_until=EXCLUDED.premium_until'''
+               premium_until=EXCLUDED.premium_until,
+               refresh_interval=EXCLUDED.refresh_interval'''
 
     pool = await get_pool()
-    await pool.execute(q, guild_id, lang, a_role, a_chan, m_role, json.dumps(templates), p_until)
+    await pool.execute(q, guild_id, lang, a_role, a_chan, m_role, json.dumps(templates), p_until, r_int)
     
     # Update cache if bot instance provided
     if bot:
@@ -281,8 +285,10 @@ async def update_guild_settings(guild_id, language=None, alert_templates=None, a
             "admin_channel_id": a_chan,
             "master_role_id": m_role,
             "alert_templates": templates,
-            "premium_until": p_until
+            "premium_until": p_until,
+            "refresh_interval": r_int
         }
+
         log.info(f"Updated guild settings cache for {guild_id}")
 
 async def get_bot_statuses():
