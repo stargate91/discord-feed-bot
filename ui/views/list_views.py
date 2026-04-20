@@ -16,7 +16,8 @@ class MonitorListPaginatedView(discord.ui.LayoutView):
         page_content = self.pages_data[self.current_page]
         title_text = f"### **{self.bot.get_feedback('list_monitors_title', guild_id=self.guild_id)}**"
         if len(self.pages_data) > 1:
-            title_text += f" (Oldal {self.current_page+1}/{len(self.pages_data)})"
+            page_label = self.bot.get_feedback("ui_label_page", guild_id=self.guild_id)
+            title_text += f" ({page_label} {self.current_page+1}/{len(self.pages_data)})"
             
         footer_text = f"*{self.bot.get_feedback('list_monitors_footer', count=self.total_count, guild_id=self.guild_id)}*"
         
@@ -29,9 +30,12 @@ class MonitorListPaginatedView(discord.ui.LayoutView):
         ]
         
         if len(self.pages_data) > 1:
-            self.btn_prev = discord.ui.Button(label="◀ Előző", style=discord.ButtonStyle.secondary, disabled=(self.current_page == 0))
+            prev_label = self.bot.get_feedback("ui_btn_prev", guild_id=self.guild_id)
+            self.btn_prev = discord.ui.Button(label=prev_label, style=discord.ButtonStyle.secondary, disabled=(self.current_page == 0))
             self.btn_prev.callback = self.prev_callback
-            self.btn_next = discord.ui.Button(label="Következő ▶", style=discord.ButtonStyle.secondary, disabled=(self.current_page == len(self.pages_data)-1))
+            
+            next_label = self.bot.get_feedback("ui_btn_next", guild_id=self.guild_id)
+            self.btn_next = discord.ui.Button(label=next_label, style=discord.ButtonStyle.secondary, disabled=(self.current_page == len(self.pages_data)-1))
             self.btn_next.callback = self.next_callback
             container_items.append(discord.ui.ActionRow(self.btn_prev, self.btn_next))
             

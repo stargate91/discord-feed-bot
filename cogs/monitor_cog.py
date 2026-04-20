@@ -186,8 +186,11 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         for m_cfg in monitors_cfg:
             m_type = m_cfg.get("type", "unknown")
             emoji = type_emojis.get(m_type, TYPE_UNKNOWN)
-            status = STATUS_SUCCESS if m_cfg.get("enabled", True) else STATUS_ERROR
-            lines.append(f"**{emoji} {m_cfg.get('name', '??')}**\n{status} `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>")
+            
+            status_key = "ui_status_enabled" if m_cfg.get("enabled", True) else "ui_status_disabled"
+            status_text = self.bot.get_feedback(status_key, guild_id=guild_id)
+            
+            lines.append(f"**{emoji} {m_cfg.get('name', '??')}**\n{status_text} • `{m_type}` • <#{m_cfg.get('discord_channel_id', 0)}>")
             
         pages_data = []
         chunk_size = 10
