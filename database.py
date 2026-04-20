@@ -45,7 +45,6 @@ async def init_db():
             language TEXT DEFAULT 'en',
             admin_role_id BIGINT DEFAULT 0,
             admin_channel_id BIGINT DEFAULT 0,
-            master_role_id BIGINT DEFAULT 0,
             alert_templates TEXT,
             premium_until TIMESTAMP,
             refresh_interval INTEGER
@@ -88,7 +87,9 @@ async def init_db():
             try:
                 # Add refresh_interval if it doesn't exist
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS refresh_interval INTEGER")
-                log.info("DB Migration: ensuring 'refresh_interval' column exists in guild_settings.")
+                # Drop deprecated master_role_id
+                await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS master_role_id")
+                log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
                 log.warning(f"DB Migration Issue (safe to ignore if already exists): {e}")
 
@@ -248,51 +249,49 @@ async def mark_as_published(entry_id, platform, feed_url, guild_id=0, published_
     await pool.execute(q, entry_id, platform, guild_id, feed_url, published_at)
 
 async def get_guild_settings(guild_id):
-    q = "SELECT language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until, refresh_interval FROM guild_settings WHERE guild_id = $1"
+    q = "SELECT language, admin_role_id, admin_channel_id, alert_templates, premium_until, refresh_interval FROM guild_settings WHERE guild_id = $1"
     pool = await get_pool()
     row = await pool.fetchrow(q, guild_id)
     if row:
         templates = {}
-        if row[4]:
-            try: templates = json.loads(row[4])
+        if row[3]:
+            try: templates = json.loads(row[3])
             except: pass
         return {
             "language": row[0] or "en", 
             "admin_role_id": row[1] or 0,
             "admin_channel_id": row[2] or 0,
-            "master_role_id": row[3] or 0,
             "alert_templates": templates,
-            "premium_until": row[5],
-            "refresh_interval": row[6]
+            "premium_until": row[4],
+            "refresh_interval": row[5]
         }
     return {
         "language": "en",
-        "admin_role_id": 0, "admin_channel_id": 0, "master_role_id": 0, "alert_templates": {},
+        "admin_role_id": 0, "admin_channel_id": 0, "alert_templates": {},
         "premium_until": None, "refresh_interval": None
     }
 
-async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, master_role_id=None, premium_until=None, refresh_interval=None, bot=None):
+async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, admin_channel_id=None, premium_until=None, refresh_interval=None, bot=None):
     current = await get_guild_settings(guild_id)
     lang = language if language is not None else current["language"]
     a_role = admin_role_id if admin_role_id is not None else current["admin_role_id"]
     a_chan = admin_channel_id if admin_channel_id is not None else current["admin_channel_id"]
-    m_role = master_role_id if master_role_id is not None else current["master_role_id"]
     templates = alert_templates if alert_templates is not None else current["alert_templates"]
     p_until = premium_until if premium_until is not None else current["premium_until"]
     r_int = refresh_interval if refresh_interval is not None else current["refresh_interval"]
     
-    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until, refresh_interval)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, admin_channel_id, alert_templates, premium_until, refresh_interval)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT(guild_id) DO UPDATE SET 
                language=EXCLUDED.language, 
                admin_role_id=EXCLUDED.admin_role_id,
-               admin_channel_id=EXCLUDED.admin_channel_id, master_role_id=EXCLUDED.master_role_id, 
+               admin_channel_id=EXCLUDED.admin_channel_id, 
                alert_templates=EXCLUDED.alert_templates,
                premium_until=EXCLUDED.premium_until,
                refresh_interval=EXCLUDED.refresh_interval'''
 
     pool = await get_pool()
-    await pool.execute(q, guild_id, lang, a_role, a_chan, m_role, json.dumps(templates), p_until, r_int)
+    await pool.execute(q, guild_id, lang, a_role, a_chan, json.dumps(templates), p_until, r_int)
     
     # Update cache if bot instance provided
     if bot:
@@ -300,7 +299,6 @@ async def update_guild_settings(guild_id, language=None, alert_templates=None, a
             "language": lang,
             "admin_role_id": a_role,
             "admin_channel_id": a_chan,
-            "master_role_id": m_role,
             "alert_templates": templates,
             "premium_until": p_until,
             "refresh_interval": r_int

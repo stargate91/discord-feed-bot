@@ -41,7 +41,7 @@ class FeedBot(commands.Bot):
 
         # Load all guild settings into memory
         try:
-            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, admin_channel_id, master_role_id, alert_templates, premium_until FROM guild_settings")
+            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, admin_channel_id, alert_templates, premium_until FROM guild_settings")
             
             for row in settings_rows:
                 g_id = row[0]
@@ -49,9 +49,8 @@ class FeedBot(commands.Bot):
                     "language": row[1] or "en",
                     "admin_role_id": row[2] or 0,
                     "admin_channel_id": row[3] or 0,
-                    "master_role_id": row[4] or 0,
-                    "alert_templates": json.loads(row[5]) if row[5] else {},
-                    "premium_until": row[6]
+                    "alert_templates": json.loads(row[4]) if row[4] else {},
+                    "premium_until": row[5]
                 }
         except Exception as e:
             log.error(f"Error loading guild settings cache: {e}")
@@ -231,23 +230,18 @@ class FeedBot(commands.Bot):
 
 
     def is_master_admin(self, member):
-        """Check if a member is a Master Admin (Owner OR specific Master Role)."""
-        if not member or not hasattr(member, 'guild'):
+        """Check if a member is a Master Admin (Owner OR globally permitted User ID)."""
+        if not member:
             return False
             
         # 1. Global Owner
         if member.id in [self.owner_id] or (self.application and member.id == self.application.owner.id):
             return True
 
-        # 2. Check for Master-only Role
-        if self.is_master(member.guild.id):
-            settings = self.guild_settings_cache.get(member.guild.id, {})
-            master_role_id = settings.get("master_role_id", 0)
-            if master_role_id != 0:
-                role = member.get_role(master_role_id)
-                if role in member.roles:
-                    return True
-                    
+        # 2. Check config.json array
+        if member.id in self.config.get("master_user_ids", []):
+            return True
+            
         return False
 
     async def on_error(self, event, *args, **kwargs):

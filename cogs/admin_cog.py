@@ -177,16 +177,7 @@ class MasterCog(commands.GroupCog, name="master"):
         
         await interaction.response.send_message(self.bot.get_feedback("master_admin_ch_success", id=target_channel.id, guild_id=interaction.guild_id), ephemeral=True)
 
-    @app_commands.command(name="admin-role", description="Delegate master permissions to a specific role on this server")
-    @app_commands.describe(role="Select the master role")
-    async def master_admin_role(self, interaction: discord.Interaction, role: discord.Role):
-        # Only Bot Owner can grant Master role
-        if not (interaction.user.id == self.bot.owner_id or (self.bot.application and interaction.user.id == self.bot.application.owner.id)):
-            await interaction.response.send_message(self.bot.get_feedback("master_admin_role_owner_only"), ephemeral=True)
-            return
-            
-        await database.update_guild_settings(interaction.guild_id, master_role_id=role.id, bot=self.bot)
-        await interaction.response.send_message(self.bot.get_feedback("master_admin_role_success", id=role.id), ephemeral=True)
+
 
     @app_commands.command(name="refresh-interval", description="Set the global monitor refresh interval")
     @app_commands.describe(minutes="How many minutes between checks? (1-1440)")
