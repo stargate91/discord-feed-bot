@@ -1,4 +1,5 @@
 {
+    "tmdb_lang_code": "en-US",
     "new_youtube_alert": "**{name}** just uploaded a new video!",
     "new_stream_alert": "**{name}** is now LIVE!",
     "new_rss_alert": "New entry published:",

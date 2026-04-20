@@ -255,21 +255,29 @@ class FeedBot(commands.Bot):
         guild_id = guild_id or 0
         settings = self.guild_settings_cache.get(guild_id, {})
         
+        # Identify system keys (admin/master commands)
+        # These should always be English for technical consistency as requested.
+        system_prefixes = ["master_", "sync_", "clear_commands_", "status_", "purge_"]
+        is_system = any(key.startswith(p) for p in system_prefixes)
+        
         # Determine language
         master_guilds = self.config.get("master_guild_ids", [])
         
         # 1. Force Language Override
         if force_lang:
             lang_code = force_lang
+        elif is_system:
+            # System context defaults to English
+            lang_code = "en"
         else:
-            # 2. Guild specific
+            # 2. User context: prioritizes guild setting
             lang_code = settings.get("language")
             
-            # 3. Master/Global Fallback
+            # 3. Smart Fallback for user content
             if not lang_code:
-                # If we are in a master guild context, we STILL use the guild setting if available,
-                # but if no setting exists, we default to English (removing master_lang logic).
-                lang_code = "en"
+                # If no guild setting exists, we default to Hungarian for user-facing content (feeds)
+                # This ensures cards are localized even on the Master Guild without manual setup.
+                lang_code = "hu"
 
         lang_data = self.locales.get(lang_code, self.locales.get("en", self.language_data))
 

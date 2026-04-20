@@ -14,10 +14,8 @@ class MovieMonitor(BaseMonitor):
         self.bearer_token = bot.config.get("tmdb_bearer_token")
         self.api_key = bot.config.get("tmdb_api_key") # Fallback
         
-        # Get server language
-        settings = bot.guild_settings_cache.get(self.guild_id, {})
-        lang = settings.get("language", bot.config.get("language", "hu"))
-        self.tmdb_lang = "hu-HU" if lang == "hu" else "en-US"
+        # Get server language for TMDB API
+        self.tmdb_lang = bot.get_feedback("tmdb_lang_code", guild_id=self.guild_id)
         
         # Base URL without api_key
         self.api_url = f"https://api.themoviedb.org/3/movie/now_playing?language={self.tmdb_lang}&page=1"

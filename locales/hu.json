@@ -1,4 +1,5 @@
 {
+    "tmdb_lang_code": "hu-HU",
     "new_youtube_alert": "**{name}** friss videót töltött fel!",
     "new_stream_alert": "**{name}** elindította az élő adást!",
     "new_rss_alert": "Új bejegyzés jelent meg:",
