@@ -185,12 +185,12 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 return
                 
             for i, p_data in enumerate(previews):
-                send_kwargs = {
-                    "content": p_data.get("content"),
-                    "embed": p_data.get("embed"),
-                    "view": p_data.get("view"),
-                    "ephemeral": True
-                }
+                send_kwargs = {"ephemeral": True}
+                for field in ["content", "embed", "view"]:
+                    val = p_data.get(field)
+                    if val is not None:
+                        send_kwargs[field] = val
+                
                 await interaction.followup.send(**send_kwargs)
             
             await interaction.followup.send(self.bot.get_feedback("preview_success", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
