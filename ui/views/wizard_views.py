@@ -4,7 +4,6 @@ from ui.modals import (
     AddMonitorWizardStepTwoModal,
     EditMonitorModal
 )
-from ui.views.select_views import AlertTemplateSelectLayout
 from core.emojis import ICON_CLOSE
 
 class AddMonitorWizardLayout(discord.ui.LayoutView):
