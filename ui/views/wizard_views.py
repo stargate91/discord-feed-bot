@@ -296,14 +296,16 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         )
         self.role_select.callback = self.role_callback
 
-        self.clear_ch_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_clear_channels", guild_id=self.guild_id), style=discord.ButtonStyle.danger)
+        c_label, c_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_clear_channels", guild_id=self.guild_id))
+        self.clear_ch_btn = discord.ui.Button(label=c_label, emoji=c_emoji, style=discord.ButtonStyle.secondary)
         self.clear_ch_btn.callback = self.clear_ch_callback
 
-        self.clear_role_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_clear_pings", guild_id=self.guild_id), style=discord.ButtonStyle.danger)
+        cr_label, cr_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_clear_pings", guild_id=self.guild_id))
+        self.clear_role_btn = discord.ui.Button(label=cr_label, emoji=cr_emoji, style=discord.ButtonStyle.secondary)
         self.clear_role_btn.callback = self.clear_role_callback
 
         next_label, next_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id))
-        self.next_btn = discord.ui.Button(label=next_label, emoji=next_emoji, style=discord.ButtonStyle.primary, disabled=False)
+        self.next_btn = discord.ui.Button(label=next_label, emoji=next_emoji, style=discord.ButtonStyle.secondary, disabled=False)
         self.next_btn.callback = self.next_btn_callback
         
         title_text = self.bot.get_feedback("ui_monitor_edit_step_1", name=self.original_name, guild_id=self.guild_id)
