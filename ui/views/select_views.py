@@ -95,8 +95,7 @@ class AlertTemplateDashboardLayout(discord.ui.LayoutView):
             btn.callback = make_callback(val, current_val)
             
             container_items.append(discord.ui.Section(
-                label=label_text,
-                description=desc,
+                discord.ui.TextDisplay(f"**{label_text}**\n{desc}"),
                 accessory=btn
             ))
 
