@@ -73,6 +73,25 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             if self.needs_url:
                 val = self.url_input.value
                 if self.monitor_type == "youtube":
+                    if "youtube.com" in val or "youtu.be" in val:
+                        try:
+                            import aiohttp
+                            import re
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(val, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10) as resp:
+                                    html = await resp.text()
+                                    rss_match = re.search(r'href="https://www.youtube.com/feeds/videos.xml\?channel_id=(UC[\w-]+)"', html)
+                                    browse_id_match = re.search(r'"browseId":"(UC[\w-]+)"', html)
+                                    if rss_match:
+                                        val = rss_match.group(1)
+                                        log.info(f"Resolved YouTube channel ID via RSS match: {val}")
+                                    elif browse_id_match:
+                                        val = browse_id_match.group(1)
+                                        log.info(f"Resolved YouTube channel ID via browseId: {val}")
+                                    else:
+                                        log.warning(f"Could not resolve channel ID from URL: {val}")
+                        except Exception as e:
+                            log.error(f"Error resolving YouTube channel ID from URL: {e}")
                     m_config["channel_id"] = val
                 elif self.monitor_type == "rss":
                     m_config["rss_url"] = val
