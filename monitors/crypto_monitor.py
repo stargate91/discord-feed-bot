@@ -257,42 +257,33 @@ class CryptoMonitor(BaseMonitor):
                     if resp.status == 200:
                         prices_data = await resp.json()
                         
-                        title = self.bot.get_feedback("ui_crypto_status_title", name=self.name, guild_id=self.guild_id)
+                        title = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
                         accent_color = self.get_color()
                         
                         summary_lines = []
                         valid_count = 0
-                        field_price = self.bot.get_feedback("ui_crypto_field_price", guild_id=self.guild_id)
-                        field_target = self.bot.get_feedback("ui_crypto_field_target", guild_id=self.guild_id)
-                        field_diff = self.bot.get_feedback("ui_crypto_field_diff", guild_id=self.guild_id)
                         
-                        header_text = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
                         container_items = [
-                            discord.ui.TextDisplay(header_text),
-                            discord.ui.Separator(),
-                            discord.ui.TextDisplay(f"### {title}"),
-                            discord.ui.Separator()
+                            discord.ui.TextDisplay(f"### {title}")
                         ]
 
                         for sym, threshold in self.targets.items():
                             cid = self.coin_id_map.get(sym)
                             if cid and cid in prices_data:
                                 current_price = float(prices_data[cid]["usd"])
-                                diff = ((current_price - threshold) / threshold) * 100
-                                color_emoji = "🟢" if current_price >= threshold else "🔴"
+                                bullet = "●" if diff >= 0 else "○"
                                 
                                 fmt_price = f"{current_price:,.2f}"
                                 fmt_diff = f"{diff:+.2f}"
                                 
-                                line = self.bot.get_feedback("ui_crypto_status_line", emoji=color_emoji, sym=sym, price=fmt_price, diff=fmt_diff, guild_id=self.guild_id)
+                                line = f"{bullet} **{sym}**: {fmt_price} USD ({fmt_diff}% a küszöbtől)"
                                 summary_lines.append(line)
                                 valid_count += 1
                         
                         if valid_count == 0:
-                            return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "embed": None}
+                            return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "view": None}
 
                         container_items.append(discord.ui.TextDisplay("\n".join(summary_lines)))
-                        container_items.append(discord.ui.Separator())
                         
                         view = discord.ui.LayoutView()
                         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
