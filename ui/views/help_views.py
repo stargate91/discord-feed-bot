@@ -51,6 +51,7 @@ class HelpView(discord.ui.LayoutView):
                 f"{self.bot.get_feedback('help_cmd_monitor_edit', guild_id=gid)}\n"
                 f"{self.bot.get_feedback('help_cmd_monitor_status', guild_id=gid)}\n"
                 f"{self.bot.get_feedback('help_cmd_monitor_check', guild_id=gid)}\n"
+                f"{self.bot.get_feedback('help_cmd_monitor_preview', guild_id=gid)}\n"
                 f"{self.bot.get_feedback('help_cmd_monitor_repost', guild_id=gid)}"
             ),
             discord.ui.Separator(),

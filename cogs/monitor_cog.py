@@ -154,6 +154,50 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             log.error(f"Error in /repost command for {monitor_name}: {e}", exc_info=True)
             await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
 
+    @app_commands.command(name="preview", description="Preview how alerts look for a monitor")
+    @app_commands.describe(monitor_name="Which monitor should be previewed?")
+    async def monitor_preview(self, interaction: discord.Interaction, monitor_name: str):
+        """[Admin] Shows a sample/mock preview of an alert from the monitor."""
+        if not self.bot.is_bot_admin(interaction.user):
+            await interaction.response.send_message(self.bot.get_feedback("error_no_permission", guild_id=interaction.guild_id), ephemeral=True)
+            return
+            
+        target_monitor = None
+        if self.bot.monitor_manager:
+            for m in self.bot.monitor_manager.monitors:
+                if m.name == monitor_name:
+                    m_guild_id = getattr(m, 'guild_id', 0)
+                    if m_guild_id == interaction.guild_id:
+                        target_monitor = m
+                        break
+                    elif m_guild_id == 0:
+                        target_monitor = m
+        
+        if not target_monitor:
+            await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        try:
+            previews = await target_monitor.get_preview()
+            if not previews:
+                await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
+                return
+                
+            for i, p_data in enumerate(previews):
+                send_kwargs = {
+                    "content": p_data.get("content"),
+                    "embed": p_data.get("embed"),
+                    "view": p_data.get("view"),
+                    "ephemeral": True
+                }
+                await interaction.followup.send(**send_kwargs)
+            
+            await interaction.followup.send(self.bot.get_feedback("preview_success", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
+        except Exception as e:
+            log.error(f"Error in /preview command for {monitor_name}: {e}", exc_info=True)
+            await interaction.followup.send(self.bot.get_feedback("error_monitor_check", error=str(e), guild_id=interaction.guild_id), ephemeral=True)
+
 
     @app_commands.command(name="list", description="List active and inactive monitors")
     async def monitor_list(self, interaction: discord.Interaction):
@@ -329,6 +373,7 @@ class MonitorCog(commands.GroupCog, name="monitor"):
 
     @monitor_check.autocomplete("monitor_name")
     @monitor_repost.autocomplete("monitor_name")
+    @monitor_preview.autocomplete("monitor_name")
     @monitor_stop.autocomplete("monitor_name")
     @monitor_start.autocomplete("monitor_name")
     @monitor_remove.autocomplete("monitor_name")

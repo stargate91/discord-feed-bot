@@ -112,6 +112,16 @@ class BaseMonitor(ABC):
             return [item] if item else []
         return [] # Subclasses should override for N > 1
 
+    async def get_preview(self):
+        """
+        Return a list of data dicts (content, embed, view) to represent how an alert looks.
+        Default implementation returns the latest real item.
+        """
+        item = await self.get_latest_item()
+        if not item or item.get("empty"):
+            return None
+        return [item]
+
     async def send_update(self, content=None, embed=None, view=None):
         """Send an update to the configured Discord channel(s)."""
         if not self.target_channels:

@@ -264,7 +264,8 @@ class CryptoMonitor(BaseMonitor):
                         valid_count = 0
                         
                         container_items = [
-                            discord.ui.TextDisplay(f"### {title}")
+                            discord.ui.TextDisplay(f"### {title}"),
+                            discord.ui.Separator()
                         ]
 
                         for sym, threshold in self.targets.items():
@@ -299,3 +300,61 @@ class CryptoMonitor(BaseMonitor):
             except Exception as e:
                 log.error(f"Crypto get_latest_item error: {e}")
                 return {"content": self.bot.get_feedback("crypto_technical_error", error=str(e), guild_id=self.guild_id), "embed": None}
+    async def get_preview(self):
+        """Show a simulated alert for one of the coins."""
+        if not self.targets:
+            return None
+            
+        sym = list(self.targets.keys())[0]
+        threshold = self.targets[sym]
+        current_price = threshold * 1.05 # Mock 5% increase
+        dir_emoji = "📈"
+        percent_str = "+5.00%"
+        cid = self.coin_id_map.get(sym)
+        
+        # Header for the mock alert
+        mock_header = self.bot.get_feedback("ui_crypto_mock_header", guild_id=self.guild_id)
+        if mock_header == "ui_crypto_mock_header":
+            mock_header = " `[ MOCK ALERT SIMULÁCIÓ ]` "
+            
+        # 1. Format the alert message (same logic as _send_alert)
+        alert_msg = self.get_alert_message({
+            "name": sym,
+            "price": f"{current_price:,.2f}",
+            "threshold": f"{threshold:,.2f}",
+            "direction": dir_emoji,
+            "percent": percent_str
+        })
+        
+        # 2. Format the layout message (same logic as _send_alert)
+        msg = self.bot.get_feedback("new_crypto_alert", guild_id=self.guild_id).format(
+            name=sym,
+            price=f"{current_price:,.2f}",
+            threshold=f"{threshold:,.2f}",
+            direction=dir_emoji,
+            percent=percent_str
+        )
+
+        accent_color = self.get_color()
+        title = self.bot.get_feedback("ui_crypto_alert_title", sym=sym, guild_id=self.guild_id)
+        
+        view = discord.ui.LayoutView()
+        container_items = [
+            discord.ui.TextDisplay(f"### {title}"),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(msg),
+            discord.ui.Separator()
+        ]
+        
+        if cid:
+            c_label = self.bot.get_feedback("btn_view_coingecko", guild_id=self.guild_id)
+            cg_url = f"https://www.coingecko.com/en/coins/{cid}"
+            btn = discord.ui.Button(label=c_label, url=cg_url, style=discord.ButtonStyle.link)
+            container_items.append(discord.ui.ActionRow(btn))
+            
+        view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
+        
+        return [
+            {"content": f"{mock_header}\n{alert_msg}"},
+            {"view": view}
+        ]
