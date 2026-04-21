@@ -39,3 +39,7 @@ CRYPTO_DOWN = "<:chartdecreasedoutlined:1496133103750742188>"
 CRYPTO_BULLET_FILLED = "●"
 CRYPTO_BULLET_EMPTY = "○"
 CRYPTO_CHART_COLORFUL = "<:barchartlinecolorful:1495853051569901629>"
+
+# Pagination & Navigation
+NAV_BACK = "<:chevronleftfilled:1495849471513329786>"
+NAV_NEXT = "<:chevronrightfilled:1495849487308951703>"
