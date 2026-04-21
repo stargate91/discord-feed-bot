@@ -215,11 +215,12 @@ class CryptoMonitor(BaseMonitor):
         accent_color = self.get_color()
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=symbol, guild_id=self.guild_id)
         
-        # Build the Layout
         view = discord.ui.LayoutView()
         
         container_items = [
             discord.ui.TextDisplay(f"### {title}"),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(msg),
             discord.ui.Separator()
         ]
         
@@ -231,8 +232,14 @@ class CryptoMonitor(BaseMonitor):
             
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
-        # Send Alert Message and Layout in a single message
-        await self.send_update(content=alert_msg, view=view)
+        # Send Pings and Layout separately to avoid API errors with IS_COMPONENTS_V2
+        # Message 1: Pings Only
+        pings = self.ping_role
+        if pings:
+            await self.send_update(content=pings)
+            
+        # Message 2: Graphical Layout with content
+        await self.send_update(view=view)
         log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
     async def get_latest_item(self):
@@ -342,6 +349,8 @@ class CryptoMonitor(BaseMonitor):
         view = discord.ui.LayoutView()
         container_items = [
             discord.ui.TextDisplay(f"### {title}"),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(msg),
             discord.ui.Separator()
         ]
         
@@ -353,9 +362,9 @@ class CryptoMonitor(BaseMonitor):
             
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
+        mock_ping = "@Drinker" # Mock ping for preview
+        
         return [
-            {
-                "content": f"{mock_header}\n{alert_msg}",
-                "view": view
-            }
+            {"content": f"{mock_header}\n{mock_ping}"},
+            {"view": view}
         ]
