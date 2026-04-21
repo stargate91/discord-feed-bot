@@ -96,6 +96,12 @@ class TVSeriesMonitor(BaseMonitor):
             if not any(g in target_genres for g in item_genres):
                 return
 
+        target_languages = self.config.get("target_languages", [])
+        if target_languages:
+            orig_lang = series.get("original_language", "")
+            if orig_lang not in target_languages:
+                return
+
         genre_map = await self._fetch_genres()
 
         series_id = str(series.get("id"))
@@ -260,6 +266,12 @@ class TVSeriesMonitor(BaseMonitor):
                                 item_genres.append("9999")
                                 
                             if not any(g in target_genres for g in item_genres):
+                                continue
+                        
+                        target_languages = self.config.get("target_languages", [])
+                        if target_languages:
+                            orig_lang = item.get("original_language", "")
+                            if orig_lang not in target_languages:
                                 continue
                         
                         filtered_results.append(item)

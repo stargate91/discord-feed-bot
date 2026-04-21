@@ -7,12 +7,13 @@ from core.emojis import STATUS_ERROR
 
 
 class AddMonitorWizardStepTwoModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_type, target_channels, target_roles, target_genres=None):
+    def __init__(self, bot, monitor_type, target_channels, target_roles, target_genres=None, target_languages=None):
         self.bot = bot
         self.monitor_type = monitor_type
         self.target_channels = target_channels
         self.target_roles = target_roles
         self.target_genres = target_genres or []
+        self.target_languages = target_languages or []
         
         super().__init__(title=bot.get_feedback("add_monitor_title"))
 
@@ -69,6 +70,8 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             }
             if self.target_genres:
                 m_config["target_genres"] = self.target_genres
+            if self.target_languages:
+                m_config["target_languages"] = self.target_languages
 
             if self.needs_url:
                 val = self.url_input.value
@@ -154,13 +157,14 @@ class AddMonitorWizardStepTwoModal(discord.ui.Modal):
             await interaction.response.send_message(self.bot.get_feedback("error_prefix_msg", error=str(e)), ephemeral=True)
 
 class EditMonitorModal(discord.ui.Modal):
-    def __init__(self, bot, monitor_id, original_name, target_channels, target_roles, current_color="", steam_patch_only=None, target_genres=None):
+    def __init__(self, bot, monitor_id, original_name, target_channels, target_roles, current_color="", steam_patch_only=None, target_genres=None, target_languages=None):
         self.bot = bot
         self.monitor_id = monitor_id
         self.target_channels = target_channels
         self.target_roles = target_roles
         self.steam_patch_only = steam_patch_only
         self.target_genres = target_genres
+        self.target_languages = target_languages
         super().__init__(title=bot.get_feedback("ui_monitor_edit_title", name=original_name))
 
         self.name_input = discord.ui.TextInput(label=bot.get_feedback("add_monitor_name_label"), default=original_name, required=True)
@@ -181,7 +185,7 @@ class EditMonitorModal(discord.ui.Modal):
 
             log.info(f"[EDIT DEBUG] Step 1: monitor_id={self.monitor_id}, guild_id={guild_id}, new_name={new_name}, new_chs={self.target_channels}, new_roles={self.target_roles}, color={color_val}, steam_patch={self.steam_patch_only}")
             
-            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only, target_genres=self.target_genres)
+            await database.update_monitor_details(self.monitor_id, guild_id, new_name, self.target_channels, self.target_roles, embed_color=color_val, steam_patch_only=self.steam_patch_only, target_genres=self.target_genres, target_languages=self.target_languages)
             
             log.info(f"[EDIT DEBUG] Step 2: Database update completed successfully.")
 

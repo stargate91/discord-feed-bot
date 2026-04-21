@@ -222,7 +222,7 @@ class FeedBot(commands.Bot):
         premium = self.is_premium(guild_id)
         
         # Premium-only features
-        premium_only = ["crypto", "repost", "custom_color", "alert_template", "genre_filter", "bulk_delete"]
+        premium_only = ["crypto", "repost", "custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter"]
         if feature_name in premium_only:
             return premium
             

@@ -18,6 +18,7 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         self.selected_roles = []
         self.selected_type = None
         self.selected_genres = []
+        self.selected_languages = []
         
         self.channel_display_name = bot.get_feedback("ui_status_not_selected", guild_id=self.guild_id)
         self.role_display_name = bot.get_feedback("ui_status_no_ping", guild_id=self.guild_id)
@@ -72,7 +73,6 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         MOVIE_GENRES = {28:"Action", 12:"Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 14:"Fantasy", 36:"History", 27:"Horror", 10402:"Music", 9648:"Mystery", 10749:"Romance", 878:"Sci-Fi", 10770:"TV Movie", 53:"Thriller", 10752:"War", 37:"Western", 9999:"Anime"}
         TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
 
-        genre_str = ""
         if self.selected_type in ["movie", "tv_series"]:
             genre_dict = MOVIE_GENRES if self.selected_type == "movie" else TV_GENRES
             if self.selected_genres:
@@ -83,9 +83,20 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
                     if isinstance(label, str) and label.startswith("Missing key"):
                         label = genre_dict.get(int(g)) or str(g)
                     g_names.append(str(label))
-                genre_str = f"\n**Szűrők:** {', '.join(g_names)}"
+                genre_str = f"| **Műfaj:** {', '.join(g_names)}"
             else:
-                genre_str = f"\n**Szűrők:** Mind (Nincs szűrés)"
+                genre_str = f"| **Műfaj:** Mind"
+
+            lang_str = ""
+            if self.selected_languages:
+                l_names = []
+                for l in self.selected_languages:
+                    l_names.append(self.bot.get_feedback(f"lang_{l}", guild_id=self.guild_id))
+                lang_str = f"| **Nyelv:** {', '.join(l_names)}"
+            else:
+                lang_str = f"| **Nyelv:** Mind"
+            
+            genre_str = f"\n**Szűrők:** {genre_str} {lang_str}"
 
         settings_text = (
             f"### **{title_text}**\n"
@@ -139,6 +150,43 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
             
             container_items.append(discord.ui.ActionRow(self.genre_select))
 
+            # Language Selection (Premium)
+            TMDB_LANGS = [
+                ("en", "lang_en"), ("es", "lang_es"), ("fr", "lang_fr"), ("de", "lang_de"),
+                ("ja", "lang_ja"), ("ko", "lang_ko"), ("zh", "lang_zh"), ("it", "lang_it"),
+                ("pt", "lang_pt"), ("hi", "lang_hi"), ("ru", "lang_ru"), ("ar", "lang_ar"),
+                ("tr", "lang_tr"), ("nl", "lang_nl"), ("sv", "lang_sv"), ("da", "lang_da"),
+                ("no", "lang_no"), ("fi", "lang_fi"), ("pl", "lang_pl"), ("hu", "lang_hu"),
+                ("cs", "lang_cs"), ("ro", "lang_ro"), ("vi", "lang_vi"), ("th", "lang_th"), ("el", "lang_el")
+            ]
+            
+            lang_options = []
+            has_lang_feat = self.bot.has_feature(self.guild_id, "tmdb_language_filter")
+            
+            for l_code, l_key in TMDB_LANGS:
+                l_label = self.bot.get_feedback(l_key, guild_id=self.guild_id)
+                lang_options.append(discord.SelectOption(label=l_label, value=l_code))
+            
+            l_ph = self.bot.get_feedback("ui_ph_languages", guild_id=self.guild_id)
+            if not has_lang_feat:
+                l_ph = f"{l_ph} ({self.bot.get_feedback('ui_premium_only_badge', guild_id=self.guild_id)})"
+                
+            self.lang_select = discord.ui.Select(
+                placeholder=l_ph,
+                options=lang_options,
+                min_values=0,
+                max_values=len(lang_options) if has_lang_feat else 0,
+                disabled=not has_lang_feat
+            )
+            self.lang_select.callback = self.lang_callback
+            
+            if self.selected_languages and has_lang_feat:
+                for opt in self.lang_select.options:
+                    if opt.value in self.selected_languages:
+                        opt.default = True
+            
+            container_items.append(discord.ui.ActionRow(self.lang_select))
+
         container_items.append(discord.ui.ActionRow(self.next_btn))
         
         self.add_item(discord.ui.Container(*container_items, accent_color=0x40C4FF))
@@ -147,9 +195,14 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         self.selected_genres = self.genre_select.values
         await interaction.response.edit_message(view=self)
 
+    async def lang_callback(self, interaction: discord.Interaction):
+        self.selected_languages = self.lang_select.values
+        await interaction.response.edit_message(view=self)
+
     async def check_readiness(self, interaction: discord.Interaction):
         if self.selected_type not in ["movie", "tv_series"]:
             self.selected_genres = []
+            self.selected_languages = []
 
         self.update_components()
         self.next_btn.disabled = not self.selected_type
@@ -195,12 +248,12 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
         role_ids = self.selected_roles if self.selected_roles else []
         
         from ui.modals import AddMonitorWizardStepTwoModal
-        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_ids, role_ids, target_genres=self.selected_genres)
+        modal = AddMonitorWizardStepTwoModal(self.bot, self.selected_type, ch_ids, role_ids, target_genres=self.selected_genres, target_languages=self.selected_languages)
         await interaction.response.send_modal(modal)
 
 
 class EditMonitorWizardLayout(discord.ui.LayoutView):
-    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", current_genres=None, steam_patch_only=None, interaction=None):
+    def __init__(self, bot, monitor_id, original_name, monitor_type, current_color="", current_genres=None, current_languages=None, steam_patch_only=None, interaction=None):
         super().__init__(timeout=300)
         self.bot = bot
         self.monitor_id = monitor_id
@@ -208,6 +261,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         self.monitor_type = monitor_type
         self.current_color = current_color
         self.current_genres = current_genres or []
+        self.current_languages = current_languages or []
         self.steam_patch_only = steam_patch_only
         self.guild_id = interaction.guild_id if interaction else 0
         self.trigger_interaction = interaction
@@ -215,6 +269,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         self.selected_channels = []
         self.selected_roles = []
         self.selected_genres = [str(g) for g in self.current_genres] if self.current_genres else []
+        self.selected_languages = [str(l) for l in self.current_languages] if self.current_languages else []
         
         self.channel_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
         self.role_display_name = bot.get_feedback("ui_status_unchanged", guild_id=self.guild_id)
@@ -258,6 +313,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
             TV_GENRES = {10759:"Action & Adventure", 16:"Animation", 35:"Comedy", 80:"Crime", 99:"Documentary", 18:"Drama", 10751:"Family", 10762:"Kids", 9648:"Mystery", 10763:"News", 10764:"Reality", 10765:"Sci-Fi & Fantasy", 10766:"Soap", 10767:"Talk", 10768:"War & Politics", 37:"Western", 9999:"Anime"}
             genre_dict = MOVIE_GENRES if self.monitor_type == "movie" else TV_GENRES
             
+            genre_str = ""
             if self.selected_genres:
                 g_names = []
                 for g in self.selected_genres:
@@ -266,9 +322,20 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
                     if isinstance(label, str) and label.startswith("Missing key"):
                         label = genre_dict.get(int(g)) or str(g)
                     g_names.append(str(label))
-                genre_str = f"\n**Szűrők:** {', '.join(g_names)}"
+                genre_str = f"| **Műfaj:** {', '.join(g_names)}"
             else:
-                genre_str = f"\n**Szűrők:** Mind (Nincs szűrés)"
+                genre_str = f"| **Műfaj:** Mind"
+
+            lang_str = ""
+            if self.selected_languages:
+                l_names = []
+                for l in self.selected_languages:
+                    l_names.append(self.bot.get_feedback(f"lang_{l}", guild_id=self.guild_id))
+                lang_str = f"| **Nyelv:** {', '.join(l_names)}"
+            else:
+                lang_str = f"| **Nyelv:** Mind"
+            
+            genre_str = f"\n**Szűrők:** {genre_str} {lang_str}"
 
         settings_text = (
             f"### **{title_text}**\n"
@@ -312,6 +379,43 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
                         option.default = True
             
             container_items.append(discord.ui.ActionRow(self.genre_select))
+
+            # Language Selection (Premium)
+            TMDB_LANGS = [
+                ("en", "lang_en"), ("es", "lang_es"), ("fr", "lang_fr"), ("de", "lang_de"),
+                ("ja", "lang_ja"), ("ko", "lang_ko"), ("zh", "lang_zh"), ("it", "lang_it"),
+                ("pt", "lang_pt"), ("hi", "lang_hi"), ("ru", "lang_ru"), ("ar", "lang_ar"),
+                ("tr", "lang_tr"), ("nl", "lang_nl"), ("sv", "lang_sv"), ("da", "lang_da"),
+                ("no", "lang_no"), ("fi", "lang_fi"), ("pl", "lang_pl"), ("hu", "lang_hu"),
+                ("cs", "lang_cs"), ("ro", "lang_ro"), ("vi", "lang_vi"), ("th", "lang_th"), ("el", "lang_el")
+            ]
+            
+            lang_options = []
+            has_lang_feat = self.bot.has_feature(self.guild_id, "tmdb_language_filter")
+            
+            for l_code, l_key in TMDB_LANGS:
+                l_label = self.bot.get_feedback(l_key, guild_id=self.guild_id)
+                lang_options.append(discord.SelectOption(label=l_label, value=l_code))
+            
+            l_ph = self.bot.get_feedback("ui_ph_languages", guild_id=self.guild_id)
+            if not has_lang_feat:
+                l_ph = f"{l_ph} ({self.bot.get_feedback('ui_premium_only_badge', guild_id=self.guild_id)})"
+                
+            self.lang_select = discord.ui.Select(
+                placeholder=l_ph,
+                options=lang_options,
+                min_values=0,
+                max_values=len(lang_options) if has_lang_feat else 0,
+                disabled=not has_lang_feat
+            )
+            self.lang_select.callback = self.lang_callback
+            
+            if self.selected_languages and has_lang_feat:
+                for opt in self.lang_select.options:
+                    if opt.value in self.selected_languages:
+                        opt.default = True
+            
+            container_items.append(discord.ui.ActionRow(self.lang_select))
             
         container_items.append(discord.ui.ActionRow(self.clear_ch_btn, self.clear_role_btn, self.next_btn))
         
@@ -319,6 +423,10 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
 
     async def genre_callback(self, interaction: discord.Interaction):
         self.selected_genres = self.genre_select.values
+        await interaction.response.edit_message(view=self)
+
+    async def lang_callback(self, interaction: discord.Interaction):
+        self.selected_languages = self.lang_select.values
         await interaction.response.edit_message(view=self)
 
     async def check_readiness(self, interaction: discord.Interaction):
@@ -361,7 +469,7 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
     async def next_btn_callback(self, interaction: discord.Interaction):
         from ui.modals import EditMonitorModal
         # [] means keep existing
-        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channels, self.selected_roles, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None, target_genres=self.selected_genres if self.monitor_type in ["movie", "tv_series"] else None)
+        modal = EditMonitorModal(self.bot, self.monitor_id, self.original_name, self.selected_channels, self.selected_roles, current_color=self.current_color, steam_patch_only=self.steam_patch_only if self.monitor_type == "steam_news" else None, target_genres=self.selected_genres if self.monitor_type in ["movie", "tv_series"] else None, target_languages=self.selected_languages if self.monitor_type in ["movie", "tv_series"] else None)
         await interaction.response.send_modal(modal)
 
 

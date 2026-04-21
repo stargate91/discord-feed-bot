@@ -56,11 +56,13 @@ async def init_db():
 
 async def add_monitor(m_config, guild_id):
     extra_settings = m_config.copy()
-    for k in ["type", "name", "discord_channel_id", "ping_role_id", "target_channels", "target_roles", "enabled", "id", "guild_id"]:
+    for k in ["type", "name", "discord_channel_id", "ping_role_id", "target_channels", "target_roles", "enabled", "id", "guild_id", "target_genres", "target_languages"]:
         extra_settings.pop(k, None)
         
     extra_settings["target_channels"] = m_config.get("target_channels", [])
     extra_settings["target_roles"] = m_config.get("target_roles", [])
+    if "target_genres" in m_config: extra_settings["target_genres"] = m_config["target_genres"]
+    if "target_languages" in m_config: extra_settings["target_languages"] = m_config["target_languages"]
 
     q = '''INSERT INTO monitors (guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings)
            VALUES ($1, $2, $3, $4, $5, $6, $7)'''
@@ -142,7 +144,7 @@ async def update_monitor_status(monitor_id, guild_id, is_enabled):
     pool = await get_pool()
     await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
-async def update_monitor_details(monitor_id, guild_id, name, target_channels, target_roles, embed_color=None, steam_patch_only=None, target_genres=None):
+async def update_monitor_details(monitor_id, guild_id, name, target_channels, target_roles, embed_color=None, steam_patch_only=None, target_genres=None, target_languages=None):
     q_sel = "SELECT extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
     pool = await get_pool()
     row = await pool.fetchrow(q_sel, monitor_id, guild_id)
@@ -177,6 +179,9 @@ async def update_monitor_details(monitor_id, guild_id, name, target_channels, ta
         
     if target_genres is not None:
         extra_settings["target_genres"] = target_genres
+
+    if target_languages is not None:
+        extra_settings["target_languages"] = target_languages
         
     q_upd = '''UPDATE monitors SET name = $1, extra_settings = $2 
                WHERE id = $3 AND guild_id = $4'''

@@ -3,6 +3,8 @@ from discord.ext import commands
 from discord import app_commands
 from logger import log
 import database
+from ui.views.help_views import HelpView
+
 
 def is_admin():
     async def predicate(ctx):
@@ -167,6 +169,20 @@ class AdminCog(commands.Cog):
                 await interaction.followup.send(err_msg, ephemeral=True)
             except:
                 await interaction.channel.send(err_msg)
+
+    @app_commands.command(name="help", description="Show the bot documentation and command list")
+    async def show_help(self, interaction: discord.Interaction):
+        """Displays a categorized help menu with bot commands and support links."""
+        await interaction.response.defer(ephemeral=True)
+        
+        # Load guild translations just in case (already usually done in bot, but safe)
+        from core.bot import FeedBot
+        if isinstance(self.bot, FeedBot):
+            # This triggers a refresh if needed
+            self.bot.get_feedback("help_title", guild_id=interaction.guild_id)
+
+        view = HelpView(self.bot, interaction.guild_id or 0)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 class MasterCog(commands.GroupCog, name="master"):
     def __init__(self, bot):
