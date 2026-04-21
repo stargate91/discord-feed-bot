@@ -244,49 +244,61 @@ class TVSeriesMonitor(BaseMonitor):
         return items[0] if items else None
 
     async def get_latest_items(self, count=1):
-        """Fetch the N most recent trending TV series in chronological order."""
+        """Fetch the N most recent TV series, searching through up to 5 pages if filters are active."""
         if not self.bearer_token and not self.api_key: return []
+        
+        filtered_results = []
+        target_genres = self.config.get("target_genres", [])
+        target_languages = self.config.get("target_languages", [])
+        
         try:
-            url = self.get_api_url("trending/tv/day")
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=self.get_headers()) as response:
-                    if response.status != 200: return []
-                    data = await response.json()
-                    results = data.get("results", [])
-                    if not results: return []
-                    
-                    target_genres = self.config.get("target_genres", [])
-                    filtered_results = []
-                    
-                    for item in results:
-                        if target_genres:
-                            item_genres = [str(g) for g in item.get("genre_ids", [])]
-                            orig_lang = item.get("original_language", "")
-                            if orig_lang in ["ja", "zh", "ko"] and "16" in item_genres:
-                                item_genres.append("9999")
-                                
-                            if not any(g in target_genres for g in item_genres):
-                                continue
-                        
-                        target_languages = self.config.get("target_languages", [])
-                        if target_languages:
-                            orig_lang = item.get("original_language", "")
-                            if orig_lang not in target_languages:
-                                continue
-                        
-                        filtered_results.append(item)
-                        if len(filtered_results) >= count:
+                # Iterate through up to 5 pages to find enough items matching filters
+                for page in range(1, 6):
+                    url = f"{self.get_api_url('trending/tv/day')}&page={page}"
+                    async with session.get(url, headers=self.get_headers()) as response:
+                        if response.status != 200:
                             break
                             
-                    filtered_results.reverse()
-
-                    genre_map = await self._fetch_genres()
-                    items = []
-                    for series in filtered_results:
-                        items.append(await self._format_series(series, genre_map))
-                    return items
+                        data = await response.json()
+                        results = data.get("results", [])
+                        if not results:
+                            break
+                        
+                        for item in results:
+                            # Apply Genre Filtering
+                            if target_genres:
+                                item_genres = [str(g) for g in item.get("genre_ids", [])]
+                                orig_lang = item.get("original_language", "")
+                                if orig_lang in ["ja", "zh", "ko"] and "16" in item_genres:
+                                    item_genres.append("9999") # Anime tag
+                                    
+                                if not any(g in target_genres for g in item_genres):
+                                    continue
+                            
+                            # Apply Language Filtering
+                            if target_languages:
+                                if item.get("original_language") not in target_languages:
+                                    continue
+                            
+                            filtered_results.append(item)
+                            if len(filtered_results) >= count:
+                                # We have enough results, exit BOTH loops
+                                break
+                    
+                    if len(filtered_results) >= count:
+                        break
+                
+                # Format the results
+                filtered_results.reverse()
+                genre_map = await self._fetch_genres()
+                items = []
+                for series in filtered_results:
+                    items.append(await self._format_series(series, genre_map))
+                return items
+                
         except Exception as e:
-            log.error(f"Manual TV check failed: {e}")
+            log.error(f"Error fetching filtered TV series ({self.tmdb_lang}): {e}")
             return []
 
     async def _format_series(self, series, genre_map):
