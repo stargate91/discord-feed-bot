@@ -271,6 +271,7 @@ class CryptoMonitor(BaseMonitor):
                             cid = self.coin_id_map.get(sym)
                             if cid and cid in prices_data:
                                 current_price = float(prices_data[cid]["usd"])
+                                diff = ((current_price - threshold) / threshold) * 100
                                 bullet = "●" if diff >= 0 else "○"
                                 
                                 fmt_price = f"{current_price:,.2f}"
