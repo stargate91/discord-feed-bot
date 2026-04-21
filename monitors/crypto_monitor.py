@@ -6,6 +6,10 @@ import time
 from logger import log
 from core.base_monitor import BaseMonitor
 import database
+from core.emojis import (
+    TYPE_CRYPTO, STATUS_SUCCESS, STATUS_ERROR,
+    CRYPTO_UP, CRYPTO_DOWN, CRYPTO_BULLET_FILLED, CRYPTO_BULLET_EMPTY, CRYPTO_CHART_COLORFUL
+)
 
 class CryptoMonitor(BaseMonitor):
     def __init__(self, bot, m_config):
@@ -188,7 +192,7 @@ class CryptoMonitor(BaseMonitor):
 
     async def _send_alert(self, symbol, cid, current_price, threshold, direction, percent_str):
         # Placeholders for alert message
-        dir_emoji = "📈" if direction == "up" else "📉"
+        dir_emoji = CRYPTO_UP if direction == "up" else CRYPTO_DOWN
         
         # Format the system message via variables
         alert_msg = self.get_alert_message({
@@ -273,7 +277,7 @@ class CryptoMonitor(BaseMonitor):
                             if cid and cid in prices_data:
                                 current_price = float(prices_data[cid]["usd"])
                                 diff = ((current_price - threshold) / threshold) * 100
-                                bullet = "●" if diff >= 0 else "○"
+                                bullet = CRYPTO_BULLET_FILLED if diff >= 0 else CRYPTO_BULLET_EMPTY
                                 
                                 fmt_price = f"{current_price:,.2f}"
                                 fmt_diff = f"{diff:+.2f}"
@@ -308,7 +312,7 @@ class CryptoMonitor(BaseMonitor):
         sym = list(self.targets.keys())[0]
         threshold = self.targets[sym]
         current_price = threshold * 1.05 # Mock 5% increase
-        dir_emoji = "📈"
+        dir_emoji = CRYPTO_UP
         percent_str = "+5.00%"
         cid = self.coin_id_map.get(sym)
         

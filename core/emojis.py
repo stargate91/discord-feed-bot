@@ -32,3 +32,10 @@ STATUS_INFO = "<:infofilledcircle:1495831063597940998>"
 THUMBNAIL_STEAM = "https://cdn.discordapp.com/emojis/1490131413956038656.png"
 THUMBNAIL_GOG = "https://cdn.discordapp.com/emojis/1490131412043431976.png"
 THUMBNAIL_EPIC = "https://cdn.discordapp.com/emojis/1490131410852253716.png"
+
+# Crypto Specific Icons
+CRYPTO_UP = "📈"
+CRYPTO_DOWN = "📉"
+CRYPTO_BULLET_FILLED = "●"
+CRYPTO_BULLET_EMPTY = "○"
+CRYPTO_CHART_COLORFUL = "<:barchartlinecolorful:1495853051569901629>"
