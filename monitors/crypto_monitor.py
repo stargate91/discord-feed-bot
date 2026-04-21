@@ -229,7 +229,9 @@ class CryptoMonitor(BaseMonitor):
             
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
-        await self.send_update(content=alert_msg, view=view)
+        # Send Alert Message and Layout separately to avoid API errors with IS_COMPONENTS_V2
+        await self.send_update(content=alert_msg)
+        await self.send_update(view=view)
         log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
     async def get_latest_item(self):
@@ -264,7 +266,10 @@ class CryptoMonitor(BaseMonitor):
                         field_target = self.bot.get_feedback("ui_crypto_field_target", guild_id=self.guild_id)
                         field_diff = self.bot.get_feedback("ui_crypto_field_diff", guild_id=self.guild_id)
                         
+                        header_text = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
                         container_items = [
+                            discord.ui.TextDisplay(header_text),
+                            discord.ui.Separator(),
                             discord.ui.TextDisplay(f"### {title}"),
                             discord.ui.Separator()
                         ]
@@ -293,7 +298,6 @@ class CryptoMonitor(BaseMonitor):
                         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
                         
                         return {
-                            "content": self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id),
                             "view": view
                         }
                     elif resp.status == 429:
