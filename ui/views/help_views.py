@@ -17,19 +17,23 @@ class HelpView(discord.ui.LayoutView):
 
         # Support Link
         support_url = "https://discord.gg/PbvX3S7pXR"
+        sup_label, sup_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_support_server", guild_id=gid))
         support_btn = discord.ui.Button(
-            label=self.bot.get_feedback("btn_support_server", guild_id=gid),
+            label=sup_label,
+            emoji=sup_emoji,
             url=support_url,
             style=discord.ButtonStyle.link
         )
 
         # Close Button
+        cls_label, cls_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_close_help", guild_id=gid))
         close_btn = discord.ui.Button(
-            label=self.bot.get_feedback("btn_close_help", guild_id=gid),
+            label=cls_label,
+            emoji=cls_emoji,
             style=discord.ButtonStyle.secondary
         )
         async def close_callback(interaction: discord.Interaction):
-            await interaction.response.edit_message(view=None, content="Help closed.")
+            await interaction.response.defer()
             await interaction.delete_original_response()
         close_btn.callback = close_callback
 
