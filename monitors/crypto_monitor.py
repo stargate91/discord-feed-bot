@@ -314,6 +314,9 @@ class CryptoMonitor(BaseMonitor):
             return None
             
         sym = list(self.targets.keys())[0]
+        if not self.coin_id_map:
+            await self._update_coin_map()
+            
         threshold = self.targets[sym]
         current_price = threshold * 1.05 # Mock 5% increase
         dir_emoji = CRYPTO_UP

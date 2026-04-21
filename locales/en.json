@@ -50,6 +50,7 @@
     "btn_view_tmdb": "Open",
     "btn_view_tmdb_tv": "Open",
     "btn_view_github": "View on GitHub",
+    "btn_view_coingecko": "View on CoinGecko",
     "btn_watch_trailer": "<:moviefilled:1495851799251521536> Trailer",
     "ui_setup_save_success": "<:checkfilledcircle:1495829946248200414> **Server settings updated!**",
     "ui_setup_lang_success": "<:checkfilledcircle:1495829946248200414> Server language successfully set to: **{lang}**",
