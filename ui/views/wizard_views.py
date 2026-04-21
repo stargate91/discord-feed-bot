@@ -84,24 +84,24 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
                     if isinstance(label, str) and label.startswith("Missing key"):
                         label = genre_dict.get(int(g)) or str(g)
                     g_names.append(str(label))
-                genre_str = f"| **Műfaj:** {', '.join(g_names)}"
+                genre_str = f"| **{self.bot.get_feedback('ui_label_genres', guild_id=self.guild_id)}:** {', '.join(g_names)}"
             else:
-                genre_str = f"| **Műfaj:** Mind"
+                genre_str = f"| **{self.bot.get_feedback('ui_label_genres', guild_id=self.guild_id)}:** {self.bot.get_feedback('ui_option_all', guild_id=self.guild_id)}"
 
             lang_str = ""
             if self.selected_languages:
                 l_names = []
                 for l in self.selected_languages:
                     l_names.append(self.bot.get_feedback(f"lang_{l}", guild_id=self.guild_id))
-                lang_str = f"| **Nyelv:** {', '.join(l_names)}"
+                lang_str = f"| **{self.bot.get_feedback('ui_label_languages_short', guild_id=self.guild_id)}:** {', '.join(l_names)}"
             else:
-                lang_str = f"| **Nyelv:** Mind"
+                lang_str = f"| **{self.bot.get_feedback('ui_label_languages_short', guild_id=self.guild_id)}:** {self.bot.get_feedback('ui_option_all', guild_id=self.guild_id)}"
             
-            genre_str = f"\n**Szűrők:** {genre_str} {lang_str}"
+            genre_str = f"\n**{self.bot.get_feedback('ui_label_filters', guild_id=self.guild_id)}:** {genre_str} {lang_str}"
 
         settings_text = (
             f"### **{title_text}**\n"
-            f"*Tipp: Ha választás nélkül mész tovább, az adott csatorna lesz a cél, és senkit nem pingel!*\n\n"
+            f"*{self.bot.get_feedback('ui_add_wizard_tip_1', guild_id=self.guild_id)}*\n\n"
             f"**{self.bot.get_feedback('ui_label_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
             f"**{self.bot.get_feedback('ui_label_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}\n"
             f"**{self.bot.get_feedback('field_type', guild_id=self.guild_id)}:** {platform_name}{genre_str}"
@@ -296,10 +296,10 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
         )
         self.role_select.callback = self.role_callback
 
-        self.clear_ch_btn = discord.ui.Button(label="Csatornák Törlése 🗑️", style=discord.ButtonStyle.danger)
+        self.clear_ch_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_clear_channels", guild_id=self.guild_id), style=discord.ButtonStyle.danger)
         self.clear_ch_btn.callback = self.clear_ch_callback
 
-        self.clear_role_btn = discord.ui.Button(label="Ping Törlése 🗑️", style=discord.ButtonStyle.danger)
+        self.clear_role_btn = discord.ui.Button(label=self.bot.get_feedback("ui_btn_clear_pings", guild_id=self.guild_id), style=discord.ButtonStyle.danger)
         self.clear_role_btn.callback = self.clear_role_callback
 
         next_label, next_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("ui_btn_monitor_next_name", guild_id=self.guild_id))
@@ -323,25 +323,25 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
                     if isinstance(label, str) and label.startswith("Missing key"):
                         label = genre_dict.get(int(g)) or str(g)
                     g_names.append(str(label))
-                genre_str = f"| **Műfaj:** {', '.join(g_names)}"
+                genre_str = f"| **{self.bot.get_feedback('ui_label_genres', guild_id=self.guild_id)}:** {', '.join(g_names)}"
             else:
-                genre_str = f"| **Műfaj:** Mind"
+                genre_str = f"| **{self.bot.get_feedback('ui_label_genres', guild_id=self.guild_id)}:** {self.bot.get_feedback('ui_option_all', guild_id=self.guild_id)}"
 
             lang_str = ""
             if self.selected_languages:
                 l_names = []
                 for l in self.selected_languages:
                     l_names.append(self.bot.get_feedback(f"lang_{l}", guild_id=self.guild_id))
-                lang_str = f"| **Nyelv:** {', '.join(l_names)}"
+                lang_str = f"| **{self.bot.get_feedback('ui_label_languages_short', guild_id=self.guild_id)}:** {', '.join(l_names)}"
             else:
-                lang_str = f"| **Nyelv:** Mind"
+                lang_str = f"| **{self.bot.get_feedback('ui_label_languages_short', guild_id=self.guild_id)}:** {self.bot.get_feedback('ui_option_all', guild_id=self.guild_id)}"
             
-            genre_str = f"\n**Szűrők:** {genre_str} {lang_str}"
+            genre_str = f"\n**{self.bot.get_feedback('ui_label_filters', guild_id=self.guild_id)}:** {genre_str} {lang_str}"
 
         settings_text = (
             f"### **{title_text}**\n"
-            f"*Tipp: Ha üresen hagysz egy menüt és úgy mész tovább, a bot megtartja a korábbi beállítást!*\n"
-            f"*Ha törölni akarsz minden eddigi beállítást (nullázni), használd a Piros gombokat!*\n\n"
+            f"*{self.bot.get_feedback('ui_edit_wizard_tip_1', guild_id=self.guild_id)}*\n"
+            f"*{self.bot.get_feedback('ui_edit_wizard_tip_2', guild_id=self.guild_id)}*\n\n"
             f"**{self.bot.get_feedback('ui_label_new_target_ch', guild_id=self.guild_id)}:** {self.channel_display_name}\n"
             f"**{self.bot.get_feedback('ui_label_new_ping_role', guild_id=self.guild_id)}:** {self.role_display_name}{genre_str}"
         )
@@ -459,12 +459,12 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
 
     async def clear_ch_callback(self, interaction: discord.Interaction):
         self.selected_channels = [-1]
-        self.channel_display_name = "Törlésre jelölve! 🗑️"
+        self.channel_display_name = self.bot.get_feedback("ui_status_marked_for_deletion", guild_id=self.guild_id)
         await self.check_readiness(interaction)
 
     async def clear_role_callback(self, interaction: discord.Interaction):
         self.selected_roles = [-1]
-        self.role_display_name = "Törlésre jelölve! 🗑️"
+        self.role_display_name = self.bot.get_feedback("ui_status_marked_for_deletion", guild_id=self.guild_id)
         await self.check_readiness(interaction)
 
     async def next_btn_callback(self, interaction: discord.Interaction):
