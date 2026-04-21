@@ -159,6 +159,7 @@ class CryptoMonitor(BaseMonitor):
                     if not await database.is_published(pub_id):
                         events.append({
                             "sym": sym,
+                            "cid": cid,
                             "current_price": current_price,
                             "threshold": threshold,
                             "direction": direction,
@@ -171,7 +172,8 @@ class CryptoMonitor(BaseMonitor):
 
     async def process_item(self, event):
         await self._send_alert(
-            event["sym"], 
+            event["sym"],
+            event["cid"],
             event["current_price"], 
             event["threshold"], 
             event["direction"], 
@@ -184,7 +186,7 @@ class CryptoMonitor(BaseMonitor):
             if pub_id:
                 await database.mark_as_published(pub_id)
 
-    async def _send_alert(self, symbol, current_price, threshold, direction, percent_str):
+    async def _send_alert(self, symbol, cid, current_price, threshold, direction, percent_str):
         # Placeholders for alert message
         dir_emoji = "📈" if direction == "up" else "📉"
         
@@ -206,17 +208,28 @@ class CryptoMonitor(BaseMonitor):
             percent=percent_str
         )
 
-        color = self.get_color()
+        accent_color = self.get_color()
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=symbol, guild_id=self.guild_id)
-        embed = discord.Embed(
-            title=title,
-            description=msg,
-            color=color
-        )
-        embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
-        embed.timestamp = discord.utils.utcnow()
         
-        await self.send_update(content=alert_msg, embed=embed)
+        # Build the Layout
+        view = discord.ui.LayoutView()
+        
+        container_items = [
+            discord.ui.TextDisplay(f"### {title}"),
+            discord.ui.Separator(),
+            discord.ui.TextDisplay(msg),
+            discord.ui.Separator()
+        ]
+        
+        if cid:
+            c_label = self.bot.get_feedback("btn_view_coingecko", guild_id=self.guild_id)
+            cg_url = f"https://www.coingecko.com/en/coins/{cid}"
+            btn = discord.ui.Button(label=c_label, url=cg_url, style=discord.ButtonStyle.link)
+            container_items.append(discord.ui.ActionRow(btn))
+            
+        view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
+        
+        await self.send_update(content=alert_msg, view=view)
         log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
     async def get_latest_item(self):
@@ -243,10 +256,7 @@ class CryptoMonitor(BaseMonitor):
                         prices_data = await resp.json()
                         
                         title = self.bot.get_feedback("ui_crypto_status_title", name=self.name, guild_id=self.guild_id)
-                        embed = discord.Embed(
-                            title=title,
-                            color=self.get_color()
-                        )
+                        accent_color = self.get_color()
                         
                         summary_lines = []
                         valid_count = 0
@@ -254,6 +264,11 @@ class CryptoMonitor(BaseMonitor):
                         field_target = self.bot.get_feedback("ui_crypto_field_target", guild_id=self.guild_id)
                         field_diff = self.bot.get_feedback("ui_crypto_field_diff", guild_id=self.guild_id)
                         
+                        container_items = [
+                            discord.ui.TextDisplay(f"### {title}"),
+                            discord.ui.Separator()
+                        ]
+
                         for sym, threshold in self.targets.items():
                             cid = self.coin_id_map.get(sym)
                             if cid and cid in prices_data:
@@ -266,19 +281,20 @@ class CryptoMonitor(BaseMonitor):
                                 
                                 line = self.bot.get_feedback("ui_crypto_status_line", emoji=color_emoji, sym=sym, price=fmt_price, diff=fmt_diff, guild_id=self.guild_id)
                                 summary_lines.append(line)
-                                embed.add_field(name=sym, value=f"{field_price}: **{fmt_price} USD**\n{field_target}: **{threshold:,.2f} USD**\n{field_diff}: **{fmt_diff}%**", inline=True)
                                 valid_count += 1
                         
                         if valid_count == 0:
                             return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "embed": None}
 
-                        embed.description = "\n".join(summary_lines)
-                        embed.set_footer(text=self.bot.get_feedback("footer_coingecko", guild_id=self.guild_id), icon_url="https://static.coingecko.com/s/thumbnail-d3493722a4497e70407fcfdc72e4ec326e0e2bb52479493979872583abbbe28d.png")
-                        embed.timestamp = discord.utils.utcnow()
+                        container_items.append(discord.ui.TextDisplay("\n".join(summary_lines)))
+                        container_items.append(discord.ui.Separator())
+                        
+                        view = discord.ui.LayoutView()
+                        view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
                         
                         return {
                             "content": self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id),
-                            "embed": embed
+                            "view": view
                         }
                     elif resp.status == 429:
                         return {"content": self.bot.get_feedback("crypto_rate_limited", guild_id=self.guild_id), "embed": None}
