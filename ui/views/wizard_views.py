@@ -194,11 +194,11 @@ class AddMonitorWizardLayout(discord.ui.LayoutView):
 
     async def genre_callback(self, interaction: discord.Interaction):
         self.selected_genres = self.genre_select.values
-        await interaction.response.edit_message(view=self)
+        await self.check_readiness(interaction)
 
     async def lang_callback(self, interaction: discord.Interaction):
         self.selected_languages = self.lang_select.values
-        await interaction.response.edit_message(view=self)
+        await self.check_readiness(interaction)
 
     async def check_readiness(self, interaction: discord.Interaction):
         if self.selected_type not in ["movie", "tv_series"]:
@@ -424,11 +424,11 @@ class EditMonitorWizardLayout(discord.ui.LayoutView):
 
     async def genre_callback(self, interaction: discord.Interaction):
         self.selected_genres = self.genre_select.values
-        await interaction.response.edit_message(view=self)
+        await self.check_readiness(interaction)
 
     async def lang_callback(self, interaction: discord.Interaction):
         self.selected_languages = self.lang_select.values
-        await interaction.response.edit_message(view=self)
+        await self.check_readiness(interaction)
 
     async def check_readiness(self, interaction: discord.Interaction):
         self.update_components()
