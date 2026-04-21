@@ -220,8 +220,6 @@ class CryptoMonitor(BaseMonitor):
         
         container_items = [
             discord.ui.TextDisplay(f"### {title}"),
-            discord.ui.Separator(),
-            discord.ui.TextDisplay(msg),
             discord.ui.Separator()
         ]
         
@@ -233,9 +231,8 @@ class CryptoMonitor(BaseMonitor):
             
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
-        # Send Alert Message and Layout separately to avoid API errors with IS_COMPONENTS_V2
-        await self.send_update(content=alert_msg)
-        await self.send_update(view=view)
+        # Send Alert Message and Layout in a single message
+        await self.send_update(content=alert_msg, view=view)
         log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
     async def get_latest_item(self):
@@ -345,8 +342,6 @@ class CryptoMonitor(BaseMonitor):
         view = discord.ui.LayoutView()
         container_items = [
             discord.ui.TextDisplay(f"### {title}"),
-            discord.ui.Separator(),
-            discord.ui.TextDisplay(msg),
             discord.ui.Separator()
         ]
         
@@ -359,6 +354,8 @@ class CryptoMonitor(BaseMonitor):
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
         return [
-            {"content": f"{mock_header}\n{alert_msg}"},
-            {"view": view}
+            {
+                "content": f"{mock_header}\n{alert_msg}",
+                "view": view
+            }
         ]
