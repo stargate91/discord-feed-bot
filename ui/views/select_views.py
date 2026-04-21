@@ -53,7 +53,7 @@ class AlertTemplateDashboardLayout(discord.ui.LayoutView):
         """Return the effective template preview for a platform."""
         custom = self.current_templates.get(platform_val, "")
         if custom:
-            preview = custom[:80] + "..." if len(custom) > 80 else custom
+            preview = custom[:32] + "..." if len(custom) > 32 else custom
             return f"✏️ {preview}"
         
         # Show the system default
@@ -61,7 +61,7 @@ class AlertTemplateDashboardLayout(discord.ui.LayoutView):
         if locale_key:
             default_text = self.bot.get_feedback(locale_key, guild_id=self.guild_id, force_lang=self.force_lang)
             if default_text != locale_key:
-                preview = default_text[:80] + "..." if len(default_text) > 80 else default_text
+                preview = default_text[:32] + "..." if len(default_text) > 32 else default_text
                 return preview
         return "—"
 
@@ -75,7 +75,7 @@ class AlertTemplateDashboardLayout(discord.ui.LayoutView):
         total_pages = (len(self.platforms) + self.page_size - 1) // self.page_size
         
         # 2. Header
-        title_text = self.bot.get_feedback("ui_btn_templates", guild_id=self.guild_id, force_lang=self.force_lang)
+        title_text = self.bot.get_feedback("ui_dashboard_title", guild_id=self.guild_id, force_lang=self.force_lang)
         page_indicator = self.bot.get_feedback("ui_dashboard_page", current=self.page + 1, total=total_pages, guild_id=self.guild_id, force_lang=self.force_lang)
         
         container_items = [

@@ -58,6 +58,7 @@
     "ui_setup_interval_success": "<:checkfilledcircle:1495829946248200414> Refresh interval configured successfully to {val} minutes.",
     "ui_setup_template_success": "<:checkfilledcircle:1495829946248200414> Custom alert template for **{platform}** has been updated!",
     "ui_setup_template_save_msg": "<:checkfilledcircle:1495829946248200414> {platform} template saved temporarily. **Don't forget to click 'Save Settings' in the main menu!**",
+    "ui_dashboard_title": "Message Templates",
     "ui_dashboard_page": "Page {current} of {total}",
     "ui_template_placeholder": "Using default template...",
     "ui_btn_edit": "Edit",
