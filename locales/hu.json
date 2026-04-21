@@ -219,6 +219,7 @@
     "crypto_price_check": "<:barchartlinecolorful:1495853051569901629> **Crypto Árfolyam Ellenőrzés: {name}**",
     "new_crypto_alert": "{direction} **{name}** árfolyama átlépte a küszöböt! Jelenlegi ár: **{price} USD** ({percent} a küszöbtől)",
     "ui_crypto_alert_title": "Kripto Riasztás: {sym}",
+    "ui_label_mock_ping": "PRÓBA PING",
     "ui_crypto_mock_header": " `[ MOCK ALERT SIMULÁCIÓ ]` ",
     "preview_success": "<:checkfilledcircle:1495829946248200414> Sikeres előnézet a(z) **{name}** monitorhoz.",
     "genre_28": "Akció",

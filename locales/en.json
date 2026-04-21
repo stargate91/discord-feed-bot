@@ -221,6 +221,7 @@
     "crypto_price_check": "<:barchartlinecolorful:1495853051569901629> **Crypto Price Check: {name}**",
     "new_crypto_alert": "{direction} **{name}** price crossed the threshold! Current price: **{price} USD** ({percent} from threshold)",
     "ui_crypto_alert_title": "Crypto Alert: {sym}",
+    "ui_label_mock_ping": "MOCK PING",
     "ui_crypto_mock_header": " `[ MOCK ALERT SIMULATION ]` ",
     "preview_success": "<:checkfilledcircle:1495829946248200414> Successfully generated preview for **{name}**.",
     "genre_28": "Action",

@@ -365,9 +365,13 @@ class CryptoMonitor(BaseMonitor):
             
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
-        mock_ping = "@Drinker" # Mock ping for preview
+        # Message 1: Simulation Header and Pings (if set)
+        pings = self.ping_role
+        content_parts = [mock_header]
+        if pings:
+            content_parts.append(pings)
         
         return [
-            {"content": f"{mock_header}\n{mock_ping}"},
+            {"content": "\n".join(content_parts)},
             {"view": view}
         ]

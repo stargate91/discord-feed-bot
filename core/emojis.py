@@ -34,8 +34,8 @@ THUMBNAIL_GOG = "https://cdn.discordapp.com/emojis/1490131412043431976.png"
 THUMBNAIL_EPIC = "https://cdn.discordapp.com/emojis/1490131410852253716.png"
 
 # Crypto Specific Icons
-CRYPTO_UP = "📈"
-CRYPTO_DOWN = "📉"
+CRYPTO_UP = "<:chartincreaseoutlined:1496133105394651177>"
+CRYPTO_DOWN = "<:chartdecreasedoutlined:1496133103750742188>"
 CRYPTO_BULLET_FILLED = "●"
 CRYPTO_BULLET_EMPTY = "○"
 CRYPTO_CHART_COLORFUL = "<:barchartlinecolorful:1495853051569901629>"
