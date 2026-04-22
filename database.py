@@ -50,12 +50,16 @@ async def init_db():
                 # Add columns if they don't exist
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS refresh_interval INTEGER")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP")
+                
+                # Migration for Monitors table
+                await conn.execute("ALTER TABLE monitors ADD COLUMN IF NOT EXISTS last_post_at TIMESTAMP WITH TIME ZONE")
+
                 # Drop deprecated master_role_id and admin_channel_id
                 await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS master_role_id")
                 await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS admin_channel_id")
                 log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
-                log.warning(f"DB Migration Issue (safe to ignore if already exists): {e}")
+                log.warning(f"DB Migration Issue: {e}")
 
     log.info("Database tables initialized.")
 
