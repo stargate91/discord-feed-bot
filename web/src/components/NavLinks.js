@@ -31,6 +31,15 @@ export default function NavLinks({ session, isMaster }) {
           Dashboard
         </Link>
       </li>
+
+      <li>
+        <Link 
+          href={getHref("/premium")} 
+          className={`nav-link premium-link ${isActive("/premium") ? "active" : ""}`}
+        >
+          <span>Premium</span>
+        </Link>
+      </li>
       
       {session ? (
         <>

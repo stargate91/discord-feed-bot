@@ -41,60 +41,128 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     # Handle the event
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        
-        # client_reference_id should be our Guild ID
         guild_id_str = session.get('client_reference_id')
         if not guild_id_str:
             log.error("[STRIPE] Missing client_reference_id (Guild ID) in session.")
-            return {"status": "error", "message": "No guild mapping"}
+            return {"status": "error"}
 
         guild_id = int(guild_id_str)
+        subscription_id = session.get('subscription')
         
-        # Determine duration from Price ID
-        # We need to look up line items to get price_id
-        full_session = stripe.checkout.Session.retrieve(
-            session['id'],
-            expand=['line_items'],
-        )
-        
-        if not full_session.line_items or len(full_session.line_items.data) == 0:
-             log.error(f"[STRIPE] No line items for session {session['id']}")
-             return {"status": "error"}
-
+        # Retrieve full session to get price/tier
+        full_session = stripe.checkout.Session.retrieve(session['id'], expand=['line_items'])
+        if not full_session.line_items or not full_session.line_items.data:
+            return {"status": "error"}
+            
         price_id = full_session.line_items.data[0].price.id
         products = app.state.stripe_config.get("products", {})
         
-        product_info = products.get(price_id)
-        if not product_info:
-            log.error(f"[STRIPE] Price ID {price_id} not found in bot config.")
-            return {"status": "error", "message": "Unknown product"}
-
+        # Determine tier from config mapping
+        # Config should look like: "price_abc": {"tier": 1, "days": 30}
+        product_info = products.get(price_id, {"tier": 3, "days": 30})
+        tier = product_info.get("tier", 3)
         days = product_info.get("days", 30)
-        
-        # 1. Activate in DB
-        await database.add_premium_days(guild_id, days)
-        
-        # 2. Log History
-        await database.log_payment(
+
+        # Update DB: Tier + Expiration + Sub ID
+        from datetime import datetime, timedelta
+        expiry = datetime.now() + timedelta(days=days + 2) # Grace period
+
+        await database.update_guild_settings(
             guild_id=guild_id,
-            session_id=session['id'],
-            price_id=price_id,
-            amount=session['amount_total'],
-            currency=session['currency']
+            tier=tier,
+            premium_until=expiry,
+            stripe_subscription_id=subscription_id,
+            bot=app.state.bot
         )
         
-        log.info(f"[STRIPE] Successfully activated {days} days of premium for guild {guild_id}")
+        log.info(f"[STRIPE] Activated Tier {tier} for guild {guild_id} (Sub: {subscription_id})")
+
+    elif event['type'] == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        guild_id_str = subscription.get('metadata', {}).get('guild_id')
+        if not guild_id_str: 
+            return {"status": "ignored"}
+            
+        guild_id = int(guild_id_str)
+        price_id = subscription['items']['data'][0]['price']['id']
         
-        # 3. Optional: Notify in Discord
-        # try:
-        #     guild = app.state.bot.get_guild(guild_id)
-        #     if guild:
-        #         # Logic to find a channel to post in
-        #         pass
-        # except Exception as e:
-        #     log.error(f"Failed to notify guild {guild_id}: {e}")
+        products = app.state.stripe_config.get("products", {})
+        product_info = products.get(price_id, {"tier": 1})
+        tier = product_info.get("tier", 1)
+        
+        await database.update_guild_settings(guild_id=guild_id, tier=tier, bot=app.state.bot)
+        log.info(f"[STRIPE] Updated Tier to {tier} for guild {guild_id} due to sub update.")
+
+    elif event['type'] == 'customer.subscription.deleted':
+        subscription = event['data']['object']
+        guild_id_str = subscription.get('metadata', {}).get('guild_id')
+        if not guild_id_str: return {"status": "ignored"}
+        
+        guild_id = int(guild_id_str)
+        # Revert to Free Tier
+        await database.update_guild_settings(
+            guild_id=guild_id, 
+            tier=0, 
+            premium_until=None, 
+            stripe_subscription_id=None, 
+            bot=app.state.bot
+        )
+        log.info(f"[STRIPE] Subscription deleted for guild {guild_id}. Reverted to Free.")
 
     return {"status": "success"}
+
+from fastapi.responses import RedirectResponse
+
+@app.get("/checkout")
+async def create_checkout(guild_id: str, tier: int, interval: str = "mo"):
+    """Create a Stripe Checkout Session and redirect the user."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe is not configured on the bot.")
+
+    products = app.state.stripe_config.get("products", {})
+    price_id = None
+    
+    # Search for matching product in config
+    for pid, info in products.items():
+        if info.get("tier") == tier and info.get("interval") == interval:
+            price_id = pid
+            break
+            
+    if not price_id:
+        # Fallback for testing/initial setup if tier is in the key name
+        if tier == 1: price_id = os.getenv(f"STRIPE_PRICE_TIER1_{interval.upper()}")
+        elif tier == 2: price_id = os.getenv(f"STRIPE_PRICE_TIER2_{interval.upper()}")
+        elif tier == 3: price_id = os.getenv(f"STRIPE_PRICE_TIER3_{interval.upper()}")
+
+    if not price_id:
+        log.error(f"[CHECKOUT] Price not found for Tier {tier}, Interval {interval}")
+        raise HTTPException(status_code=400, detail=f"Price ID not configured for Tier {tier} ({interval})")
+
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            client_reference_id=guild_id,
+            success_url=app.state.stripe_config.get("success_url"),
+            cancel_url=app.state.stripe_config.get("cancel_url"),
+            subscription_data={
+                "metadata": {
+                    "guild_id": guild_id
+                }
+            },
+            metadata={
+                "guild_id": guild_id,
+                "tier": str(tier)
+            }
+        )
+        return RedirectResponse(url=session.url)
+    except Exception as e:
+        log.error(f"[CHECKOUT] Error creating session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create checkout session")
 
 @app.post("/monitors/sync")
 async def sync_monitors():

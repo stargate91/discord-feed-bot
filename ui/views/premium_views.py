@@ -49,11 +49,15 @@ class PremiumPurchaseView(discord.ui.View):
                     'price': price_id,
                     'quantity': 1,
                 }],
-                mode='payment',
+                mode='subscription',
                 client_reference_id=str(self.guild_id),
                 success_url=self.stripe_config.get("success_url"),
                 cancel_url=self.stripe_config.get("cancel_url"),
-                # We can also metadata if we want more info
+                subscription_data={
+                    "metadata": {
+                        "guild_id": str(self.guild_id)
+                    }
+                },
                 metadata={
                     "guild_id": str(self.guild_id),
                     "user_id": str(interaction.user.id)
@@ -61,12 +65,16 @@ class PremiumPurchaseView(discord.ui.View):
             )
             
             embed = discord.Embed(
-                title="🚀 Upgrade to Premium",
+                title="🚀 Nova Premium Subscription",
                 description=(
-                    "Click the button below to complete your payment on our secure Stripe checkout page.\n\n"
-                    "**Note:** Premium will be activated automatically for this server once the payment is completed."
+                    "You are about to upgrade this server to a higher tier.\n\n"
+                    "**Process:**\n"
+                    "1. Click the button below to go to secure checkout.\n"
+                    "2. Complete the payment.\n"
+                    "3. Your tier will be activated **immediately** for this server.\n\n"
+                    "*Subscription will renew automatically. You can cancel anytime via the dashboard.*"
                 ),
-                color=0x40C4FF
+                color=0x7B2CBF
             )
             
             button = discord.ui.Button(label="Proceed to Payment", url=session.url, style=discord.ButtonStyle.link)

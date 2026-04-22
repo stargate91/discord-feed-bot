@@ -12,7 +12,7 @@ class SteamNewsMonitor(BaseMonitor):
     
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.appid = config.get("appid")
+        self.appid = config.get("appid") or config.get("app_id")
         self.api_url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=5"
         self.is_first_run = True
 

@@ -9,7 +9,7 @@ from datetime import datetime
 class GitHubMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.repo_path = config.get("repo_path")  # owner/repo
+        self.repo_path = config.get("repo_path") or config.get("repo")  # owner/repo
         self.api_url = f"https://api.github.com/repos/{self.repo_path}/releases"
         self.is_first_run = True
 

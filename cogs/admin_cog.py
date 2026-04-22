@@ -196,9 +196,14 @@ class MasterCog(commands.GroupCog, name="master"):
 
 
     @app_commands.command(name="generate-premium", description="Generate a new premium code (Master Admin only)")
-    @app_commands.describe(days="Duration in days (0 for lifetime)", uses="How many times can it be redeemed?")
+    @app_commands.describe(tier="Subscription level", days="Duration in days (0 for lifetime)", uses="How many times can it be redeemed?")
+    @app_commands.choices(tier=[
+        app_commands.Choice(name="Scout (Tier 1)", value=1),
+        app_commands.Choice(name="Operator (Tier 2)", value=2),
+        app_commands.Choice(name="Architect (Tier 3)", value=3)
+    ])
     @is_master_only()
-    async def master_generate_premium(self, interaction: discord.Interaction, days: int, uses: int = 1):
+    async def master_generate_premium(self, interaction: discord.Interaction, tier: app_commands.Choice[int], days: int, uses: int = 1):
         import secrets
         import string
         
@@ -207,8 +212,9 @@ class MasterCog(commands.GroupCog, name="master"):
         parts = [''.join(secrets.choice(chars) for _ in range(4)) for _ in range(4)]
         code = "PREM-" + "-".join(parts)
         
-        await database.create_premium_code(code, days, uses)
-        await interaction.response.send_message(self.bot.get_feedback("master_premium_gen_success", code=code, days=days, uses=uses), ephemeral=True)
+        await database.create_premium_code(code, days, uses, tier.value)
+        tier_name = tier.name.split(" (")[0]
+        await interaction.response.send_message(self.bot.get_feedback("master_premium_gen_success", code=code, days=days, uses=uses, tier=tier_name), ephemeral=True)
 
     @app_commands.command(name="list-premium", description="List generated premium codes (Master Admin only)")
     @app_commands.describe(filter_type="Filter by usage")
@@ -225,10 +231,13 @@ class MasterCog(commands.GroupCog, name="master"):
             return
 
         lines = []
+        tier_names = {1: "Scout", 2: "Operator", 3: "Architect"}
         for r in codes:
-            code, days, max_uses, used_count, created_at = r
+            code, days, max_uses, used_count, created_at, is_revoked, tier = r
             duration = "Lifetime" if days == 0 else f"{days} days"
-            lines.append(f"`{code}` | {duration} | Uses: {used_count}/{max_uses}")
+            t_name = tier_names.get(tier, "Architect")
+            rev_str = " [REV]" if is_revoked else ""
+            lines.append(f"`{code}` | **{t_name}** | {duration} | Uses: {used_count}/{max_uses}{rev_str}")
 
         msg = self.bot.get_feedback("master_premium_list_title", filter=filter_type.name) + "\n" + "\n".join(lines)
         if len(msg) > 2000:

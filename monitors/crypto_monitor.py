@@ -16,7 +16,7 @@ class CryptoMonitor(BaseMonitor):
         super().__init__(bot, m_config)
         self.type = "crypto"
         # Format: "BTC:100000, ETH:5000"
-        self.input_data = m_config.get("source_id", "")
+        self.input_data = m_config.get("source_id") or m_config.get("symbols", "")
         self.targets = self._parse_targets(self.input_data)
         self.last_prices = {} # symbol -> price
         self.coin_id_map = {} # symbol -> coingecko_id

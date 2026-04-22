@@ -55,6 +55,17 @@ export default function MonitorsPage() {
     fetchMonitors();
   }, [guildId]);
 
+  // Handle auto-open for Create Modal via Quick Actions
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsCreateModalOpen(true);
+      
+      // Clean up URL parameter after opening
+      const newUrl = window.location.pathname + (guildId ? `?guild=${guildId}` : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams, guildId]);
+
   const handleToggle = async (id, enabled) => {
     try {
       const res = await fetch(`/api/monitors/${id}`, {

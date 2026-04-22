@@ -32,7 +32,7 @@ export async function GET(req, { params }) {
     }
 
     const res = await pool.query(
-      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates FROM guild_settings WHERE guild_id = $1::bigint",
+      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier FROM guild_settings WHERE guild_id = $1::bigint",
       [guildId]
     );
 
@@ -42,6 +42,7 @@ export async function GET(req, { params }) {
         premium_until: null,
         refresh_interval: 15,
         alert_templates: {},
+        tier: 0,
         isMaster: isMaster
     };
 
@@ -58,12 +59,22 @@ export async function GET(req, { params }) {
             }
         }
 
+        let tier = row.tier || 0;
+        const now = new Date();
+        const premiumUntil = row.premium_until;
+        
+        // Legacy support: If tier is 0 but premium_until is valid, treat as Tier 3
+        if (tier === 0 && premiumUntil && new Date(premiumUntil) > now) {
+            tier = 3;
+        }
+
         settings = {
             language: row.language || "en",
             admin_role_id: row.admin_role_id ? String(row.admin_role_id) : "0",
             premium_until: row.premium_until,
             refresh_interval: row.refresh_interval || 15,
             alert_templates: templates,
+            tier: tier,
             isMaster: isMaster
         };
     }

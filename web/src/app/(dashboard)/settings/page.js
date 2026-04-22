@@ -190,8 +190,37 @@ function SettingsContent() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState(null);
   
+  // Redemption State
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemStatus, setRedeemStatus] = useState(null); // { type: 'success'|'error', message: string }
+
   // Template Editor State
   const [activePlatform, setActivePlatform] = useState(PLATFORMS[0].id);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [settingsRes, rolesRes] = await Promise.all([
+        fetch(`/api/guilds/${guildId}/settings`),
+        fetch(`/api/guilds/${guildId}/roles`)
+      ]);
+
+      if (settingsRes.ok) {
+        const sData = await settingsRes.json();
+        setSettings(sData);
+      }
+      
+      if (rolesRes.ok) {
+        const rData = await rolesRes.json();
+        setRoles(rData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch settings/roles:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!guildId) {
@@ -199,32 +228,36 @@ function SettingsContent() {
       return;
     }
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [settingsRes, rolesRes] = await Promise.all([
-          fetch(`/api/guilds/${guildId}/settings`),
-          fetch(`/api/guilds/${guildId}/roles`)
-        ]);
-
-        if (settingsRes.ok) {
-          const sData = await settingsRes.json();
-          setSettings(sData);
-        }
-        
-        if (rolesRes.ok) {
-          const rData = await rolesRes.json();
-          setRoles(rData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch settings/roles:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [guildId, router]);
+
+  const handleRedeem = async () => {
+    if (!redeemCode.trim()) return;
+    setRedeemLoading(true);
+    setRedeemStatus(null);
+
+    try {
+      const res = await fetch('/api/premium/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: redeemCode, guildId })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setRedeemStatus({ type: 'success', message: 'Premium activated successfully!' });
+        setRedeemCode("");
+        // Refresh settings locally or re-fetch
+        fetchData();
+      } else {
+        setRedeemStatus({ type: 'error', message: data.error || 'Failed to redeem' });
+      }
+    } catch (err) {
+      setRedeemStatus({ type: 'error', message: 'Connection error' });
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -386,6 +419,41 @@ function SettingsContent() {
                 <button className="upgrade-btn">Upgrade to Premium</button>
             )}
           </div>
+
+          {!settings.isMaster && (
+            <div className="card redeem-card">
+              <div className="card-header-compact">
+                <Zap size={18} className="zap-icon" />
+                <h4>Redeem Code</h4>
+              </div>
+              <p className="card-hint">Have a premium key? Enter it below to activate features.</p>
+              
+              <div className="redeem-form">
+                <input 
+                  type="text" 
+                  className="redeem-input" 
+                  placeholder="PREM-XXXX-XXXX-XXXX" 
+                  value={redeemCode}
+                  onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                  disabled={redeemLoading}
+                />
+                <button 
+                  className="redeem-btn" 
+                  onClick={handleRedeem}
+                  disabled={redeemLoading || !redeemCode.trim()}
+                >
+                  {redeemLoading ? <div className="btn-loader-small"></div> : 'Redeem'}
+                </button>
+              </div>
+
+              {redeemStatus && (
+                <div className={`redeem-status ${redeemStatus.type}`}>
+                  {redeemStatus.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                  <span>{redeemStatus.message}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -457,6 +525,63 @@ function SettingsContent() {
         .premium-icon { color: #ffb703; }
         .expiry-date { font-size: 1.2rem; font-weight: 700; margin: 0; }
         .upgrade-btn { width: 100%; background: #ffb703; color: #3c096c; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+
+        /* Redeem Card Styling */
+        .redeem-card {
+          margin-top: 1rem;
+          padding: 1.5rem;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        .card-header-compact { display: flex; align-items: center; gap: 10px; }
+        .card-header-compact h4 { margin: 0; font-size: 1rem; font-weight: 800; }
+        .zap-icon { color: var(--accent-color); }
+        .card-hint { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+        .redeem-form { display: flex; flex-direction: column; gap: 10px; }
+        .redeem-input {
+          background: rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px;
+          padding: 0.6rem 0.8rem;
+          color: white;
+          font-family: monospace;
+          font-size: 0.9rem;
+          outline: none;
+          text-align: center;
+        }
+        .redeem-input:focus { border-color: var(--accent-color); }
+        .redeem-btn {
+          background: var(--accent-color);
+          border: none;
+          color: white;
+          padding: 0.6rem;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .redeem-btn:hover:not(:disabled) { filter: brightness(1.1); transform: scale(1.02); }
+        .redeem-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.8rem;
+          padding: 8px;
+          border-radius: 8px;
+        }
+        .redeem-status.success { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+        .redeem-status.error { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+        .btn-loader-small {
+          width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white; border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 968px) { .settings-grid { grid-template-columns: 1fr; } }
       `}</style>
     </div>

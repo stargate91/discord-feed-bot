@@ -125,6 +125,24 @@ body::before {
   box-shadow: inset 4px 0 10px rgba(123, 44, 191, 0.1);
 }
 
+.premium-link {
+  color: #ffb703 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease;
+}
+
+.premium-link:hover {
+  background: rgba(255, 183, 3, 0.08) !important;
+  color: #ffc300 !important;
+  text-shadow: 0 0 8px rgba(255, 183, 3, 0.4);
+}
+
+.premium-link.active {
+  background: linear-gradient(90deg, rgba(255, 183, 3, 0.1), transparent) !important;
+  border-left: 3px solid #ffb703 !important;
+  box-shadow: inset 4px 0 10px rgba(255, 183, 3, 0.05) !important;
+}
+
 /* Guild Switcher - Improved Popover */
 .guild-switcher-wrapper {
   position: relative;
@@ -494,6 +512,12 @@ body::before {
   gap: 1.5rem;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
 .card {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -507,6 +531,10 @@ body::before {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 10px var(--accent-glow);
   border-color: rgba(255, 255, 255, 0.15);
+}
+
+.card.compact {
+  padding: 1rem 1.25rem;
 }
 
 .card-header {
@@ -526,6 +554,11 @@ body::before {
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.5rem;
+}
+
+.card-value.compact-value {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
 }
 
 .card-desc {

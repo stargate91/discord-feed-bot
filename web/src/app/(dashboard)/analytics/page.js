@@ -121,16 +121,19 @@ function AnalyticsContent() {
           title="Total Messages" 
           value={data.totalPosts.toLocaleString()} 
           description="Lifetime posts sent"
+          compact={true}
         />
         <StatCard 
           title="Active Feeds" 
           value={data.activeMonitors} 
           description="Monitors currently running"
+          compact={true}
         />
         <StatCard 
           title="Platforms" 
           value={data.platformCount} 
           description="Different sources active"
+          compact={true}
         />
       </section>
 

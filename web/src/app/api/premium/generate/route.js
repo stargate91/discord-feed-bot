@@ -11,7 +11,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { days, uses = 1 } = await request.json();
+  const { days, uses = 1, tier = 3 } = await request.json();
 
   try {
     // Generate format PREM-XXXX-XXXX-XXXX-XXXX
@@ -27,8 +27,8 @@ export async function POST(request) {
     const code = `PREM-${generateSegment()}-${generateSegment()}-${generateSegment()}-${generateSegment()}`;
 
     await pool.query(
-      'INSERT INTO premium_codes (code, duration_days, max_uses, used_count, created_at) VALUES ($1, $2, $3, 0, NOW())',
-      [code, days, uses]
+      'INSERT INTO premium_codes (code, duration_days, max_uses, tier, used_count, created_at) VALUES ($1, $2, $3, $4, 0, NOW())',
+      [code, days, uses, tier]
     );
 
     return NextResponse.json({ success: true, code });

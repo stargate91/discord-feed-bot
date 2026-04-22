@@ -42,7 +42,7 @@ class FeedBot(commands.Bot):
 
         # Load all guild settings into memory
         try:
-            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, alert_templates, premium_until FROM guild_settings")
+            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, alert_templates, premium_until, tier, stripe_subscription_id FROM guild_settings")
             
             for row in settings_rows:
                 g_id = row[0]
@@ -50,7 +50,9 @@ class FeedBot(commands.Bot):
                     "language": row[1] or "en",
                     "admin_role_id": row[2] or 0,
                     "alert_templates": json.loads(row[3]) if row[3] else {},
-                    "premium_until": row[4]
+                    "premium_until": row[4],
+                    "tier": row[5] or 0,
+                    "stripe_subscription_id": row[6]
                 }
         except Exception as e:
             log.error(f"Error loading guild settings cache: {e}")
@@ -144,7 +146,9 @@ class FeedBot(commands.Bot):
                         "language": "hu",
                         "admin_role_id": 0,
                         "alert_templates": {},
-                        "premium_until": None
+                        "premium_until": None,
+                        "tier": 0,
+                        "stripe_subscription_id": None
                     }
                     synced += 1
             except Exception as e:
@@ -170,7 +174,9 @@ class FeedBot(commands.Bot):
                     "language": "hu", # Default for new joins
                     "admin_role_id": 0,
                     "alert_templates": {},
-                    "premium_until": None
+                    "premium_until": None,
+                    "tier": 0,
+                    "stripe_subscription_id": None
                 }
         except Exception as e:
             log.error(f"Error initializing guild settings for {guild.id}: {e}")
@@ -246,13 +252,18 @@ class FeedBot(commands.Bot):
         return str(guild_id) in master_guilds
 
     def is_premium(self, guild_id):
-        """Check if a guild has premium status (via DB expiration or Master status)."""
-        # 1. Master Guils are automatically Premium Forever
+        """Check if a guild has premium status (via Tier or DB expiration or Master status)."""
+        # 1. Master Guilds are automatically Premium Forever (Tier 3+)
         if self.is_master(guild_id):
             return True
             
-        # 2. DB Source (Calculated from expiration date)
         settings = self.guild_settings_cache.get(guild_id, {})
+        
+        # 2. Check Tier Level
+        if settings.get("tier", 0) >= 1:
+            return True
+
+        # 3. DB Source (Calculated from expiration date - Legacy support)
         p_until = settings.get("premium_until")
         if p_until:
             return p_until > datetime.now()
@@ -263,9 +274,22 @@ class FeedBot(commands.Bot):
         """Returns (min_refresh_min, max_refresh_min, default_refresh_min, max_monitors, max_channels, max_roles) based on tier."""
         if self.is_master(guild_id):
             return (1, 1440, 5, 1000, 20, 20)
-        if self.is_premium(guild_id):
-            return (2, 1440, 5, 100, 10, 10)
-        return (15, 1440, 20, 3, 1, 1)
+            
+        settings = self.guild_settings_cache.get(guild_id, {})
+        tier = settings.get("tier", 0)
+        
+        # Legacy fallback if tier is 0 but premium_until is valid
+        if tier == 0 and self.is_premium(guild_id):
+            tier = 3 # Assume top tier for legacy premium users
+
+        if tier == 3: # Architect
+            return (2, 1440, 5, 100, 15, 15)
+        if tier == 2: # Operator
+            return (2, 1440, 5, 50, 10, 10)
+        if tier == 1: # Scout
+            return (2, 1440, 5, 25, 5, 5)
+            
+        return (20, 1440, 30, 5, 1, 1) # Free Tier
 
     def has_feature(self, guild_id, feature_name):
         """Check if a guild has access to a specific premium feature."""

@@ -77,7 +77,7 @@
     "status_add_success": "<:checkfilledcircle:1495829946248200414> Állapot hozzáadva: **{type} {text}**",
     "premium_activate_success": "<:checkfilledcircle:1495829946248200414> **Sikeres aktiválás!** A Prémium státusz érvényes eddig: {date}.",
     "premium_activate_success_lifetime": "<:checkfilledcircle:1495829946248200414> **Sikeres indulás!** Ez a szerver mostantól **Örökös Prémium** előnyökkel rendelkezik!",
-    "master_premium_gen_success": "<:checkfilledcircle:1495829946248200414> Prémium kód legenerálva: **{code}**\nIdőtartam: {days} nap\nFelhasználhatóság: {uses}",
+    "master_premium_gen_success": "<:checkfilledcircle:1495829946248200414> Prémium kód legenerálva: **{code}**\nSzint: **{tier}**\nIdőtartam: {days} nap\nFelhasználhatóság: {uses}",
     "master_premium_delete_success": "<:checkfilledcircle:1495829946248200414> Prémium kód `{code}` sikeresen törölve.",
     "master_premium_revoke_success": "<:checkfilledcircle:1495829946248200414> Prémium hozzáférés a(z) `{guild_id}` szervertől megvonva.",
     "check_no_active_offers": "<:infofilledcircle:1495831063597940998> Jelenleg nincs aktív ajánlat a(z) {name} feed-en (üres a lista).",

@@ -77,7 +77,7 @@
     "status_add_success": "<:checkfilledcircle:1495829946248200414> Status added: **{type} {text}**",
     "premium_activate_success": "<:checkfilledcircle:1495829946248200414> **Success!** Premium activated. Valid until: {date}.",
     "premium_activate_success_lifetime": "<:checkfilledcircle:1495829946248200414> **Success!** This server now has **Lifetime Premium** activated!",
-    "master_premium_gen_success": "<:checkfilledcircle:1495829946248200414> Premium code generated: **{code}**\nDuration: {days} days\nUses: {uses}",
+    "master_premium_gen_success": "<:checkfilledcircle:1495829946248200414> Premium code generated: **{code}**\nTier: **{tier}**\nDuration: {days} days\nUses: {uses}",
     "master_premium_delete_success": "<:checkfilledcircle:1495829946248200414> Premium code `{code}` deleted successfully.",
     "master_premium_revoke_success": "<:checkfilledcircle:1495829946248200414> Premium access for server `{guild_id}` has been revoked.",
     "check_no_active_offers": "<:infofilledcircle:1495831063597940998> There are currently no active offers for {name} (the list is empty).",

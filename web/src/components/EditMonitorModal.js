@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
-import { X } from 'lucide-react';
+import { X, Plus, Trash2, Info } from 'lucide-react';
 
 // --- STATIC OPTIONS ---
 const MOVIE_GENRES = [
@@ -55,6 +55,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
     target_languages: []
   });
   
+  const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
   const [guildChannels, setGuildChannels] = useState([]);
   const [guildRoles, setGuildRoles] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -85,7 +86,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
 
   // Sync monitor data to form
   useEffect(() => {
-    if (monitor) {
+    if (monitor && isOpen) {
       setFormData({
         name: monitor.name || '',
         target_channels: monitor.target_channels || [],
@@ -95,6 +96,15 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
         target_genres: monitor.target_genres || [],
         target_languages: monitor.target_languages || []
       });
+
+      if (monitor.type === 'crypto') {
+        const symbolsStr = monitor.symbols || monitor.source_id || '';
+        const pairs = symbolsStr.split(',').filter(p => p.includes(':')).map(p => {
+          const [s, t] = p.split(':');
+          return { symbol: s.trim().toUpperCase(), threshold: t.trim() };
+        });
+        setCryptoPairs(pairs.length > 0 ? pairs : [{ symbol: '', threshold: '' }]);
+      }
     }
   }, [monitor, isOpen]);
 
@@ -112,6 +122,15 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const addCryptoPair = () => setCryptoPairs([...cryptoPairs, { symbol: '', threshold: '' }]);
+  const removeCryptoPair = (index) => setCryptoPairs(cryptoPairs.filter((_, i) => i !== index));
+  const updateCryptoPair = (index, field, value) => {
+    const next = [...cryptoPairs];
+    if (field === 'symbol') next[index][field] = value.toUpperCase();
+    else next[index][field] = value;
+    setCryptoPairs(next);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -122,6 +141,13 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
       target_roles: formData.target_roles,
       embed_color: formData.embed_color,
     };
+
+    if (monitor.type === 'crypto') {
+      updateData.symbols = cryptoPairs
+        .filter(p => p.symbol && p.threshold)
+        .map(p => `${p.symbol}:${p.threshold}`)
+        .join(', ');
+    }
 
     if (monitor.type === 'steam_news') {
         updateData.steam_patch_only = formData.steam_patch_only;
@@ -160,6 +186,58 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
               placeholder="Enter a descriptive name"
             />
           </div>
+
+          {monitor.type === 'crypto' && (
+            <div className="form-group highlighted-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label>Price Alert Targets</label>
+                <div className="hint-pill"><Info size={12} /> Set coin and threshold</div>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {cryptoPairs.map((pair, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input 
+                      type="text" 
+                      placeholder="BTC" 
+                      value={pair.symbol} 
+                      onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
+                      className="styled-input-main compact-input"
+                      style={{ flex: 1 }}
+                      required
+                    />
+                    <span style={{ opacity: 0.3 }}>:</span>
+                    <input 
+                      type="number" 
+                      placeholder="50000" 
+                      value={pair.threshold} 
+                      onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
+                      className="styled-input-main compact-input"
+                      style={{ flex: 2 }}
+                      required
+                    />
+                    {cryptoPairs.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => removeCryptoPair(idx)}
+                        className="delete-icon-btn"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                
+                <button 
+                  type="button" 
+                  onClick={addCryptoPair}
+                  className="add-pair-btn"
+                >
+                  <Plus size={14} /> Add Another Coin
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid-responsive">
             <div className="form-group">
@@ -297,6 +375,53 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           color: white; padding: 0.8rem 1.2rem; border-radius: 12px; outline: none; transition: all 0.25s;
         }
         .styled-input-main:focus { border-color: var(--accent-color); background: rgba(123, 44, 191, 0.05); }
+
+        .highlighted-group { background: rgba(123, 44, 191, 0.04); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(123, 44, 191, 0.1); }
+        .hint-pill { font-size: 0.7rem; font-weight: 600; background: rgba(50, 150, 255, 0.1); color: #3296ff; padding: 2px 8px; border-radius: 10px; display: flex; align-items: center; gap: 4px; }
+        
+        .compact-input {
+          padding: 0.6rem 0.8rem !important;
+          font-size: 0.9rem !important;
+        }
+
+        .delete-icon-btn {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .delete-icon-btn:hover {
+          background: #ef4444;
+          color: white;
+        }
+
+        .add-pair-btn {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          color: var(--text-secondary);
+          padding: 0.75rem;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        .add-pair-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: var(--accent-color);
+          color: white;
+        }
 
         .color-trigger {
           width: 48px; height: 48px; border-radius: 12px; 

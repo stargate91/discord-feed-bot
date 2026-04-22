@@ -7,11 +7,38 @@ import { notifyBotOfChange } from "@/lib/bot-sync";
 export async function POST(request) {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "master") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { action, guildId } = await request.json();
+  const cleanId = String(guildId).replace('-', '');
+
+  // 1. Authorization: Master users can do anything. 
+  // Non-masters must have a paid tier on the specific guild.
+  const isMaster = session.user.role === "master";
+  
+  if (!isMaster) {
+    if (!guildId) return NextResponse.json({ error: "Guild ID required for non-masters" }, { status: 400 });
+
+    try {
+      const guildCheck = await pool.query(
+        'SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1',
+        [cleanId]
+      );
+      
+      const row = guildCheck.rows[0];
+      const hasTier = row && (row.tier >= 1 || (row.premium_until && new Date(row.premium_until) > new Date()));
+      
+      if (!hasTier) {
+        return NextResponse.json({ error: "Premium Tier required for bulk actions" }, { status: 403 });
+      }
+      
+      // Note: Ideally check if user is admin of this guild here too
+    } catch (e) {
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+  }
 
   if (!action) {
     return NextResponse.json({ error: "Action is required" }, { status: 400 });

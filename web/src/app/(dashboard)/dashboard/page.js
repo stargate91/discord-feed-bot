@@ -4,60 +4,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import pool from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Plus, Shield, MessageSquare } from "lucide-react";
 import fs from "fs";
 import path from "path";
-
-// --- Minimal Components (Inlined to avoid any import/hydration issues) ---
-
-function UsageIndicator({ label, current, max, unit = "" }) {
-  const percentage = Math.min(Math.round((current / max) * 100), 100);
-  let color = "#7b2cbf";
-  if (percentage >= 100) color = "#ef4444";
-  else if (percentage >= 80) color = "#f59e0b";
-
-  return (
-    <div style={{ marginBottom: '1.5rem', width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600' }}>
-        <span style={{ color: '#a0a0b0' }}>{label}</span>
-        <span style={{ color: '#f8f8f8' }}>{current} / {max} {unit}</span>
-      </div>
-      <div style={{ height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <div style={{ height: '100%', borderRadius: '4px', width: `${percentage}%`, background: color, boxShadow: `0 0 10px ${color}` }}></div>
-      </div>
-    </div>
-  );
-}
-
-function PricingCard({ label, days, isPopular = false }) {
-  const priceValue = (days / 30 * 4.99).toFixed(2);
-  return (
-    <div className={`pricing-card ${isPopular ? 'popular' : ''}`} style={{
-      background: 'rgba(255, 255, 255, 0.03)',
-      border: `1px solid ${isPopular ? '#7b2cbf' : 'rgba(255, 255, 255, 0.08)'}`,
-      borderRadius: '20px',
-      padding: '2rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      position: 'relative',
-      minWidth: '280px'
-    }}>
-      {isPopular && <div style={{ position: 'absolute', top: '-12px', background: '#7b2cbf', color: 'white', padding: '4px 15px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase' }}>Best Value</div>}
-      <div style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>{label}</div>
-      <div style={{ fontSize: '0.85rem', color: '#a0a0b0', marginBottom: '1.5rem' }}>{days} Days</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '2rem' }}>
-        <span style={{ fontSize: '1.2rem', fontWeight: '700', color: '#9d4edd' }}>$</span>
-        <span style={{ fontSize: '3rem', fontWeight: '900', color: 'white' }}>{priceValue}</span>
-      </div>
-      <ul style={{ listStyle: 'none', width: '100%', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '10px', padding: 0 }}>
-        <li style={{ fontSize: '0.85rem' }}>✨ 100 Feed Monitors</li>
-        <li style={{ fontSize: '0.85rem' }}>⚡ 5 Min Refresh Rate</li>
-        <li style={{ fontSize: '0.85rem' }}>🏷️ Filtering & Roles</li>
-      </ul>
-      <button className="btn" style={{ width: '100%', marginTop: 'auto' }}>Select Plan</button>
-    </div>
-  );
-}
+import UsageIndicator from "@/components/UsageIndicator";
 
 async function getGlobalStats() {
   try {
@@ -97,17 +48,33 @@ async function getGuildStats(guildId, session) {
     const monitorsRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1 AND enabled = true', [cleanId]);
     const totalMonitorsRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1', [cleanId]);
     const statsRes = await pool.query('SELECT SUM(post_count) FROM monitor_stats_daily WHERE guild_id = $1', [cleanId]);
-    const guildInfo = await pool.query('SELECT premium_until FROM guild_settings WHERE guild_id = $1', [cleanId]);
+    const guildInfo = await pool.query('SELECT premium_until, tier FROM guild_settings WHERE guild_id = $1', [cleanId]);
 
     const premiumUntil = guildInfo.rows[0]?.premium_until;
+    let tier = guildInfo.rows[0]?.tier || 0;
     const now = new Date();
     const isMasterGuild = masterGuilds.hasOwnProperty(cleanId);
-    const isLifetime = isMasterGuild || (premiumUntil && new Date(premiumUntil) > new Date('2090-01-01'));
-    const isPremium = isLifetime || (premiumUntil && new Date(premiumUntil) > now);
 
-    let maxMonitors = 3;
+    // Legacy support: If tier is 0 but premium_until is valid, treat as Tier 3
+    const isLegacyPremium = premiumUntil && new Date(premiumUntil) > now;
+    if (tier === 0 && isLegacyPremium) tier = 3;
+
+    const isLifetime = isMasterGuild || (premiumUntil && new Date(premiumUntil) > new Date('2090-01-01'));
+    const isPremium = isLifetime || tier >= 1;
+
+    let maxMonitors = 5;
     if (isMasterGuild) maxMonitors = 1000;
-    else if (isPremium) maxMonitors = 100;
+    else {
+      switch (tier) {
+        case 1: maxMonitors = 25; break;
+        case 2: maxMonitors = 50; break;
+        case 3: maxMonitors = 100; break;
+        default: maxMonitors = 5;
+      }
+    }
+
+    const tierNames = ["Free", "Scout", "Operator", "Architect"];
+    const currentTierName = isMasterGuild ? "Master" : tierNames[tier];
 
     return {
       activeMonitors: parseInt(monitorsRes.rows[0].count || 0),
@@ -116,6 +83,8 @@ async function getGuildStats(guildId, session) {
       isPremium,
       isLifetime,
       maxMonitors,
+      tier,
+      tierName: currentTierName,
       viewType: `Guild ${cleanId}`
     };
   } catch (error) {
@@ -133,7 +102,7 @@ export default async function Dashboard({ searchParams }) {
     redirect("/select-server");
   }
 
-  const stats = guildId 
+  const stats = guildId
     ? await getGuildStats(guildId, session)
     : await getGlobalStats();
 
@@ -147,7 +116,7 @@ export default async function Dashboard({ searchParams }) {
   }
 
   if (!session) {
-     return redirect("/");
+    return redirect("/");
   }
 
   return (
@@ -162,53 +131,126 @@ export default async function Dashboard({ searchParams }) {
       <section className="dashboard-grid" style={{ marginBottom: '3rem' }}>
         <StatCard title="Active Monitors" value={stats ? stats.activeMonitors : "0"} description="Running on this server" />
         <StatCard title="Messages Sent" value={stats ? stats.totalPosts.toLocaleString() : "0"} description="Lifetime stats" />
-        <StatCard 
-          title="Premium Status" 
-          value={stats?.isLifetime ? "Active (Lifetime)" : stats?.isPremium ? "Active (Premium)" : "Standard"} 
-          valueColor={stats?.isPremium || stats?.isLifetime ? "var(--accent-color)" : "var(--text-secondary)"}
-          actionButton={!stats?.isPremium && !stats?.isLifetime && guildId ? "Upgrade Server" : null}
+        <StatCard
+          title="Premium Status"
+          value={stats?.tierName || "Free"}
+          valueColor={stats?.tier >= 1 || stats?.isLifetime ? "var(--accent-color)" : "var(--text-secondary)"}
+          actionButton={stats?.tier === 0 && !stats?.isLifetime && guildId ? "Upgrade Server" : null}
+          actionHref={guildId ? `/premium?guild=${guildId}` : "/premium"}
         />
       </section>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '3rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="card" style={{ padding: '2rem' }}>
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Plan Usage & Limits</h3>
-            <UsageIndicator label="Feed Monitors" current={stats?.totalMonitorsCount || 0} max={stats?.maxMonitors || 3} unit="monitors" />
+            <h3 style={{
+              fontSize: '0.8rem',
+              fontWeight: '800',
+              color: 'rgba(255, 255, 255, 0.4)',
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              margin: 0,
+              paddingBottom: '8px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              marginBottom: '1.5rem'
+            }}>Plan Usage & Limits</h3>
+            <UsageIndicator 
+              label="Feed Monitors" 
+              current={stats?.totalMonitorsCount || 0} 
+              max={stats?.isLifetime ? 1000 : (stats?.maxMonitors || 5)} 
+              unit="monitors" 
+            />
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-              Your current plan allows for up to <strong>{stats?.maxMonitors}</strong> monitors.
+              {stats?.tierName === "Master" ? (
+                <span>You have <strong>Master Access</strong> with unlimited capacity.</span>
+              ) : (
+                <span>Your current <strong>{stats?.tierName}</strong> plan allows for up to <strong>{stats?.maxMonitors}</strong> monitors.</span>
+              )}
             </p>
           </div>
 
-          {!stats?.isPremium && (
-            <div className="card highlight-card" style={{ padding: '2.5rem', background: 'rgba(123, 44, 191, 0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {!stats?.isLifetime && stats?.tier < 3 && (
+            <div className="card highlight-card" style={{ 
+              padding: '2rem', 
+              background: 'linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(60, 9, 108, 0.05) 100%)',
+              border: '1px solid rgba(123, 44, 191, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', 
+                background: 'var(--accent-color)', opacity: 0.05, borderRadius: '50%', filter: 'blur(30px)' 
+              }}></div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                 <div>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Ready for Premium?</h3>
-                  <p style={{ color: 'var(--text-secondary)', maxWidth: '500px' }}>Unlock 100 monitors, role pings, and more.</p>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.4rem' }}>
+                    {stats?.tier === 0 ? "Ready for Premium?" : "Ready to scale up?"}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '350px' }}>
+                    {stats?.tier === 0 
+                      ? "Unlock role pings, faster refresh, and more monitors." 
+                      : `Upgrade to ${stats?.tier === 1 ? "Operator" : "Architect"} for even higher limits and features.`}
+                  </p>
                 </div>
-                <button className="btn" style={{ padding: '0.8rem 2rem' }}>Upgrade Now</button>
+                <Link href={guildId ? `/premium?guild=${guildId}` : "/premium"}>
+                  <button className="btn" style={{ 
+                    padding: '0.7rem 1.5rem', fontSize: '0.9rem', fontWeight: '700',
+                    boxShadow: '0 10px 20px rgba(123, 44, 191, 0.1)'
+                  }}>
+                    {stats?.tier === 0 ? "Upgrade Now" : "View Plans"}
+                  </button>
+                </Link>
               </div>
             </div>
           )}
+
         </div>
 
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1.1rem' }}>Quick Actions</h3>
-          <button className="btn btn-secondary-outline" style={{ width: '100%', textAlign: 'left', padding: '1rem' }}>Add New Feed</button>
-          <button className="btn btn-secondary-outline" style={{ width: '100%', textAlign: 'left', padding: '1rem' }}>Manage Roles</button>
-          <button className="btn btn-secondary-outline" style={{ width: '100%', textAlign: 'left', padding: '1rem' }}>Alert Templates</button>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'fit-content' }}>
+          <h3 style={{
+            fontSize: '0.8rem',
+            fontWeight: '800',
+            color: 'rgba(255, 255, 255, 0.4)',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            margin: 0,
+            paddingBottom: '8px',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+            marginBottom: '0.5rem'
+          }}>Quick Actions</h3>
+
+          <Link href={`/monitors?guild=${guildId}&add=true`} style={{
+            display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+            background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
+            fontWeight: '600', fontSize: '0.95rem'
+          }}>
+            <Plus size={18} style={{ color: 'var(--accent-color)' }} />
+            <span>Add New Feed</span>
+          </Link>
+
+          <Link href={`/settings?guild=${guildId}`} style={{
+            display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+            background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
+            fontWeight: '600', fontSize: '0.95rem'
+          }}>
+            <Shield size={18} style={{ color: 'var(--accent-color)' }} />
+            <span>Manage Roles</span>
+          </Link>
+
+          <Link href={`/settings?guild=${guildId}`} style={{
+            display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+            background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
+            fontWeight: '600', fontSize: '0.95rem'
+          }}>
+            <MessageSquare size={18} style={{ color: 'var(--accent-color)' }} />
+            <span>Alert Templates</span>
+          </Link>
         </div>
       </div>
-
-      <section style={{ marginTop: '5rem' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 800, textAlign: 'center', marginBottom: '3rem' }}>Choose Your Plan</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-          <PricingCard label="1 Month" days={30} />
-          <PricingCard label="3 Months" days={90} isPopular={true} />
-          <PricingCard label="1 Year" days={365} />
-        </div>
-      </section>
     </>
   );
 }

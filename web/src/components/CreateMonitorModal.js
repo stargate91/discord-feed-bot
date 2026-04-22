@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
-import { X } from 'lucide-react';
-import { ChevronRight, ChevronLeft, Info } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Info, Plus, Trash2 } from 'lucide-react';
 
 const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: 'UC... or @handle', hint: 'The alphanumeric ID or the @handle of the channel.' },
@@ -11,7 +10,7 @@ const PLATFORMS = [
   { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#171a21', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'The application ID from the Steam store URL.' },
   { id: 'stream', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'The exact Twitch username of the creator.' },
   { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "username/repository-name".' },
-  { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', inputLabel: 'Symbols', inputKey: 'symbols', placeholder: 'BTC, ETH', hint: 'Comma separated list of coin symbols.' },
+  { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', isCrypto: true },
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
   { id: 'steam_free', name: 'Steam Free', logo: '/emojis/steam.png', color: '#66c0f4', description: 'New free games discovered on Steam.', isGlobal: true },
   { id: 'gog_free', name: 'GOG Free', logo: '/emojis/gog.png', color: '#b237c1', description: 'Limited time free offers on GOG.com.', isGlobal: true },
@@ -30,6 +29,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     platform_input: '',
   });
 
+  const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
   const [guildChannels, setGuildChannels] = useState([]);
   const [guildRoles, setGuildRoles] = useState([]);
   const [loadingContext, setLoadingContext] = useState(false);
@@ -52,6 +52,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       setStep(1);
       setSelectedPlatform(null);
       setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#7b2cbf', platform_input: '' });
+      setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
 
@@ -67,9 +68,26 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     setStep(2);
   };
 
+  const addCryptoPair = () => setCryptoPairs([...cryptoPairs, { symbol: '', threshold: '' }]);
+  const removeCryptoPair = (index) => setCryptoPairs(cryptoPairs.filter((_, i) => i !== index));
+  const updateCryptoPair = (index, field, value) => {
+    const next = [...cryptoPairs];
+    next[index][field] = value.toUpperCase();
+    if (field === 'threshold') next[index][field] = value; // Don't uppercase numbers
+    setCryptoPairs(next);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setCreating(true);
+
+    let platformInput = formData.platform_input;
+    if (selectedPlatform.isCrypto) {
+      platformInput = cryptoPairs
+        .filter(p => p.symbol && p.threshold)
+        .map(p => `${p.symbol}:${p.threshold}`)
+        .join(', ');
+    }
 
     const payload = {
       type: selectedPlatform.id,
@@ -80,8 +98,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       embed_color: formData.embed_color,
     };
 
-    if (!selectedPlatform.isGlobal && selectedPlatform.inputKey) {
-      payload[selectedPlatform.inputKey] = formData.platform_input;
+    if (!selectedPlatform.isGlobal) {
+      payload[selectedPlatform.id === 'crypto' ? 'symbols' : selectedPlatform.inputKey] = platformInput;
     }
 
     try {
@@ -146,7 +164,57 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                  />
                </div>
 
-               {!selectedPlatform.isGlobal && (
+               {selectedPlatform.isCrypto ? (
+                 <div className="form-group highlighted-group">
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                     <label>Price Alert Targets</label>
+                     <div className="hint-pill"><Info size={12} /> Set coin and threshold</div>
+                   </div>
+                   
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                     {cryptoPairs.map((pair, idx) => (
+                       <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                         <input 
+                           type="text" 
+                           placeholder="BTC" 
+                           value={pair.symbol} 
+                           onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
+                           className="styled-input-main compact-input"
+                           style={{ flex: 1 }}
+                           required
+                         />
+                         <span style={{ opacity: 0.3 }}>:</span>
+                         <input 
+                           type="number" 
+                           placeholder="50000" 
+                           value={pair.threshold} 
+                           onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
+                           className="styled-input-main compact-input"
+                           style={{ flex: 2 }}
+                           required
+                         />
+                         {cryptoPairs.length > 1 && (
+                           <button 
+                             type="button" 
+                             onClick={() => removeCryptoPair(idx)}
+                             className="delete-icon-btn"
+                           >
+                             <Trash2 size={16} />
+                           </button>
+                         )}
+                       </div>
+                     ))}
+                     
+                     <button 
+                       type="button" 
+                       onClick={addCryptoPair}
+                       className="add-pair-btn"
+                     >
+                       <Plus size={14} /> Add Another Coin
+                     </button>
+                   </div>
+                 </div>
+               ) : !selectedPlatform.isGlobal && (
                  <div className="form-group highlighted-group">
                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                      <label>{selectedPlatform.inputLabel}</label>
@@ -278,6 +346,50 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
         }
         .styled-input-main:focus { border-color: var(--accent-color); background: rgba(123, 44, 191, 0.05); }
         .accent-border { border-color: rgba(123, 44, 191, 0.3); }
+
+        .compact-input {
+          padding: 0.6rem 0.8rem !important;
+          font-size: 0.9rem !important;
+        }
+
+        .delete-icon-btn {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .delete-icon-btn:hover {
+          background: #ef4444;
+          color: white;
+        }
+
+        .add-pair-btn {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          color: var(--text-secondary);
+          padding: 0.75rem;
+          border-radius: 12px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        .add-pair-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: var(--accent-color);
+          color: white;
+        }
 
         .grid-responsive { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
         

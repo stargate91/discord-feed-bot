@@ -11,6 +11,7 @@ export default function DevSettings() {
   const [maxUses, setMaxUses] = useState('1');
   const [generating, setGenerating] = useState(false);
   const [copying, setCopying] = useState(null);
+  const [tier, setTier] = useState('3');
 
   // Status & Presence State
   const [statuses, setStatuses] = useState([]);
@@ -42,6 +43,12 @@ export default function DevSettings() {
     { value: '365', label: '1 Year (365 Days)' },
     { value: '0', label: 'Lifetime (Infinity)' },
     { value: 'custom', label: 'Custom Days...' }
+  ];
+  
+  const TIER_OPTIONS = [
+    { value: '1', label: 'Scout (Tier 1)' },
+    { value: '2', label: 'Operator (Tier 2)' },
+    { value: '3', label: 'Architect (Tier 3)' }
   ];
 
   const fetchKeys = async () => {
@@ -90,7 +97,8 @@ export default function DevSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           days: daysToGenerate,
-          uses: parseInt(maxUses)
+          uses: parseInt(maxUses),
+          tier: parseInt(tier)
         })
       });
       if (res.ok) {
@@ -317,6 +325,16 @@ export default function DevSettings() {
             />
           </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tier</label>
+            <CustomSelect 
+              options={TIER_OPTIONS}
+              value={tier}
+              onChange={(val) => setTier(val)}
+              width="200px"
+            />
+          </div>
+
           {duration === 'custom' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Days</label>
@@ -365,35 +383,36 @@ export default function DevSettings() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="key-code">{k.code}</span>
                   <span className="key-meta">
-                    {k.duration_days === 0 ? 'Lifetime' : `${k.duration_days} Days`} • Uses: {k.used_count}/{k.max_uses}
+                    <span className={`tier-badge tier-${k.tier || 3}`}>Tier {k.tier || 3}</span> • {k.duration_days === 0 ? 'Lifetime' : `${k.duration_days} Days`} • Uses: {k.used_count}/{k.max_uses}
                     {k.is_revoked && <span style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: '8px' }}>[REVOKED]</span>}
                   </span>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '15px' }}>
                   <button 
                     className="icon-btn" 
                     onClick={() => copyToClipboard(k.code)}
                     title="Copy to clipboard"
+                    style={{ fontSize: '1.2rem' }}
                   >
-                    {copying === k.code ? '✅' : '📋'}
+                    {copying === k.code ? '✓' : '⎘'}
                   </button>
                   <button 
                     className="icon-btn" 
                     onClick={() => handleRevoke(k.code)}
-                    style={{ color: '#f59e0b' }}
+                    style={{ color: '#f59e0b', fontSize: '1.2rem' }}
                     title="Revoke Key"
                     disabled={k.is_revoked}
                   >
-                    {k.is_revoked ? '🚫' : '⚠️'}
+                    {k.is_revoked ? '⊘' : '⚡'}
                   </button>
                   <button 
                     className="icon-btn" 
                     onClick={() => handleDelete(k.code)}
-                    style={{ color: '#ef4444' }}
+                    style={{ color: '#ef4444', fontSize: '1.2rem' }}
                     title="Delete Key"
                   >
-                    🗑️
+                    ✕
                   </button>
                 </div>
               </div>
@@ -424,7 +443,7 @@ export default function DevSettings() {
         }
         .keys-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
           gap: 1rem;
         }
         .key-card {
@@ -477,6 +496,18 @@ export default function DevSettings() {
           filter: grayscale(1);
           transform: none;
         }
+        .tier-badge {
+          display: inline-block;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          margin-right: 8px;
+        }
+        .tier-1 { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .tier-2 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tier-3 { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
       `}</style>
     </>
   );
