@@ -323,7 +323,19 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15);
           transform: translateX(8px);
         }
-        .p-icon { width: 44px; height: 44px; background: rgba(0,0,0,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .p-icon { 
+          width: 44px; height: 44px; 
+          background: rgba(255,255,255,0.03); 
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 12px; display: flex; align-items: center; justify-content: center; 
+          transition: all 0.3s ease;
+        }
+        .platform-card:hover .p-icon {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: scale(1.05) rotate(-2deg);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
         .p-info { flex: 1; display: flex; flex-direction: column; }
         .p-name { font-weight: 700; font-size: 1.05rem; }
         .p-desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
