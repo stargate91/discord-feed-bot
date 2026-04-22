@@ -2,6 +2,38 @@
 
 import Link from "next/link";
 import { Plus, Shield, MessageSquare } from "lucide-react";
+import { useState } from "react";
+
+function QuickActionItem({ href, icon: Icon, label }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <Link
+      href={href}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+        background: hovered ? 'rgba(123, 44, 191, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+        border: `1px solid ${hovered ? 'rgba(123, 44, 191, 0.35)' : 'rgba(255, 255, 255, 0.08)'}`,
+        borderRadius: '12px', color: 'white', textDecoration: 'none',
+        transition: 'all 0.25s ease',
+        fontWeight: '600', fontSize: '0.95rem',
+        transform: hovered ? 'translateX(8px)' : 'translateX(0)',
+        boxShadow: hovered ? '0 5px 20px rgba(0, 0, 0, 0.25)' : 'none',
+      }}
+    >
+      <Icon size={18} style={{
+        color: hovered ? 'var(--accent-hover)' : 'var(--accent-color)',
+        transition: 'color 0.25s ease'
+      }} />
+      <span style={{
+        color: hovered ? 'var(--accent-hover)' : 'white',
+        transition: 'color 0.25s ease'
+      }}>{label}</span>
+    </Link>
+  );
+}
 
 export default function QuickActions({ guildId }) {
   return (
@@ -18,50 +50,9 @@ export default function QuickActions({ guildId }) {
         marginBottom: '0.5rem'
       }}>Quick Actions</h3>
 
-      <Link href={`/monitors?guild=${guildId}&add=true`} className="quick-action-link" style={{
-        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-        background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
-        fontWeight: '600', fontSize: '0.95rem'
-      }}>
-        <Plus size={18} style={{ color: 'var(--accent-color)' }} />
-        <span>Add New Feed</span>
-      </Link>
-
-      <Link href={`/settings?guild=${guildId}`} className="quick-action-link" style={{
-        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-        background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
-        fontWeight: '600', fontSize: '0.95rem'
-      }}>
-        <Shield size={18} style={{ color: 'var(--accent-color)' }} />
-        <span>Manage Roles</span>
-      </Link>
-
-      <Link href={`/settings?guild=${guildId}`} className="quick-action-link" style={{
-        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-        background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px', color: 'white', textDecoration: 'none', transition: 'all 0.2s',
-        fontWeight: '600', fontSize: '0.95rem'
-      }}>
-        <MessageSquare size={18} style={{ color: 'var(--accent-color)' }} />
-        <span>Alert Templates</span>
-      </Link>
-
-      <style jsx>{`
-        .quick-action-link {
-          transition: all 0.2s ease;
-        }
-        .quick-action-link:hover {
-          background: rgba(123, 44, 191, 0.08) !important;
-          border-color: rgba(123, 44, 191, 0.3) !important;
-          transform: translateX(8px);
-          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-        }
-        .quick-action-link:hover span {
-           color: var(--accent-color);
-        }
-      `}</style>
+      <QuickActionItem href={`/monitors?guild=${guildId}&add=true`} icon={Plus} label="Add New Feed" />
+      <QuickActionItem href={`/settings?guild=${guildId}`} icon={Shield} label="Manage Roles" />
+      <QuickActionItem href={`/settings?guild=${guildId}`} icon={MessageSquare} label="Alert Templates" />
     </div>
   );
 }
