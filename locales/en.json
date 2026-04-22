@@ -212,7 +212,6 @@
     "premium_cooldown_error": "<:hourglassoutlined:1495850456675778800> Please wait! You can try entering a code again in {retry_after} seconds.",
     "syncing_wait": "<:arrowsclockwiseoutlined:1495835392518127666> Syncing in progress...",
     "purge_started": "<:arrowsclockwiseoutlined:1495835392518127666> Purging messages from #{channel}... Please wait.",
-    "master_refresh_interval_success": "<:arrowsclockwiseoutlined:1495835392518127666> Global monitor refresh interval set to: **{val} minutes**",
     "purge_description": "Purge messages from a channel (monitored channels only)",
     "purge_count_description": "Number of messages to delete (leave empty to clear the whole channel)",
     "ui_monitor_stop_msg": "<:pausecircleoutlined:1495852411917434910> Monitor paused: **{name}**",

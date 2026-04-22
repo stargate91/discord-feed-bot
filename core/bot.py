@@ -126,7 +126,61 @@ class FeedBot(commands.Bot):
         log.info(f"--- FEED BOT ONLINE ---")
         log.info(f"Identity: {self.user} (ID: {self.user.id})")
         log.info(f"Prefix: {self.command_prefix}")
+        log.info(f"Connected to {len(self.guilds)} guilds.")
+
+        # Sync guilds with database
+        log.info("Syncing guilds with database...")
+        synced = 0
+        for guild in self.guilds:
+            try:
+                # Ensure guild exists in database
+                res = await database._execute(
+                    "INSERT INTO guild_settings (guild_id) VALUES ($1) ON CONFLICT (guild_id) DO NOTHING",
+                    guild.id
+                )
+                # If a new row was inserted or if we just want to ensure cache is warm
+                if guild.id not in self.guild_settings_cache:
+                    self.guild_settings_cache[guild.id] = {
+                        "language": "hu",
+                        "admin_role_id": 0,
+                        "alert_templates": {},
+                        "premium_until": None
+                    }
+                    synced += 1
+            except Exception as e:
+                log.error(f"Error syncing guild {guild.id}: {e}")
+        
+        if synced > 0:
+            log.info(f"Successfully synced {synced} new guilds to database.")
+        
         log.info(f"------------------------")
+
+    async def on_guild_join(self, guild):
+        """Called when the bot joins a new guild."""
+        log.info(f"Joined new guild: {guild.name} (ID: {guild.id})")
+        try:
+            # Ensure guild exists in database
+            await database._execute(
+                "INSERT INTO guild_settings (guild_id) VALUES ($1) ON CONFLICT (guild_id) DO NOTHING",
+                guild.id
+            )
+            # Update local cache with default settings
+            if guild.id not in self.guild_settings_cache:
+                self.guild_settings_cache[guild.id] = {
+                    "language": "hu", # Default for new joins
+                    "admin_role_id": 0,
+                    "alert_templates": {},
+                    "premium_until": None
+                }
+        except Exception as e:
+            log.error(f"Error initializing guild settings for {guild.id}: {e}")
+
+    async def on_guild_remove(self, guild):
+        """Called when the bot is kicked from a guild."""
+        log.info(f"Left guild: {guild.name} (ID: {guild.id})")
+        # We keep the settings in DB for potential re-joins, but we could remove from cache
+        if guild.id in self.guild_settings_cache:
+            del self.guild_settings_cache[guild.id]
 
     async def on_message(self, message):
         """Process commands and filter logs."""

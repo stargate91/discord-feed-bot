@@ -96,6 +96,17 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     return {"status": "success"}
 
+@app.post("/monitors/sync")
+async def sync_monitors():
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.sync_with_db()
+    if success:
+        return {"status": "success", "message": "Monitors synchronized with database"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to synchronize monitors")
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

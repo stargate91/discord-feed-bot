@@ -191,16 +191,7 @@ class MasterCog(commands.GroupCog, name="master"):
 
 
 
-    @app_commands.command(name="refresh-interval", description="Set the global monitor refresh interval")
-    @app_commands.describe(minutes="How many minutes between checks? (1-1440)")
-    @is_master_only()
-    async def master_refresh_interval(self, interaction: discord.Interaction, minutes: app_commands.Range[int, 1, 1440]):
-        self.bot.config["refresh_interval_minutes"] = minutes
-        self.bot.monitor_manager.refresh_interval = minutes * 60
-        self.bot.restart_monitor_task()
-        await database.set_bot_setting("refresh_interval_minutes", minutes)
-        
-        await interaction.response.send_message(self.bot.get_feedback("master_refresh_interval_success", val=minutes), ephemeral=True)
+
 
 
 

@@ -6,7 +6,8 @@
     },
     "master_user_ids": [
         1438156842609148006,
-        321300698245365761
+        321300698245365761,
+        495596107473223700
     ],
     "stripe_config": {
         "success_url": "https://your-domain.com/success",

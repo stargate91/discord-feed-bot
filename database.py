@@ -19,7 +19,14 @@ async def init_db():
     """Initialize the database and create tables."""
     pool = await get_pool()
     queries = [
-        # ... (other tables)
+        # 7. Monitor Statistics
+        '''CREATE TABLE IF NOT EXISTS monitor_stats_daily (
+            date DATE NOT NULL,
+            guild_id BIGINT NOT NULL,
+            platform TEXT NOT NULL,
+            post_count INTEGER DEFAULT 0,
+            PRIMARY KEY (date, guild_id, platform)
+        )''',
         # 8. Payment History
         '''CREATE TABLE IF NOT EXISTS payment_history (
             id SERIAL PRIMARY KEY,
@@ -78,14 +85,15 @@ async def add_monitor(m_config, guild_id):
     await pool.execute(q, *args)
 
 async def get_all_monitors():
-    q = "SELECT id, guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings FROM monitors"
+    q = "SELECT id, guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings, last_post_at FROM monitors"
     pool = await get_pool()
     rows = await pool.fetch(q)
     monitors = []
     for row in rows:
         m = {
             "id": row[0], "guild_id": row[1], "type": row[2], "name": row[3],
-            "discord_channel_id": row[4], "ping_role_id": row[5], "enabled": bool(row[6])
+            "discord_channel_id": row[4], "ping_role_id": row[5], "enabled": bool(row[6]),
+            "last_post_at": row[8]
         }
         if row[7]:
             try: 
@@ -109,14 +117,15 @@ async def get_all_monitors():
     return monitors
 
 async def get_monitors_for_guild(guild_id):
-    q = "SELECT id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings FROM monitors WHERE guild_id = $1"
+    q = "SELECT id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings, last_post_at FROM monitors WHERE guild_id = $1"
     pool = await get_pool()
     rows = await pool.fetch(q, guild_id)
     monitors = []
     for row in rows:
         m = {
             "id": row[0], "guild_id": guild_id, "type": row[1], "name": row[2],
-            "discord_channel_id": row[3], "ping_role_id": row[4], "enabled": bool(row[5])
+            "discord_channel_id": row[3], "ping_role_id": row[4], "enabled": bool(row[5]),
+            "last_post_at": row[7]
         }
         if row[6]:
             try: 
@@ -188,6 +197,11 @@ async def update_monitor_details(monitor_id, guild_id, name, target_channels, ta
     
     await pool.execute(q_upd, name, json.dumps(extra_settings), monitor_id, guild_id)
     log.info(f"Monitor {monitor_id} updated in DB: name={name}, chs={extra_settings.get('target_channels', [])}, roles={extra_settings.get('target_roles', [])}")
+
+async def update_last_post_at(monitor_id):
+    q = "UPDATE monitors SET last_post_at = $1 WHERE id = $2"
+    pool = await get_pool()
+    await pool.execute(q, datetime.now(), monitor_id)
 
 async def remove_monitor(monitor_id, guild_id):
     q = "DELETE FROM monitors WHERE id = $1 AND guild_id = $2"
@@ -358,6 +372,11 @@ async def _fetchrow(query, *args):
     pool = await get_pool()
     return await pool.fetchrow(query, *args)
 
+async def _execute(query, *args):
+    """Internal helper to match legacy Bot logic while moving to pool."""
+    pool = await get_pool()
+    return await pool.execute(query, *args)
+
 # --- Premium Codes ---
 
 async def create_premium_code(code: str, duration_days: int, max_uses: int = 1):
@@ -366,7 +385,7 @@ async def create_premium_code(code: str, duration_days: int, max_uses: int = 1):
     await pool.execute(q, code, duration_days, max_uses, datetime.now())
 
 async def get_premium_code(code: str):
-    q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE code = $1"
+    q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked FROM premium_codes WHERE code = $1"
     pool = await get_pool()
     return await pool.fetchrow(q, code)
 
@@ -375,9 +394,12 @@ async def redeem_premium_code(code: str, guild_id: int):
     async with pool.acquire() as conn:
         async with conn.transaction():
             # Check code validity with a lock
-            row = await conn.fetchrow("SELECT duration_days, max_uses, used_count FROM premium_codes WHERE code = $1 FOR UPDATE", code)
+            row = await conn.fetchrow("SELECT duration_days, max_uses, used_count, is_revoked FROM premium_codes WHERE code = $1 FOR UPDATE", code)
             if not row:
                 return False, "Invalid Code"
+            
+            if row['is_revoked']:
+                return False, "Code Revoked"
             
             duration_days = row['duration_days']
             max_uses = row['max_uses']
@@ -415,16 +437,20 @@ async def redeem_premium_code(code: str, guild_id: int):
 async def get_premium_codes(filter_type: str = "all"):
     pool = await get_pool()
     if filter_type == "used":
-        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE used_count >= max_uses ORDER BY created_at DESC"
+        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked FROM premium_codes WHERE used_count >= max_uses ORDER BY created_at DESC"
     elif filter_type == "unused":
-        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes WHERE used_count < max_uses ORDER BY created_at DESC"
+        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked FROM premium_codes WHERE used_count < max_uses ORDER BY created_at DESC"
     else:
-        q = "SELECT code, duration_days, max_uses, used_count, created_at FROM premium_codes ORDER BY created_at DESC"
+        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked FROM premium_codes ORDER BY created_at DESC"
     return await pool.fetch(q)
 
 async def delete_premium_code(code: str):
     pool = await get_pool()
     await pool.execute("DELETE FROM premium_codes WHERE code = $1", code)
+
+async def revoke_premium_code(code: str):
+    pool = await get_pool()
+    await pool.execute("UPDATE premium_codes SET is_revoked = TRUE WHERE code = $1", code)
 
 async def revoke_guild_premium(guild_id: int):
     pool = await get_pool()

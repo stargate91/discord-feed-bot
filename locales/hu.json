@@ -212,7 +212,6 @@
     "premium_cooldown_error": "<:hourglassoutlined:1495850456675778800> Kérlek várj! Új kódot {retry_after} másodperc múlva próbálhatsz meg beírni.",
     "syncing_wait": "<:arrowsclockwiseoutlined:1495835392518127666> Szinkronizálás folyamatban...",
     "purge_started": "<:arrowsclockwiseoutlined:1495835392518127666> Üzenetek törlése folyamatban a(z) {channel} csatornából... Kérlek várj.",
-    "master_refresh_interval_success": "<:arrowsclockwiseoutlined:1495835392518127666> Globális monitor frissítési időköz beállítva: **{val} perc**",
     "purge_description": "Csatorna üzeneteinek törlése (csak monitorozott csatornák)",
     "purge_count_description": "Törlendő üzenetek száma (ha üres, az összeset törli)",
     "ui_monitor_stop_msg": "<:pausecircleoutlined:1495852411917434910> Monitor felfüggesztve: **{name}**",

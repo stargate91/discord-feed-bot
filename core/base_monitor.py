@@ -148,6 +148,7 @@ class BaseMonitor(ABC):
                     await channel.send(content=content, embed=embed, view=view)
                     log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
                     await database.increment_post_stat(self.guild_id, self.platform)
+                    await database.update_last_post_at(self.id)
                 except Exception as e:
                     log.error(f"Failed to send update to channel {ch_id} for {self.name}: {e}", extra={'guild_id': self.guild_id})
             else:

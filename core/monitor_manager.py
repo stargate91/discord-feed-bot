@@ -32,6 +32,34 @@ class MonitorManager:
         self.monitors.append(monitor_instance)
         log.info(f"Added monitor: {monitor_instance.name} ({monitor_instance.platform}) | Enabled: {monitor_instance.enabled}")
 
+    async def sync_with_db(self):
+        """Reload all monitors from database and sync with local memory."""
+        log.info("Synchronizing monitors with database...")
+        import database
+        from core.monitor_factory import create_monitor_instance
+        
+        try:
+            db_monitors = await database.get_all_monitors()
+            new_monitors = []
+            
+            for m_config in db_monitors:
+                monitor = create_monitor_instance(self.bot, m_config)
+                if monitor:
+                    new_monitors.append(monitor)
+            
+            # Atomic update of the monitor list
+            self.monitors = new_monitors
+            
+            # Reset throttling/last_checked caches to ensure freshness
+            self.group_last_checked = {}
+            self.unshared_last_checked = {}
+            
+            log.info(f"Sync complete. Now tracking {len(self.monitors)} monitors.")
+            return True
+        except Exception as e:
+            log.error(f"Failed to sync monitors: {e}", exc_info=True)
+            return False
+
     async def start_loop(self):
         """Start the background monitoring loop centrally."""
         if self.is_running:
