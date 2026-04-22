@@ -35,9 +35,10 @@ function PremiumContent() {
         { text: "20 min Refresh Rate" },
         { text: "1 Target Channel" },
         { text: "1 Ping Role" },
-        { text: "Basic Bot Support" },
-        { text: "Bulk Actions", disabled: true },
-        { text: "Advanced Filters", disabled: true }
+        { text: "Bulk Actions (All)", disabled: true },
+        { text: "Language & Genre Filters", disabled: true },
+        { text: "Crypto & Repost Mon.", disabled: true },
+        { text: "Custom Alert Templates", disabled: true }
       ]
     },
     {
@@ -51,9 +52,10 @@ function PremiumContent() {
         { text: "2 min Refresh Rate" },
         { text: "5 Target Channels" },
         { text: "5 Ping Roles" },
-        { text: "Bulk Pause/Start" },
+        { text: "Bulk Actions (All)" },
+        { text: "Language & Genre Filters" },
         { text: "Crypto & Repost Mon." },
-        { text: "Standard Support" }
+        { text: "Custom Alert Templates" }
       ]
     },
     {
@@ -67,9 +69,10 @@ function PremiumContent() {
         { text: "2 min Refresh Rate" },
         { text: "10 Target Channels" },
         { text: "10 Ping Roles" },
-        { text: "Bulk Pause/Start" },
-        { text: "Custom Alert Templates" },
-        { text: "Priority Support" }
+        { text: "Bulk Actions (All)" },
+        { text: "Language & Genre Filters" },
+        { text: "Crypto & Repost Mon." },
+        { text: "Custom Alert Templates" }
       ]
     },
     {
@@ -85,7 +88,8 @@ function PremiumContent() {
         { text: "15 Ping Roles" },
         { text: "Bulk Actions (All)" },
         { text: "Language & Genre Filters" },
-        { text: "24/7 Dedicated Support" }
+        { text: "Crypto & Repost Mon." },
+        { text: "Custom Alert Templates" }
       ]
     }
   ];
