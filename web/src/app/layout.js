@@ -20,7 +20,12 @@ export const metadata = {
   },
   description: "Automated Discord feed bot for YouTube, Twitch, RSS, and more.",
   icons: {
-    icon: "/nova_v2.jpg",
+    icon: [
+      { url: "/nova_v2.jpg" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/nova_v2.jpg",
   },
 };
 

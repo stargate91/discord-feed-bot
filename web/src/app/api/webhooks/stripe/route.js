@@ -10,8 +10,8 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 // Load mapping from config.json
 const configPath = path.join(process.cwd(), "..", "config.json");
-const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-const products = config.stripe_config.products;
+const botConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+const products = botConfig.stripe_config.products;
 
 export async function POST(req) {
   const body = await req.text();
@@ -70,9 +70,3 @@ export async function POST(req) {
 
   return NextResponse.json({ received: true });
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
