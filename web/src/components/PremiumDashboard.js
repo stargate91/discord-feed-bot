@@ -8,6 +8,7 @@ export default function PremiumDashboard({ guildId, session }) {
   const [billingInterval, setBillingInterval] = useState('mo');
   const [currentTier, setCurrentTier] = useState(0);
   const [isMaster, setIsMaster] = useState(false);
+  const [stripeConfig, setStripeConfig] = useState(null);
 
   useEffect(() => {
     if (guildId) {
@@ -19,10 +20,42 @@ export default function PremiumDashboard({ guildId, session }) {
         })
         .catch(err => console.error("Failed to fetch current tier:", err));
     }
+
+    // Fetch billing config
+    fetch('/api/billing/config')
+      .then(res => res.json())
+      .then(data => setStripeConfig(data))
+      .catch(err => console.error("Failed to fetch billing config:", err));
   }, [guildId]);
 
-  const handlePurchaseClick = (tier) => {
-    window.location.href = `http://localhost:8080/checkout?guild_id=${guildId}&tier=${tier}&interval=${billingInterval}`;
+  const handlePurchaseClick = async (tier) => {
+    if (!stripeConfig?.products) return;
+
+    // Find the priceId that matches this tier and interval
+    const priceId = Object.keys(stripeConfig.products).find(pid => {
+      const p = stripeConfig.products[pid];
+      return p.tier === tier && p.interval === billingInterval;
+    });
+
+    if (!priceId) {
+      console.error(`No Price ID found for Tier ${tier} (${billingInterval})`);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, guildId })
+      });
+      
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+    }
   };
 
   return (
