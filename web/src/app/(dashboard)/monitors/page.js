@@ -32,6 +32,7 @@ export default function MonitorsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
   const searchParams = useSearchParams();
   const guildId = searchParams.get('guild');
@@ -53,7 +54,21 @@ export default function MonitorsPage() {
 
   useEffect(() => {
     fetchMonitors();
+    if (guildId) fetchGuildInfo();
   }, [guildId]);
+
+  const fetchGuildInfo = async () => {
+    try {
+      const res = await fetch('/api/guilds');
+      if (res.ok) {
+        const guilds = await res.json();
+        const currentGuild = guilds.find(g => g.id === guildId);
+        setIsPremium(!!currentGuild?.isPremium || !!currentGuild?.isMaster);
+      }
+    } catch (err) {
+      console.error("Failed to fetch guild info:", err);
+    }
+  };
 
   // Handle auto-open for Create Modal via Quick Actions
   useEffect(() => {
@@ -151,12 +166,12 @@ export default function MonitorsPage() {
   const platforms = ['all', ...new Set(monitors.map(m => m.type))];
 
   return (
-    <>
+    <div className="monitors-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto' }}>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Manage Monitors</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            {monitors.length} feeds configured {guildId ? 'on this server' : 'globally'}
+            Configure and oversee your automated feed sources and notification targets.
           </p>
         </div>
         
@@ -218,7 +233,7 @@ export default function MonitorsPage() {
           </button>
         </div>
         
-        {guildId && (
+        {guildId && !isPremium && (
             <div className="premium-badge">PREMIUM FEATURE</div>
         )}
       </div>
@@ -374,6 +389,6 @@ export default function MonitorsPage() {
           letter-spacing: 1px;
         }
       `}</style>
-    </>
+    </div>
   );
 }

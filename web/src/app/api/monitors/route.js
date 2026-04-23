@@ -1,19 +1,32 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import pool from "@/lib/db";
+import { canManageGuild } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "master") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const { searchParams } = new URL(request.url);
-    const guildId = searchParams.get('guild');
+  const { searchParams } = new URL(request.url);
+  const guildId = searchParams.get('guild')?.trim();
 
+  // Security check:
+  // 1. If guildId is provided, check if user can manage THAT guild
+  // 2. If no guildId is provided, ONLY master users can see ALL monitors
+  if (guildId) {
+    const allowed = await canManageGuild(session, guildId);
+    if (!allowed) {
+      return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
+    }
+  } else if (session.user.role !== "master") {
+    return NextResponse.json({ error: "Unauthorized: Only master users can view all monitors" }, { status: 401 });
+  }
+
+  try {
     let query = 'SELECT * FROM monitors';
     let values = [];
 
@@ -34,13 +47,23 @@ export async function GET(request) {
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "master") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const data = await request.json();
     const { type, name, guildId, target_channels, target_roles, embed_color, ...rest } = data;
+
+    if (!guildId) {
+      return NextResponse.json({ error: "Missing guildId" }, { status: 400 });
+    }
+
+    // Security check: user must be master OR admin of the guild
+    const allowed = await canManageGuild(session, guildId);
+    if (!allowed) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     if (!type || !name || !guildId) {
       return NextResponse.json({ error: "Missing required fields (type, name, guildId)" }, { status: 400 });

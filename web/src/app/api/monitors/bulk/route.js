@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
+import { canManageGuild } from "@/lib/permissions";
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
@@ -21,6 +22,12 @@ export async function POST(request) {
   if (!isMaster) {
     if (!guildId) return NextResponse.json({ error: "Guild ID required for non-masters" }, { status: 400 });
 
+    // 2. Security check: user must be admin of the guild
+    const allowed = await canManageGuild(session, guildId);
+    if (!allowed) {
+      return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
+    }
+
     try {
       const guildCheck = await pool.query(
         'SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1',
@@ -33,8 +40,6 @@ export async function POST(request) {
       if (!hasTier) {
         return NextResponse.json({ error: "Premium Tier required for bulk actions" }, { status: 403 });
       }
-      
-      // Note: Ideally check if user is admin of this guild here too
     } catch (e) {
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }

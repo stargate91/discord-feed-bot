@@ -5,12 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function GuildSwitcher({ isMaster }) {
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [guilds, setGuilds] = useState([]);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const currentGuildId = searchParams.get("guild");
 
   // Fetch guilds for the dropdown
@@ -43,6 +49,19 @@ export default function GuildSwitcher({ isMaster }) {
   }, []);
 
   const currentGuild = guilds.find(g => g.id === currentGuildId);
+
+  if (!mounted) {
+    return (
+      <div className="guild-switcher-wrapper" ref={dropdownRef}>
+        <button className="guild-switcher-toggle" disabled>
+          <div className="current-guild-info">
+            <span className="guild-name-mini">Loading servers...</span>
+          </div>
+          <span className="chevron down">▼</span>
+        </button>
+      </div>
+    );
+  }
 
   const handleSelect = (id) => {
     setIsOpen(false);

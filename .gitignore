@@ -28,3 +28,7 @@ Thumbs.db
 .vscode/
 .idea/
 .gemini/
+
+# Temp & Binaries
+scratch/
+*.exe

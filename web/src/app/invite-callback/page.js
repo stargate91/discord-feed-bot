@@ -28,7 +28,7 @@ function InviteCallbackContent() {
       textAlign: 'center'
     }}>
       <h2 style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>Success!</h2>
-      <p style={{ color: 'var(--text-secondary)' }}>Redirecting you back to Nova Dashboard...</p>
+      <p style={{ color: 'var(--text-secondary)' }}>Redirecting you back to NOVABOT Dashboard...</p>
       <div className="loader" style={{ marginTop: '2rem' }}></div>
     </div>
   );

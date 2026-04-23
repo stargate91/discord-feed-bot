@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Search, Server, Crown, Shield, Plus, ChevronRight, Sparkles } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
+import LoginButton from '@/components/LoginButton';
+import Loading from '@/app/loading';
 
 export default function SelectServer() {
   const { data: session, status } = useSession();
@@ -30,7 +33,7 @@ export default function SelectServer() {
         setGuilds(data);
       } else {
         const errData = await res.json();
-        setError(errData); // Store the full object
+        setError(errData);
       }
     } catch (err) {
       setError('Connection error');
@@ -40,385 +43,599 @@ export default function SelectServer() {
   };
 
   const handleSelect = (guildId) => {
-    // Redirect to dashboard with the guild query param
     router.push(`/dashboard?guild=${guildId}`);
   };
 
-  const filteredGuilds = guilds.filter(g => 
+  const filteredGuilds = guilds.filter(g =>
     g.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const botGuilds = filteredGuilds.filter(g => g.hasBot);
+  const inviteGuilds = filteredGuilds.filter(g => !g.hasBot);
+
   if (loading) {
-    return (
-      <div className="select-container">
-        <div className="loader">Loading Nova...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
-    <div className="select-container">
-      <div className="select-header">
-        <div className="user-profile-header">
-          <div className="user-info">
-            <img 
-              src={session?.user?.image} 
-              alt="" 
-              className="user-avatar-large" 
-            />
-            <div className="user-text">
-              <span className="user-welcome">Logged in as</span>
-              <span className="user-name-large">{session?.user?.name}</span>
-            </div>
+    <div className="premium-root is-marketing">
+      {/* ── Navbar ── */}
+      <nav className="lp-navbar">
+        <div className="lp-navbar-inner">
+          <a href="/" className="lp-brand">
+            <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-brand-img" />
+            <span className="lp-brand-text">NOVABOT</span>
+          </a>
+          <div className="lp-nav-links">
+            <a href="/" className="lp-nav-link">Home</a>
+            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="lp-nav-link">Support</a>
+            <a href="/premium" className="lp-nav-link">Premium</a>
           </div>
-          <button onClick={() => signOut({ callbackUrl: '/' })} className="signout-link-elegant">
-            Sign Out
-          </button>
-        </div>
-
-        <h1>Select a Server</h1>
-        <p>Choose which Discord server's dashboard you want to manage.</p>
-        
-        {error && (
-          <div className="error-box">
-             <p>⚠️ {typeof error === 'string' ? error : 'Internal Server Error'}</p>
-             {error?.details && <p style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '5px' }}>Code: {error.details}</p>}
-             <button onClick={() => signOut({ callbackUrl: '/' })} className="btn" style={{ background: '#ff4d4d', marginTop: '1rem' }}>
-                Re-login
-             </button>
-          </div>
-        )}
-
-        {!error && (
-          <div className="search-container">
-            <input 
-              type="text" 
-              placeholder="Search your servers..." 
-              className="search-bar"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="guild-grid">
-
-        {filteredGuilds.map(guild => (
-          <div 
-            key={guild.id} 
-            className={`guild-card ${guild.isPremium ? 'premium-border' : ''} ${!guild.hasBot ? 'no-bot' : ''}`}
-            onClick={() => guild.hasBot && handleSelect(guild.id)}
-          >
-            <div className="guild-icon-wrapper">
-              {guild.icon ? (
-                <img 
-                  src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`} 
-                  alt={guild.name} 
-                  className="guild-icon"
-                />
-              ) : (
-                <div className="guild-icon-placeholder">{guild.name.charAt(0)}</div>
-              )}
-              
-              {guild.hasBot && <div className="bot-pulse"></div>}
-            </div>
-
-            <div className="guild-info">
-              <h3 className="guild-name">{guild.name}</h3>
-              <div className="badge-container">
-                {guild.isMaster && <span className="badge master-badge">Master</span>}
-                {guild.isPremium && <span className="badge premium-badge">Premium</span>}
-                {!guild.hasBot && <span className="badge invite-badge">Invite Needed</span>}
-              </div>
-            </div>
-
-            {!guild.hasBot && (
-              <a 
-                href={`https://discord.com/api/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}&response_type=code&redirect_uri=${encodeURIComponent('http://localhost:3000/invite-callback')}`}
-                rel="noopener noreferrer"
-                className="invite-btn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Invite
+          <div className="lp-nav-right">
+            {session && (
+              <a href="/select-server" className="lp-servers-btn">
+                Servers
               </a>
             )}
+            <LoginButton session={session} />
           </div>
-        ))}
+        </div>
+      </nav>
+
+      <div className="select-container">
+        {/* ── Hero Header ── */}
+        <div className="select-hero">
+          <div className="select-hero-glow"></div>
+          <div className="select-badge">
+            <Server size={14} />
+            <span>SERVER HUB</span>
+          </div>
+          <h1 className="select-title">
+            Your <span className="select-title-gradient">Servers</span>
+          </h1>
+          <p className="select-subtitle">
+            Choose a Discord server to manage its feeds, monitors, and settings.
+          </p>
+
+          {error && (
+            <div className="error-box">
+              <p>⚠️ {typeof error === 'string' ? error : 'Internal Server Error'}</p>
+              {error?.details && <p style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '5px' }}>Code: {error.details}</p>}
+              <button onClick={() => signOut({ callbackUrl: '/' })} className="btn" style={{ background: '#ff4d4d', marginTop: '1rem' }}>
+                Re-login
+              </button>
+            </div>
+          )}
+
+          {!error && (
+            <div className="search-wrapper">
+              <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none', display: 'flex' }}>
+                <Search size={18} />
+              </span>
+              <input
+                type="text"
+                placeholder="Search servers..."
+                className="search-bar"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="server-count">
+                <span className="server-count-num">{botGuilds.length}</span>
+                <span className="server-count-label">active</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Active Servers ── */}
+        {botGuilds.length > 0 && (
+          <>
+            <div className="section-divider">
+              <div className="section-line"></div>
+              <span className="section-tag"><Sparkles size={12} /> Active Servers</span>
+              <div className="section-line"></div>
+            </div>
+            <div className="guild-grid">
+              {botGuilds.map((guild, i) => (
+                <div
+                  key={guild.id}
+                  className={`guild-card ${guild.isPremium ? 'premium-border' : ''}`}
+                  onClick={() => handleSelect(guild.id)}
+                  style={{ animationDelay: `${i * 0.06}s` }}
+                >
+                  <div className="guild-card-shimmer"></div>
+                  <div className="guild-icon-wrapper">
+                    {guild.icon ? (
+                      <img
+                        src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
+                        alt={guild.name}
+                        className="guild-icon"
+                      />
+                    ) : (
+                      <div className="guild-icon-placeholder">{guild.name.charAt(0)}</div>
+                    )}
+                    <div className="bot-pulse"></div>
+                  </div>
+
+                  <div className="guild-info">
+                    <h3 className="guild-name">{guild.name}</h3>
+                    <div className="badge-container">
+                      {guild.isMaster && <span className="badge master-badge"><Shield size={10} /> Master</span>}
+                      {guild.isPremium && <span className="badge premium-badge"><Crown size={10} /> Premium</span>}
+                    </div>
+                  </div>
+
+                  <div className="guild-arrow">
+                    <ChevronRight size={20} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── Invite Needed ── */}
+        {inviteGuilds.length > 0 && (
+          <>
+            <div className="section-divider" style={{ marginTop: '3rem' }}>
+              <div className="section-line"></div>
+              <span className="section-tag"><Plus size={12} /> Invite Bot</span>
+              <div className="section-line"></div>
+            </div>
+            <div className="guild-grid invite-grid">
+              {inviteGuilds.map((guild, i) => (
+                <div
+                  key={guild.id}
+                  className="guild-card no-bot"
+                  style={{ animationDelay: `${(botGuilds.length + i) * 0.06}s` }}
+                >
+                  <div className="guild-icon-wrapper">
+                    {guild.icon ? (
+                      <img
+                        src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
+                        alt={guild.name}
+                        className="guild-icon"
+                      />
+                    ) : (
+                      <div className="guild-icon-placeholder">{guild.name.charAt(0)}</div>
+                    )}
+                  </div>
+
+                  <div className="guild-info">
+                    <h3 className="guild-name">{guild.name}</h3>
+                    <div className="badge-container">
+                      <span className="badge invite-badge">Not installed</span>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`https://discord.com/api/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}&response_type=code&redirect_uri=${encodeURIComponent('http://localhost:3000/invite-callback')}`}
+                    rel="noopener noreferrer"
+                    className="invite-btn"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Plus size={14} /> Invite
+                  </a>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {filteredGuilds.length === 0 && !loading && !error && (
+          <div className="empty-state">
+            <Server size={48} strokeWidth={1} />
+            <h3>No servers found</h3>
+            <p>Try a different search term</p>
+          </div>
+        )}
       </div>
 
-      {filteredGuilds.length === 0 && !loading && !error && (
-        <div className="empty-state">No servers found with that name.</div>
-      )}
+      {/* ── Footer ── */}
+      <footer className="lp-footer">
+        <div className="lp-footer-inner">
+          <div className="lp-footer-brand">
+            <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-footer-logo" />
+            <div>
+              <div className="lp-footer-name">NOVABOT</div>
+              <p className="lp-footer-desc">Your friendly neighborhood Discord feed bot.</p>
+            </div>
+          </div>
+          <div className="lp-footer-col">
+            <h4>Product</h4>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/premium">Premium</a>
+          </div>
+          <div className="lp-footer-col">
+            <h4>Resources</h4>
+            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">Support Server</a>
+            <a href={`https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=277025770560&scope=bot%20applications.commands`} target="_blank" rel="noopener noreferrer">Invite Bot</a>
+          </div>
+          <div className="lp-footer-col">
+            <h4>Legal</h4>
+            <a href="/terms">Terms of Service</a>
+            <a href="/privacy">Privacy Policy</a>
+          </div>
+        </div>
+        <div className="lp-footer-bottom">
+          <span>© {new Date().getFullYear()} NOVABOT. All rights reserved.</span>
+        </div>
+      </footer>
 
       <style jsx>{`
-        .user-profile-header {
+        .premium-root.is-marketing {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          padding: 1rem 1.5rem;
-          border-radius: 20px;
+          flex-direction: column;
+          min-height: 100vh;
+          width: 100%;
+          background: transparent;
+        }
+
+        /* ── Container ── */
+        .select-container {
+          padding: 8rem 2rem 4rem;
+          max-width: 1200px;
+          margin: 0 auto;
+          width: 100%;
+          min-height: 80vh;
+        }
+
+        /* ── Hero ── */
+        .select-hero {
+          text-align: center;
           margin-bottom: 4rem;
+          position: relative;
+        }
+        .select-hero-glow {
+          position: absolute;
+          top: -60px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 500px;
+          height: 300px;
+          background: radial-gradient(ellipse, rgba(123, 44, 191, 0.12), transparent 70%);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .select-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(123, 44, 191, 0.1);
+          border: 1px solid rgba(123, 44, 191, 0.2);
+          padding: 6px 16px;
+          border-radius: 30px;
+          color: #c084fc;
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 2px;
+          margin-bottom: 1.5rem;
+          position: relative;
+          z-index: 1;
+        }
+        .select-title {
+          font-size: 3.8rem;
+          font-weight: 900;
+          letter-spacing: -2px;
+          color: white;
+          margin-bottom: 1rem;
+          position: relative;
+          z-index: 1;
+        }
+        .select-title-gradient {
+          background: linear-gradient(135deg, #c084fc, #7b2cbf, #c084fc);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmerText 3s linear infinite;
+        }
+        @keyframes shimmerText {
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+        .select-subtitle {
+          color: rgba(255,255,255,0.5);
+          font-size: 1.15rem;
+          max-width: 500px;
+          margin: 0 auto 2.5rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* ── Search ── */
+        .search-wrapper {
+          position: relative;
+          max-width: 480px;
+          margin: 0 auto;
+          z-index: 1;
+        }
+        .search-icon {
+          position: absolute;
+          left: 20px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(255,255,255,0.3);
+          pointer-events: none;
+        }
+        .search-bar {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: white;
+          padding: 14px 110px 14px 52px;
+          border-radius: 16px;
+          font-size: 0.95rem;
+          outline: none;
+          transition: all 0.3s ease;
           backdrop-filter: blur(10px);
         }
-        .user-info {
+        .search-bar::placeholder {
+          color: rgba(255,255,255,0.3);
+        }
+        .search-bar:focus {
+          border-color: rgba(123, 44, 191, 0.5);
+          background: rgba(255, 255, 255, 0.06);
+          box-shadow: 0 0 30px rgba(123, 44, 191, 0.15);
+        }
+        .server-count {
+          position: absolute;
+          right: 6px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(123, 44, 191, 0.15);
+          border: 1px solid rgba(123, 44, 191, 0.2);
+          padding: 6px 14px;
+          border-radius: 12px;
+        }
+        .server-count-num {
+          color: #c084fc;
+          font-weight: 800;
+          font-size: 0.9rem;
+        }
+        .server-count-label {
+          color: rgba(255,255,255,0.4);
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        /* ── Section Dividers ── */
+        .section-divider {
           display: flex;
           align-items: center;
           gap: 1rem;
+          margin-bottom: 2rem;
         }
-        .user-avatar-large {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          border: 2px solid var(--accent-color);
-          box-shadow: 0 0 15px rgba(123, 44, 191, 0.2);
+        .section-line {
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
         }
-        .user-text {
+        .section-tag {
           display: flex;
-          flex-direction: column;
-        }
-        .user-welcome {
+          align-items: center;
+          gap: 6px;
+          color: rgba(255,255,255,0.4);
           font-size: 0.75rem;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .user-name-large {
-          font-size: 1.1rem;
           font-weight: 700;
-          color: white;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          white-space: nowrap;
         }
-        .signout-link-elegant {
-          background: none;
-          border: 1px solid rgba(255, 77, 77, 0.3);
-          color: #ff4d4d;
-          padding: 0.5rem 1rem;
-          border-radius: 12px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .signout-link-elegant:hover {
-          background: rgba(255, 77, 77, 0.1);
-          border-color: #ff4d4d;
-        }
-        .search-container {
-          display: flex;
-          justify-content: center;
-          width: 100%;
-        }
-          background: rgba(255, 77, 77, 0.1);
-          border: 1px solid rgba(255, 77, 77, 0.3);
-          padding: 2.5rem;
-          border-radius: 24px;
-          max-width: 550px;
-          margin: 2rem auto;
-          color: #ff4d4d;
-          backdrop-filter: blur(10px);
-        }
-        .select-container {
-          padding: 6rem 2rem;
-          max-width: 1300px;
-          margin: 0 auto;
-          min-height: 100vh;
-          position: relative;
-          z-index: 10;
-        }
-        .select-header {
-          text-align: center;
-          margin-bottom: 5rem;
-        }
-        .select-header h1 {
-          font-size: 3.5rem;
-          margin-bottom: 1.5rem;
-          font-weight: 800;
-          letter-spacing: -1px;
-          background: linear-gradient(to bottom, #fff, #a0a0b0);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .select-header p {
-          color: var(--text-secondary);
-          font-size: 1.1rem;
-          margin-bottom: 2.5rem;
-          max-width: 600px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .search-bar {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          color: white;
-          padding: 1.2rem 2.5rem;
-          border-radius: 60px;
-          width: 100%;
-          max-width: 500px;
-          outline: none;
-          font-size: 1rem;
-          transition: all 0.3s;
-          backdrop-filter: blur(10px);
-        }
-        .search-bar:focus {
-          border-color: var(--accent-color);
-          background: rgba(255, 255, 255, 0.05);
-          box-shadow: 0 0 20px rgba(123, 44, 191, 0.2);
-        }
+
+        /* ── Guild Grid ── */
         .guild-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 2.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+          gap: 1.25rem;
         }
+
+        /* ── Guild Card ── */
         .guild-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          border-radius: 24px;
-          padding: 1.75rem;
+          position: relative;
+          background: rgba(255, 255, 255, 0.025);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 18px;
+          padding: 1.25rem 1.5rem;
           display: flex;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1.25rem;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          position: relative;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           overflow: hidden;
-          backdrop-filter: blur(10px);
+          animation: fadeSlideUp 0.5s ease both;
+        }
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .guild-card-shimmer {
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+          transition: left 0.6s ease;
+          pointer-events: none;
+        }
+        .guild-card:hover .guild-card-shimmer {
+          left: 100%;
         }
         .guild-card:hover {
-          transform: translateY(-8px) scale(1.02);
-          border-color: rgba(255, 255, 255, 0.2);
-          background: rgba(255, 255, 255, 0.06);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+          transform: translateY(-4px);
+          border-color: rgba(123, 44, 191, 0.3);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(123, 44, 191, 0.08);
         }
         .guild-card.no-bot {
-          opacity: 0.6;
+          opacity: 0.55;
           cursor: default;
-          filter: grayscale(0.5);
         }
-        .guild-card.global-card {
-           border-color: var(--accent-color);
-           background: rgba(123, 44, 191, 0.08);
-           box-shadow: 0 0 30px rgba(123, 44, 191, 0.15);
+        .guild-card.no-bot:hover {
+          transform: none;
+          border-color: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.03);
+          box-shadow: none;
         }
-        .global-icon {
-           background: linear-gradient(135deg, #7b2cbf, #240046) !important;
+        .guild-card.premium-border {
+          border-color: rgba(255, 215, 0, 0.25);
         }
-        .premium-border {
-          border-color: #ffd700;
-          box-shadow: 0 0 25px rgba(255, 215, 0, 0.15);
+        .guild-card.premium-border:hover {
+          border-color: rgba(255, 215, 0, 0.5);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 25px rgba(255, 215, 0, 0.08);
         }
+
+        /* ── Guild Icon ── */
         .guild-icon-wrapper {
           position: relative;
+          flex-shrink: 0;
         }
         .guild-icon {
-          width: 72px;
-          height: 72px;
-          border-radius: 20px;
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
           object-fit: cover;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .guild-icon-placeholder {
-          width: 72px;
-          height: 72px;
-          border-radius: 20px;
-          background: var(--accent-color);
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #7b2cbf, #5b21b6);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.8rem;
+          font-size: 1.3rem;
           font-weight: 800;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          color: white;
         }
         .bot-pulse {
           position: absolute;
-          bottom: -4px;
-          right: -4px;
+          bottom: -2px;
+          right: -2px;
           width: 14px;
           height: 14px;
           background: #10b981;
           border-radius: 50%;
-          border: 3px solid rgba(20,20,30,1);
-          box-shadow: 0 0 12px #10b981;
+          border: 2.5px solid rgba(15, 15, 25, 1);
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
         }
+
+        /* ── Guild Info ── */
         .guild-info {
           flex: 1;
+          min-width: 0;
         }
         .guild-name {
-          font-size: 1.25rem;
+          font-size: 1.05rem;
           font-weight: 700;
-          margin-bottom: 0.6rem;
           color: white;
+          margin-bottom: 0.4rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .badge-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.6rem;
+          gap: 0.4rem;
         }
         .badge {
-          font-size: 0.75rem;
-          padding: 0.25rem 0.6rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.65rem;
+          padding: 3px 8px;
           border-radius: 6px;
-          font-weight: 800;
+          font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
-        .master-badge { background: #7b2cbf; color: white; }
-        .premium-badge { background: #ffd700; color: #000; }
-        .invite-badge { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
-        
+        .master-badge {
+          background: rgba(123, 44, 191, 0.2);
+          color: #c084fc;
+          border: 1px solid rgba(123, 44, 191, 0.3);
+        }
+        .premium-badge {
+          background: rgba(255, 215, 0, 0.15);
+          color: #fbbf24;
+          border: 1px solid rgba(255, 215, 0, 0.25);
+        }
+        .invite-badge {
+          background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.4);
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* ── Arrow ── */
+        .guild-arrow {
+          color: rgba(255,255,255,0.15);
+          transition: all 0.3s;
+          flex-shrink: 0;
+        }
+        .guild-card:hover .guild-arrow {
+          color: #c084fc;
+          transform: translateX(3px);
+        }
+
+        /* ── Invite Button ── */
         .invite-btn {
-          position: absolute;
-          bottom: 1.25rem;
-          right: 1.25rem;
-          background: var(--accent-color);
-          color: white;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(123, 44, 191, 0.2);
+          border: 1px solid rgba(123, 44, 191, 0.3);
+          color: #c084fc;
           text-decoration: none;
-          padding: 0.5rem 1rem;
+          padding: 6px 14px;
           border-radius: 10px;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 700;
           transition: all 0.3s;
-          box-shadow: 0 5px 15px rgba(123, 44, 191, 0.3);
+          flex-shrink: 0;
         }
         .invite-btn:hover {
-          filter: brightness(1.2);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(123, 44, 191, 0.4);
+          background: rgba(123, 44, 191, 0.35);
+          border-color: rgba(123, 44, 191, 0.5);
+          color: #e0b0ff;
+          box-shadow: 0 0 15px rgba(123, 44, 191, 0.2);
         }
+
+        /* ── Empty State ── */
         .empty-state {
           text-align: center;
-          padding: 6rem;
-          color: var(--text-secondary);
-          font-size: 1.2rem;
+          padding: 5rem 2rem;
+          color: rgba(255,255,255,0.3);
         }
-        .loader {
-          font-size: 1.8rem;
+        .empty-state h3 {
+          font-size: 1.3rem;
           font-weight: 700;
-          color: var(--accent-color);
-          text-align: center;
-          margin-top: 30vh;
-          letter-spacing: 2px;
-          animation: pulse 1.5s infinite;
+          color: rgba(255,255,255,0.5);
+          margin: 1.5rem 0 0.5rem;
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        .empty-state p {
+          font-size: 0.95rem;
         }
-        .signout-btn {
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-size: 1rem;
-          font-weight: 600;
-          transition: color 0.2s;
-          padding: 0.5rem 1rem;
-          border-radius: 8px;
+
+        /* ── Error ── */
+        .error-box {
+          background: rgba(255, 77, 77, 0.08);
+          border: 1px solid rgba(255, 77, 77, 0.2);
+          padding: 2rem;
+          border-radius: 18px;
+          max-width: 500px;
+          margin: 2rem auto;
+          color: #ff6b6b;
+          backdrop-filter: blur(10px);
         }
-        .signout-btn:hover {
-          color: var(--text-primary);
-          background: rgba(255,255,255,0.05);
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+          .select-title { font-size: 2.5rem; }
+          .guild-grid { grid-template-columns: 1fr; }
+          .select-container { padding: 7rem 1.5rem 3rem; }
         }
       `}</style>
     </div>

@@ -173,12 +173,12 @@ export default function DevSettings() {
   };
 
   return (
-    <>
+    <div className="dev-page-wrapper" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Dev Settings</h2>
+          <h2>Developer Controls</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Master Administrator Controls
+            Master administrator tools for premium keys and bot presence management.
           </p>
         </div>
       </header>
@@ -509,6 +509,6 @@ export default function DevSettings() {
         .tier-2 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .tier-3 { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
       `}</style>
-    </>
+    </div>
   );
 }

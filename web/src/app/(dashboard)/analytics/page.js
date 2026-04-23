@@ -76,11 +76,17 @@ function AnalyticsContent() {
 
   return (
     <div className="analytics-container" onClick={() => setIsDropdownOpen(false)}>
+      <style jsx global>{`
+        .analytics-container {
+          max-width: 1450px;
+          margin: 0 auto;
+        }
+      `}</style>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Analytics</h2>
+          <h2>Feed Analytics</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Data insights and performance metrics for this server
+            Detailed insights and performance metrics for your active monitor streams.
           </p>
         </div>
         

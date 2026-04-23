@@ -3,8 +3,8 @@ export default function Loading() {
     <div className="loading-screen">
       <div className="loading-logo-container">
         <img 
-          src="/nova.jpg" 
-          alt="NOVA" 
+          src="/nova_v2.jpg" 
+          alt="NOVABOT" 
           className="loading-logo"
         />
       </div>

@@ -17,6 +17,7 @@ export const authOptions = {
         token.accessToken = account.access_token;
       }
       if (profile) {
+        token.id = profile.id;
         try {
           const configPath = path.join(process.cwd(), '../config.json');
           const rawData = fs.readFileSync(configPath, 'utf8');
@@ -37,10 +38,23 @@ export const authOptions = {
     },
     async session({ session, token }) {
       if (session?.user) {
+        session.user.id = token.id;
         session.user.role = token.role;
         session.accessToken = token.accessToken;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // After sign-in, always go to select-server
+      if (url.startsWith(baseUrl) || url.startsWith("/")) {
+        // If this is returning from OAuth callback, force /select-server
+        if (url.includes("/api/auth") || url === baseUrl || url === baseUrl + "/") {
+          return `${baseUrl}/select-server`;
+        }
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        return url;
+      }
+      return `${baseUrl}/select-server`;
     },
   },
 };

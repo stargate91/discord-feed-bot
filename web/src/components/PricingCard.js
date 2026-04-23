@@ -1,16 +1,16 @@
 import { Zap, Clock, Shield, ChevronRight, Check } from "lucide-react";
 
-export default function PricingCard({ 
-  title, 
-  price, 
-  interval = 'mo', 
-  features = [], 
+export default function PricingCard({
+  title,
+  price,
+  interval = 'mo',
+  features = [],
   isPopular = false,
   tier = 0,
   currentTier = 0,
   isMaster = false,
   description = "",
-  href = ""
+  onPurchaseClick = () => { }
 }) {
   const isCurrentPlan = tier === currentTier && !isMaster;
   const isFree = tier === 0;
@@ -29,16 +29,15 @@ export default function PricingCard({
       alignItems: 'center',
       position: 'relative',
       width: '100%',
-      maxWidth: '320px',
       transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       boxShadow: isPopular ? '0 25px 50px -12px rgba(123, 44, 191, 0.3)' : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
       cursor: 'default'
     }}>
       {isPopular && (
-        <div style={{ 
-          position: 'absolute', top: '-14px', background: 'linear-gradient(90deg, #7b2cbf, #9d4edd)', 
-          color: 'white', padding: '6px 20px', borderRadius: '20px', fontSize: '0.75rem', 
-          fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.2px', boxShadow: '0 10px 20px rgba(123, 44, 191, 0.4)' 
+        <div style={{
+          position: 'absolute', top: '-14px', background: 'linear-gradient(90deg, #7b2cbf, #9d4edd)',
+          color: 'white', padding: '6px 20px', borderRadius: '20px', fontSize: '0.75rem',
+          fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.2px', boxShadow: '0 10px 20px rgba(123, 44, 191, 0.4)'
         }}>
           Most Popular
         </div>
@@ -46,7 +45,7 @@ export default function PricingCard({
 
       <div style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem', color: 'white', letterSpacing: '-0.5px' }}>{title}</div>
       <div style={{ fontSize: '0.85rem', color: '#a0a0b0', marginBottom: '2rem', fontWeight: '500', textAlign: 'center' }}>{description}</div>
-      
+
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '2.5rem' }}>
         {!isFree && <span style={{ fontSize: '1.4rem', fontWeight: '700', color: isPopular ? 'white' : 'var(--accent-color)', opacity: 0.8 }}>$</span>}
         <span style={{ fontSize: '3.8rem', fontWeight: '900', color: 'white', lineHeight: 1, letterSpacing: '-2px' }}>{price}</span>
@@ -64,12 +63,15 @@ export default function PricingCard({
         ))}
       </ul>
 
-      <a 
-        href={(isFree || isCurrentPlan || isMaster) ? '#' : href} 
+      <div
         style={{ width: '100%', textDecoration: 'none', marginTop: 'auto' }}
-        onClick={(e) => (isFree || isCurrentPlan || isMaster) && e.preventDefault()}
+        onClick={(e) => {
+          if (isFree || isCurrentPlan || isMaster) return;
+          e.preventDefault();
+          onPurchaseClick();
+        }}
       >
-        <button className="btn" style={{ 
+        <button className="btn" style={{
           width: '100%', padding: '1.1rem', borderRadius: '16px',
           background: isMaster ? 'rgba(255,255,255,0.05)' : isPopular ? 'var(--accent-color)' : isCurrentPlan ? 'rgba(255,255,255,0.08)' : isFree ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
           border: isPopular ? 'none' : '1px solid rgba(255,255,255,0.1)',
@@ -87,15 +89,15 @@ export default function PricingCard({
           cursor: (isFree || isCurrentPlan || isMaster) ? 'default' : 'pointer'
         }}>
           <span>
-            {isMaster ? 'Master Access' : 
-             isCurrentPlan ? 'Current Plan' : 
-             isUpgrade ? 'Upgrade Now' : 
-             isDowngrade ? 'Switch Plan' : 
-             isFree ? 'Current Plan' : 'Get Started'}
+            {isMaster ? 'Master Access' :
+              isCurrentPlan ? 'Current Plan' :
+                isUpgrade ? 'Upgrade Now' :
+                  isDowngrade ? 'Switch Plan' :
+                    isFree ? 'Current Plan' : 'Get Started'}
           </span>
           {(!isFree && !isCurrentPlan && !isMaster) && <ChevronRight size={18} />}
         </button>
-      </a>
+      </div>
 
       <style jsx>{`
         .pricing-card:hover {

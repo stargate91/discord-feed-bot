@@ -260,33 +260,35 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Embed Accent Color</label>
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              <input 
-                type="color" 
-                ref={colorInputRef}
-                value={formData.embed_color || '#7b2cbf'}
-                onChange={(e) => handleMultiChange('embed_color', e.target.value)}
-                style={{ display: 'none' }}
-              />
-              <div 
-                className="color-trigger"
-                onClick={() => colorInputRef.current.click()}
-                style={{ background: formData.embed_color || '#7b2cbf' }}
-                title="Open color picker"
-              ></div>
-              <input 
-                type="text" 
-                name="embed_color" 
-                value={formData.embed_color} 
-                onChange={handleChange} 
-                placeholder="#7b2cbf"
-                className="styled-input-main"
-                style={{ flex: 1 }}
-              />
+          {monitor.type !== 'youtube' && (
+            <div className="form-group">
+              <label>Embed Accent Color</label>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                <input 
+                  type="color" 
+                  ref={colorInputRef}
+                  value={formData.embed_color || '#3d3f45'}
+                  onChange={(e) => handleMultiChange('embed_color', e.target.value)}
+                  style={{ display: 'none' }}
+                />
+                <div 
+                  className="color-trigger"
+                  onClick={() => colorInputRef.current.click()}
+                  style={{ background: formData.embed_color || '#3d3f45' }}
+                  title="Open color picker"
+                ></div>
+                <input 
+                  type="text" 
+                  name="embed_color" 
+                  value={formData.embed_color} 
+                  onChange={handleChange} 
+                  placeholder="#3d3f45"
+                  className="styled-input-main"
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {monitor.type === 'steam_news' && (
             <div className="checkbox-card">

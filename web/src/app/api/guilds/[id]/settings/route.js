@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { canManageGuild } from "@/lib/permissions";
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions);
@@ -12,6 +13,12 @@ export async function GET(req, { params }) {
   // Next.js 15+ compatibility: params must be awaited
   const { id } = await params;
   const guildId = String(id).trim();
+
+  // Security check:
+  const allowed = await canManageGuild(session, guildId);
+  if (!allowed) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     // 1. Load Master Guilds from config.json (Sidebar logic)
@@ -93,6 +100,12 @@ export async function PATCH(req, { params }) {
   // Next.js 15+ compatibility: params must be awaited
   const { id } = await params;
   const guildId = String(id).trim();
+  
+  // Security check:
+  const allowed = await canManageGuild(session, guildId);
+  if (!allowed) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   
   const body = await req.json();
   const { language, admin_role_id, refresh_interval, alert_templates } = body;

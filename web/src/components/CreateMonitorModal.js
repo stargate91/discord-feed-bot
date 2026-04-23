@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
 import { X, ChevronRight, ChevronLeft, Info, Plus, Trash2 } from 'lucide-react';
+import { useToast } from "@/context/ToastContext";
 
 const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: 'UC... or @handle', hint: 'The alphanumeric ID or the @handle of the channel.' },
-  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#EE802F', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Provide the full URL to the RSS or Atom feed.' },
+  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#3d3f45', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Provide the full URL to the RSS or Atom feed.' },
   { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#171a21', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'The application ID from the Steam store URL.' },
   { id: 'stream', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'The exact Twitch username of the creator.' },
   { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "username/repository-name".' },
@@ -19,13 +20,14 @@ const PLATFORMS = [
 ];
 
 export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess }) {
+  const { addToast, showSuccess } = useToast();
   const [step, setStep] = useState(1);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     target_channels: [],
     target_roles: [],
-    embed_color: '#7b2cbf',
+    embed_color: '#3d3f45',
     platform_input: '',
   });
 
@@ -51,7 +53,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     if (!isOpen) {
       setStep(1);
       setSelectedPlatform(null);
-      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#7b2cbf', platform_input: '' });
+      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '' });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
@@ -63,7 +65,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     setFormData(prev => ({ 
       ...prev, 
       name: platform.name,
-      embed_color: platform.color !== '#ffffff' && platform.color !== '#171a21' ? platform.color : '#7b2cbf'
+      embed_color: platform.color !== '#ffffff' && platform.color !== '#171a21' ? platform.color : '#3d3f45'
     }));
     setStep(2);
   };
@@ -110,11 +112,13 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       });
 
       if (res.ok) {
+        showSuccess();
+        addToast(`Monitor '${formData.name}' has been created and is now active.`, 'success', 'Monitor Created');
         onSuccess();
         onClose();
       } else {
         const err = await res.json();
-        alert(`Error: ${err.error}`);
+        addToast(err.error || 'Failed to create monitor', 'error', 'Error');
       }
     } catch (err) {
       console.error(err);
@@ -255,30 +259,32 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                  </div>
                </div>
 
-               <div className="form-group" style={{ marginTop: '1rem' }}>
-                  <label>Embed Color</label>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <input 
-                      type="color" 
-                      ref={colorInputRef}
-                      value={formData.embed_color}
-                      onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
-                      style={{ display: 'none' }}
-                    />
-                    <div 
-                      className="color-trigger"
-                      onClick={() => colorInputRef.current.click()}
-                      style={{ background: formData.embed_color }}
-                    ></div>
-                    <input 
-                      type="text" 
-                      value={formData.embed_color} 
-                      onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
-                      className="styled-input-main"
-                      style={{ flex: 1 }}
-                    />
-                  </div>
-               </div>
+               {selectedPlatform?.id !== 'youtube' && (
+                 <div className="form-group" style={{ marginTop: '1rem' }}>
+                    <label>Embed Color</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <input 
+                        type="color" 
+                        ref={colorInputRef}
+                        value={formData.embed_color}
+                        onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
+                        style={{ display: 'none' }}
+                      />
+                      <div 
+                        className="color-trigger"
+                        onClick={() => colorInputRef.current.click()}
+                        style={{ background: formData.embed_color }}
+                      ></div>
+                      <input 
+                        type="text" 
+                        value={formData.embed_color} 
+                        onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
+                        className="styled-input-main"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                 </div>
+               )}
             </div>
 
             <div className="modal-footer">

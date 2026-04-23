@@ -3,15 +3,29 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
+import { canManageGuild } from "@/lib/permissions";
 
 export async function PATCH(request, { params }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "master") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Next.js 15+ compatibility: params must be awaited
   const { id } = await params;
+
+  // 1. Fetch the monitor to check which guild it belongs to
+  const monitorRes = await pool.query('SELECT guild_id FROM monitors WHERE id = $1', [id]);
+  if (monitorRes.rows.length === 0) {
+    return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
+  }
+  const guildId = monitorRes.rows[0].guild_id;
+
+  // 2. Security check: user must be master OR admin of the guild
+  const allowed = await canManageGuild(session, guildId);
+  if (!allowed) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const body = await request.json();
 
   try {
@@ -54,12 +68,25 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "master") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Next.js 15+ compatibility: params must be awaited
   const { id } = await params;
+
+  // 1. Fetch the monitor to check which guild it belongs to
+  const monitorRes = await pool.query('SELECT guild_id FROM monitors WHERE id = $1', [id]);
+  if (monitorRes.rows.length === 0) {
+    return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
+  }
+  const guildId = monitorRes.rows[0].guild_id;
+
+  // 2. Security check: user must be master OR admin of the guild
+  const allowed = await canManageGuild(session, guildId);
+  if (!allowed) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     await pool.query('DELETE FROM monitors WHERE id = $1', [id]);

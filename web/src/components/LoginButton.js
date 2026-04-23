@@ -27,7 +27,7 @@ export default function LoginButton({ session }) {
   return (
     <div 
       className="btn" 
-      onClick={() => signIn("discord")}
+      onClick={() => signIn("discord", { callbackUrl: "/select-server" })}
     >
       Sign in with Discord
     </div>

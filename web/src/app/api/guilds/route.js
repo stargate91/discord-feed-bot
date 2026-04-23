@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { getUserGuilds } from "@/lib/permissions";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -13,28 +14,16 @@ export async function GET() {
   }
 
   try {
-    // 1. Fetch user guilds from Discord API
-    console.log("[API/Guilds] Fetching guilds from Discord...");
-    const discordRes = await fetch("https://discord.com/api/users/@me/guilds", {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
-    });
-
-    if (!discordRes.ok) {
-      const errorText = await discordRes.text();
-      console.error("[API/Guilds] Discord API Error:", discordRes.status, errorText);
-      
-      if (discordRes.status === 429) {
-        const rateLimitData = JSON.parse(errorText);
-        return NextResponse.json({ 
-          error: "Discord Rate Limit", 
-          details: `Please wait ${rateLimitData.retry_after || 'a few'} seconds. Dashboard is making too many requests.` 
-        }, { status: 429 });
-      }
-
-      return NextResponse.json({ error: `Discord API: ${discordRes.status}`, details: errorText }, { status: discordRes.status });
+    // 1. Fetch user guilds from Discord API (with caching)
+    const userGuilds = await getUserGuilds(session);
+    
+    if (!userGuilds) {
+      return NextResponse.json({ 
+        error: "Discord API Busy", 
+        details: "Please wait a moment. We are fetching your data from Discord." 
+      }, { status: 429 });
     }
 
-    const userGuilds = await discordRes.json();
     console.log(`[API/Guilds] Found ${userGuilds.length} guilds for user.`);
 
     // 2. Fetch our bot's guild settings from DB

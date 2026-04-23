@@ -305,7 +305,7 @@ function SettingsContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Server Settings</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Configure your server's unique identity and access controls
+            Adjust bot preferences, management roles, and custom alert templates.
           </p>
         </div>
         
@@ -327,8 +327,14 @@ function SettingsContent() {
           {/* 1. Language */}
           <SettingCard title="System Language" description="Default language for bot messages" icon={Globe}>
             <div className="language-toggle">
-              <button className={`lang-btn ${settings.language === 'en' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'en'})}>🇬🇧 English</button>
-              <button className={`lang-btn ${settings.language === 'hu' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'hu'})}>🇭🇺 Magyar</button>
+              <button className={`lang-btn ${settings.language === 'en' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'en'})}>
+                <img src="https://flagcdn.com/w40/gb.png" alt="English" className="flag-icon-img" />
+                <span>English</span>
+              </button>
+              <button className={`lang-btn ${settings.language === 'hu' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'hu'})}>
+                <img src="https://flagcdn.com/w40/hu.png" alt="Magyar" className="flag-icon-img" />
+                <span>Magyar</span>
+              </button>
             </div>
           </SettingCard>
 
@@ -458,15 +464,16 @@ function SettingsContent() {
       </div>
 
       <style jsx>{`
-        .settings-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+        .settings-container { max-width: 1450px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
         .notification-banner { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; border-radius: 12px; animation: slideIn 0.3s ease-out; }
         .notification-banner.success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #4ade80; }
         .notification-banner.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; }
         .settings-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
         .settings-main { display: flex; flex-direction: column; gap: 1.5rem; }
         .language-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .lang-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-weight: 600; }
+        .lang-btn { display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-weight: 600; }
         .lang-btn.active { background: rgba(123, 44, 191, 0.15); border-color: var(--accent-color); color: white; }
+        .flag-icon-img { width: 22px; height: 16px; object-fit: cover; border-radius: 2px; }
         .number-input-container { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 0.75rem 1rem; width: fit-content; }
         .interval-number-input { background: none; border: none; color: white; font-size: 1.1rem; font-weight: 600; width: 80px; outline: none; }
         .unit-label { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }

@@ -13,20 +13,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Nova Dashboard",
+  title: "NOVABOT Dashboard",
   description: "Feed Bot Control Panel",
   icons: {
-    icon: "/nova.jpg",
+    icon: "/nova_v2.jpg",
   },
 };
+
+import { ToastProvider } from "@/context/ToastContext";
+import ToastContainer from "@/components/ToastContainer";
+
+import StyledJsxRegistry from "@/lib/registry";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <StyledJsxRegistry>
+          <AuthProvider>
+            <ToastProvider>
+              {children}
+              <ToastContainer />
+            </ToastProvider>
+          </AuthProvider>
+        </StyledJsxRegistry>
       </body>
     </html>
   );

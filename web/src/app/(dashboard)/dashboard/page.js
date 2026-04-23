@@ -121,10 +121,13 @@ export default async function Dashboard({ searchParams }) {
   }
 
   return (
-    <>
+    <div className="dashboard-page-content" style={{ maxWidth: '1450px', margin: '0 auto' }}>
       <header className="header" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <h2>Welcome Back, {session.user.name}</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <h2>Dashboard Overview</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Welcome back, {session.user.name}. Track your server&apos;s feed activity and performance.
+          </p>
         </div>
         <LoginButton session={session} />
       </header>
@@ -210,6 +213,6 @@ export default async function Dashboard({ searchParams }) {
 
         <QuickActions guildId={guildId} />
       </div>
-    </>
+    </div>
   );
 }
