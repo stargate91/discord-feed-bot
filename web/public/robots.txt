@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /monitors/
+Disallow: /settings/
+Disallow: /select-server/
+
+Sitemap: https://novafeeds.xyz/sitemap.xml
