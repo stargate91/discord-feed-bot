@@ -207,19 +207,22 @@ class FeedBot(commands.Bot):
                         message.content = clean_command + " " + parts[1]
                     else:
                         message.content = clean_command
+                    log.info(f"Command cleaned: {command_part} -> {clean_command}")
 
             master_guilds = self.config.get("master_guilds", {})
             
             if master_guilds and message.guild:
                 guild_id_str = str(message.guild.id)
                 if guild_id_str not in master_guilds:
-                    log.debug(f"Command ignored: Guild {guild_id_str} not in master_guilds")
+                    log.info(f"Command ignored: Guild {guild_id_str} not in master_guilds list")
                     return
                     
                 admin_channel_id = master_guilds.get(guild_id_str, 0)
                 if admin_channel_id != 0 and message.channel.id != admin_channel_id:
-                    log.debug(f"Command ignored: Channel {message.channel.id} is not the master admin channel ({admin_channel_id})")
+                    log.info(f"Command ignored: Channel {message.channel.id} is not the master admin channel ({admin_channel_id})")
                     return
+                
+                log.info(f"Processing admin command: {message.content} in #{message.channel.name}")
         
         await self.process_commands(message)
 
