@@ -192,6 +192,8 @@ class FeedBot(commands.Bot):
         """Process commands and filter logs."""
         if message.author.bot:
             return
+            
+        log.info(f"Message received from {message.author}: {message.content[:50]}")
         
         prefix = self.command_prefix
         suffix = self.config.get("command_suffix", "")
