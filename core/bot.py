@@ -190,10 +190,9 @@ class FeedBot(commands.Bot):
 
     async def on_message(self, message):
         """Process commands and filter logs."""
+        log.info(f"DEBUG: on_message triggered by {message.author}: {message.content[:50]}")
         if message.author.bot:
             return
-            
-        log.info(f"Message received from {message.author}: {message.content[:50]}")
         
         prefix = self.command_prefix
         suffix = self.config.get("command_suffix", "")
