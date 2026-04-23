@@ -212,12 +212,13 @@ class FeedBot(commands.Bot):
             
             if master_guilds and message.guild:
                 guild_id_str = str(message.guild.id)
-                # Universal Restriction: Master guilds can limit prefix commands to themselves
                 if guild_id_str not in master_guilds:
+                    log.debug(f"Command ignored: Guild {guild_id_str} not in master_guilds")
                     return
-                # Restriction for Master Guilds: Check Admin Channel
+                    
                 admin_channel_id = master_guilds.get(guild_id_str, 0)
                 if admin_channel_id != 0 and message.channel.id != admin_channel_id:
+                    log.debug(f"Command ignored: Channel {message.channel.id} is not the master admin channel ({admin_channel_id})")
                     return
         
         await self.process_commands(message)

@@ -56,7 +56,7 @@ class AdminCog(commands.Cog):
             msg = self.bot.get_feedback("sync_success_guild", count=len(synced))
             await ctx.send(msg)
 
-    @commands.command(name="clear_commands_nova", aliases=["clear_commands", "command_clear"])
+    @commands.command(name="clear_commands", aliases=["command_clear"])
     @commands.guild_only()
     @is_admin()
     async def clear_commands(self, ctx):
