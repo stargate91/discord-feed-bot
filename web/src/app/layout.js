@@ -22,9 +22,9 @@ export const metadata = {
   icons: {
     icon: [
       { url: "/nova_v2.jpg" },
-      { url: "/favicon.ico" },
+      { url: "/icon.png" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/icon.png",
     apple: "/nova_v2.jpg",
   },
 };

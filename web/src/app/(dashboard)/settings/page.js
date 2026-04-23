@@ -352,6 +352,7 @@ function SettingsContent() {
           {/* 3. Alert Templates (Premium) */}
           <SettingCard title="Alert Templates" description="Customize how bot messages look per platform" icon={MessageSquare}>
             {!isPremiumActive ? (
+              <div className="premium-lock-overlay">
                 <Lock size={32} />
                 <p>This is a Premium Feature</p>
                 <Link href={`/premium?guild=${guildId}`}>
