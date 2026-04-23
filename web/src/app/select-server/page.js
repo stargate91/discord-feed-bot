@@ -8,6 +8,10 @@ import LogoutButton from '@/components/LogoutButton';
 import LoginButton from '@/components/LoginButton';
 import Loading from '@/app/loading';
 
+export const metadata = {
+  title: "Select Server",
+};
+
 export default function SelectServer() {
   const { data: session, status } = useSession();
   const router = useRouter();
