@@ -6,6 +6,19 @@ import { Rocket, Zap, Link as LinkIcon, Target, Gamepad2, MonitorPlay, Rss, Bitc
 
 export const metadata = {
   title: "NOVABOT | Feed-RSS Discord Bot",
+  description: "The ultimate Discord bot for automated feeds. Real-time updates from YouTube, Twitch, RSS, Crypto, and Free Games delivered straight to your server.",
+  openGraph: {
+    title: "NOVABOT | Feed-RSS Discord Bot",
+    description: "The ultimate Discord bot for automated feeds. Real-time updates from YouTube, Twitch, RSS, Crypto, and Free Games.",
+    images: [{ url: "/nova_v2.jpg" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NOVABOT | Feed-RSS Discord Bot",
+    description: "The ultimate Discord bot for automated feeds.",
+    images: ["/nova_v2.jpg"],
+  },
 };
 
 export default async function LandingPage() {

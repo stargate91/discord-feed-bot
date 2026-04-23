@@ -17,7 +17,7 @@ export const metadata = {
     default: "NOVABOT Dashboard",
     template: "%s | NOVABOT",
   },
-  description: "Feed Bot Control Panel",
+  description: "Automated Discord feed bot for YouTube, Twitch, RSS, and more.",
   icons: {
     icon: "/nova_v2.jpg",
   },
