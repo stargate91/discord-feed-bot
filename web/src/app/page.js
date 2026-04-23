@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Rocket, Zap, Link as LinkIcon, Target, Gamepad2, MonitorPlay, Rss, Bitcoin, LayoutDashboard, ShieldCheck } from "lucide-react";
 
 export const metadata = {
-  title: "NOVABOT | Feed-RSS bot",
+  title: "NOVABOT | Feed-RSS Discord Bot",
 };
 
 export default async function LandingPage() {
