@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "NOVABOT Dashboard",
+  title: {
+    default: "NOVABOT Dashboard",
+    template: "%s | NOVABOT",
+  },
   description: "Feed Bot Control Panel",
   icons: {
     icon: "/nova_v2.jpg",

@@ -173,7 +173,7 @@ export default function DevSettings() {
   };
 
   return (
-    <div className="dev-page-wrapper" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="dev-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Developer Controls</h2>
@@ -311,7 +311,7 @@ export default function DevSettings() {
         </div>
       </div>
 
-      <section className="card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(123, 44, 191, 0.05), rgba(0,0,0,0))' }}>
+      <section className="card" style={{ marginBottom: '2rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '20px' }}>
         <h3 style={{ marginBottom: '1.5rem' }}>Premium Key Generator</h3>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -443,21 +443,23 @@ export default function DevSettings() {
         }
         .keys-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-          gap: 1rem;
+          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+          gap: 1.25rem;
         }
         .key-card {
-          background: var(--bg-panel);
+          background: rgba(255, 255, 255, 0.02);
           border: 1px solid var(--border-color);
-          padding: 1rem 1.5rem;
-          border-radius: 12px;
+          padding: 1.25rem 1.5rem;
+          border-radius: 16px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          transition: border-color 0.2s;
+          transition: all 0.2s;
         }
         .key-card:hover {
           border-color: var(--accent-color);
+          background: rgba(123, 44, 191, 0.05);
+          transform: translateY(-2px);
         }
         .glass-presence-header:hover {
           background: rgba(123, 44, 191, 0.2) !important;
