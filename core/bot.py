@@ -128,6 +128,8 @@ class FeedBot(commands.Bot):
         log.info(f"--- FEED BOT ONLINE ---")
         log.info(f"Identity: {self.user} (ID: {self.user.id})")
         log.info(f"Prefix: {self.command_prefix}")
+        log.info(f"Intents - Message Content: {self.intents.message_content}")
+        log.info(f"Intents - Guild Messages: {self.intents.guild_messages}")
         log.info(f"Connected to {len(self.guilds)} guilds.")
 
         # Sync guilds with database
