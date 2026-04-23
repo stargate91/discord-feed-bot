@@ -91,7 +91,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
         name: monitor.name || '',
         target_channels: monitor.target_channels || [],
         target_roles: monitor.target_roles || [],
-        embed_color: monitor.embed_color || '',
+        embed_color: monitor.embed_color || '#3d3f45',
         steam_patch_only: !!monitor.steam_patch_only,
         target_genres: monitor.target_genres || [],
         target_languages: monitor.target_languages || []

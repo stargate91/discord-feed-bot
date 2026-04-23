@@ -65,7 +65,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     setFormData(prev => ({ 
       ...prev, 
       name: platform.name,
-      embed_color: platform.color !== '#ffffff' && platform.color !== '#171a21' ? platform.color : '#3d3f45'
+      embed_color: '#3d3f45'
     }));
     setStep(2);
   };
@@ -279,6 +279,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                         type="text" 
                         value={formData.embed_color} 
                         onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
+                        placeholder="#3d3f45"
                         className="styled-input-main"
                         style={{ flex: 1 }}
                       />
