@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
+  metadataBase: new URL('https://novafeeds.xyz'),
   title: {
     default: "NOVABOT Dashboard",
     template: "%s | NOVABOT",
