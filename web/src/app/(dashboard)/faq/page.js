@@ -79,7 +79,7 @@ export default function FAQPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Frequently Asked Questions</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Find answers to common questions and support information for NOVABOT.
+            Find answers to common questions and support information for NovaFeeds.
           </p>
         </div>
         <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">

@@ -4,7 +4,7 @@ export default function Loading() {
       <div className="loading-logo-container">
         <img 
           src="/nova_v2.jpg" 
-          alt="NOVABOT" 
+          alt="NovaFeeds" 
           className="loading-logo"
         />
       </div>

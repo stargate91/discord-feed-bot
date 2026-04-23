@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <section>
           <h2>1. Information We Collect</h2>
           <p>
-            When you use NOVABOT and our dashboard, we collect the minimum amount of data necessary to provide our services. This includes:
+            When you use NovaFeeds and our dashboard, we collect the minimum amount of data necessary to provide our services. This includes:
           </p>
           <ul>
             <li><strong>Discord Profile Data:</strong> Your Discord ID, username, and avatar URL when you log in.</li>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         <section>
           <h2>2. How We Use Your Data</h2>
           <p>
-            We use the collected information solely for the operation and improvement of NOVABOT. This includes:
+            We use the collected information solely for the operation and improvement of NovaFeeds. This includes:
           </p>
           <ul>
             <li>Delivering automated messages to your configured Discord channels.</li>

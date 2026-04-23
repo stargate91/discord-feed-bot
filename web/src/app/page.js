@@ -5,17 +5,17 @@ import { redirect } from "next/navigation";
 import { Rocket, Zap, Link as LinkIcon, Target, Gamepad2, MonitorPlay, Rss, Bitcoin, LayoutDashboard, ShieldCheck } from "lucide-react";
 
 export const metadata = {
-  title: "NOVABOT | Feed-RSS Discord Bot",
+  title: "NovaFeeds | Feed-RSS Discord Bot",
   description: "The ultimate Discord bot for automated feeds. Real-time updates from YouTube, Twitch, RSS, Crypto, and Free Games delivered straight to your server.",
   openGraph: {
-    title: "NOVABOT | Feed-RSS Discord Bot",
+    title: "NovaFeeds | Feed-RSS Discord Bot",
     description: "The ultimate Discord bot for automated feeds. Real-time updates from YouTube, Twitch, RSS, Crypto, and Free Games.",
     images: [{ url: "/nova_v2.jpg" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NOVABOT | Feed-RSS Discord Bot",
+    title: "NovaFeeds | Feed-RSS Discord Bot",
     description: "The ultimate Discord bot for automated feeds.",
     images: ["/nova_v2.jpg"],
   },
@@ -30,8 +30,8 @@ export default async function LandingPage() {
       <nav className="lp-navbar">
         <div className="lp-navbar-inner">
           <a href="/" className="lp-brand">
-            <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-brand-img" />
-            <span className="lp-brand-text">NOVABOT</span>
+            <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-brand-img" />
+            <span className="lp-brand-text">NovaFeeds</span>
           </a>
           <div className="lp-nav-links">
             <a href="/" className="lp-nav-link">Home</a>
@@ -87,7 +87,7 @@ export default async function LandingPage() {
           </div>
           <div className="lp-hero-right">
             <div className="lp-avatar-wrapper">
-              <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-avatar" />
+              <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-avatar" />
             </div>
           </div>
         </div>
@@ -137,9 +137,9 @@ export default async function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
-            <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-footer-logo" />
+            <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-footer-logo" />
             <div>
-              <div className="lp-footer-name">NOVABOT</div>
+              <div className="lp-footer-name">NovaFeeds</div>
               <p className="lp-footer-desc">Your friendly neighborhood Discord feed bot.</p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default async function LandingPage() {
           </div>
         </div>
         <div className="lp-footer-bottom">
-          <span>© {new Date().getFullYear()} NOVABOT. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} NovaFeeds. All rights reserved.</span>
         </div>
       </footer>
     </div>

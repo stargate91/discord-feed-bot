@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 export const metadata = {
   metadataBase: new URL('https://novafeeds.xyz'),
   title: {
-    default: "NOVABOT Dashboard",
-    template: "%s | NOVABOT",
+    default: "NovaFeeds Dashboard",
+    template: "%s | NovaFeeds",
   },
   description: "Automated Discord feed bot for YouTube, Twitch, RSS, and more.",
   icons: {

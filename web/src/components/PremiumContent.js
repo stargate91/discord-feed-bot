@@ -121,8 +121,8 @@ export default function PremiumContent() {
         <nav className="lp-navbar">
           <div className="lp-navbar-inner">
             <a href="/" className="lp-brand">
-              <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-brand-img" />
-              <span className="lp-brand-text">NOVABOT</span>
+              <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-brand-img" />
+              <span className="lp-brand-text">NovaFeeds</span>
             </a>
             <div className="lp-nav-links">
               <a href="/" className="lp-nav-link">Home</a>
@@ -193,9 +193,9 @@ export default function PremiumContent() {
         <footer className="lp-footer" style={{ marginTop: '6rem' }}>
           <div className="lp-footer-inner">
             <div className="lp-footer-brand">
-              <img src="/nova_v2.jpg" alt="NOVABOT" className="lp-footer-logo" />
+              <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-footer-logo" />
               <div>
-                <div className="lp-footer-name">NOVABOT</div>
+                <div className="lp-footer-name">NovaFeeds</div>
                 <p className="lp-footer-desc">Your friendly neighborhood Discord feed bot.</p>
               </div>
             </div>
@@ -216,7 +216,7 @@ export default function PremiumContent() {
             </div>
           </div>
           <div className="lp-footer-bottom">
-            <span>© {new Date().getFullYear()} NOVABOT. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} NovaFeeds. All rights reserved.</span>
           </div>
         </footer>
       )}

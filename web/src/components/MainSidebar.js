@@ -19,14 +19,14 @@ export default function MainSidebar({ session, isMaster }) {
         <div className="brand-header" key="brand-header" style={{ marginTop: '0', paddingTop: '0', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <Image
             src="/nova_v2.jpg"
-            alt="NOVABOT"
+            alt="NovaFeeds"
             width={60}
             height={60}
             className="brand-logo"
             priority
           />
           <div className="brand-text">
-            <span className="brand-name" style={{ display: 'block', fontWeight: '900', fontSize: '1.2rem', color: 'white', letterSpacing: '1px' }}>NOVABOT</span>
+            <span className="brand-name" style={{ display: 'block', fontWeight: '900', fontSize: '1.2rem', color: 'white', letterSpacing: '1px' }}>NovaFeeds</span>
             <span className="brand-status" style={{ display: 'block', fontSize: '0.65rem', fontWeight: '800', color: 'var(--accent-color)', letterSpacing: '2px', marginTop: '-2px' }}>DASHBOARD</span>
           </div>
         </div>
