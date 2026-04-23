@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import MonitorCard from '@/components/MonitorCard';
+import Link from 'next/link';
 import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
 import { Plus, Play, Pause, Trash2 } from 'lucide-react';
@@ -234,7 +235,9 @@ export default function MonitorsPage() {
         </div>
         
         {guildId && !isPremium && (
-            <div className="premium-badge">PREMIUM FEATURE</div>
+            <Link href={`/premium?guild=${guildId}`}>
+              <div className="premium-badge" style={{ cursor: 'pointer' }}>PREMIUM FEATURE</div>
+            </Link>
         )}
       </div>
 

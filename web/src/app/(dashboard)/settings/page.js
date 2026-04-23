@@ -18,6 +18,7 @@ import {
   Zap,
   Info
 } from 'lucide-react';
+import Link from 'next/link';
 import SettingCard from '@/components/SettingCard';
 
 // --- PLATFORM CONFIG ---
@@ -351,10 +352,11 @@ function SettingsContent() {
           {/* 3. Alert Templates (Premium) */}
           <SettingCard title="Alert Templates" description="Customize how bot messages look per platform" icon={MessageSquare}>
             {!isPremiumActive ? (
-              <div className="premium-lock-overlay">
                 <Lock size={32} />
                 <p>This is a Premium Feature</p>
-                <button className="upgrade-btn-small">Upgrade Now</button>
+                <Link href={`/premium?guild=${guildId}`}>
+                  <button className="upgrade-btn-small">Upgrade Now</button>
+                </Link>
               </div>
             ) : (
               <div className="template-editor-wrapper">
@@ -422,7 +424,9 @@ function SettingsContent() {
                  <p className="expiry-date">{settings.isMaster ? 'LIFETIME' : new Date(settings.premium_until).toLocaleDateString()}</p>
                </div>
             ) : (
-                <button className="upgrade-btn">Upgrade to Premium</button>
+                <Link href={`/premium?guild=${guildId}`}>
+                  <button className="upgrade-btn">Upgrade to Premium</button>
+                </Link>
             )}
           </div>
 
