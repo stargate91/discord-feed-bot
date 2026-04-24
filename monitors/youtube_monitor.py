@@ -62,11 +62,16 @@ class YouTubeMonitor(BaseMonitor):
             }
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(url, timeout=15, allow_redirects=True) as response:
+                    log.info(f"YouTube resolution response status: {response.status} for {url}")
                     if response.status != 200:
-                        log.warning(f"YouTube resolution returned status {response.status} for {url}")
                         return None
                         
                     html = await response.text()
+                    log.info(f"YouTube resolution HTML length: {len(html)}")
+                    
+                    if len(html) < 1000:
+                        log.warning(f"YouTube resolution HTML is suspiciously short: {html[:200]}")
+
                     
                     # Pattern 1: RSS Feed Link (Extremely reliable if present)
                     match = re.search(r'feeds/videos\.xml\?channel_id=(UC[a-zA-Z0-9_-]{22})', html)
