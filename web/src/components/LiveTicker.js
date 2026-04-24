@@ -50,12 +50,24 @@ export default function LiveTicker() {
     'tv': '#01b4e4'
   };
 
+  const getIconSrc = (platform) => {
+    let base = platform.replace('_news', '').replace('_free', '').replace('_', '-');
+    if (base === 'stream') return '/emojis/twitch.png';
+    if (base === 'movie' || base === 'tv-series' || base === 'tv') return '/emojis/tmdb.png';
+    return `/emojis/${base}.png`;
+  };
+
   return (
     <div className="ticker-container">
       <div className="ticker-track">
         <div className="ticker-content">
           {[...items, ...items].map((item, idx) => (
             <div key={idx} className="ticker-item">
+              <img 
+                src={getIconSrc(item.platform)} 
+                alt="" 
+                style={{ width: '14px', height: '14px', objectFit: 'contain' }} 
+              />
               <span 
                 className="ticker-platform" 
                 style={{ color: platformColors[item.platform] || 'var(--accent-color)' }}
