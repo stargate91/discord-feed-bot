@@ -265,7 +265,7 @@ class MonitorManager:
         count = max(1, min(10, int(count)))
         
         try:
-            log.info(f"Live Repost triggered for {monitor.name} (Source: {monitor.type}). Fetching {count} items...")
+            log.info(f"Live Repost triggered for {monitor.name} (Source: {monitor.platform}). Fetching {count} items...")
             
             # 1. Fetch fresh items directly from the platform source
             if not hasattr(monitor, 'get_latest_items'):
