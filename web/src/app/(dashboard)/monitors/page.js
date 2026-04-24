@@ -290,14 +290,20 @@ export default function MonitorsPage() {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             onSave={handleUpdate}
+            tier={tier}
+            isPremium={isPremium}
           />
+
 
           <CreateMonitorModal 
             guildId={guildId}
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
             onSuccess={fetchMonitors}
+            tier={tier}
+            isPremium={isPremium}
           />
+
           
           {filteredMonitors.length === 0 && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>

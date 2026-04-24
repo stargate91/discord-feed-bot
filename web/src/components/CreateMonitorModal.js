@@ -33,7 +33,14 @@ const getAvailableVars = (platformId) => {
   return ['name'];
 };
 
-export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess }) {
+export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess, tier = 0, isPremium = false }) {
+  const isMaster = isPremium && tier === 0;
+  
+  const isLocked = (requiredTier) => {
+    if (isMaster) return false;
+    return tier < requiredTier;
+  };
+
   const { addToast, showSuccess } = useToast();
   const [step, setStep] = useState(1);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
@@ -311,32 +318,56 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                    <label>Custom Alert Message</label>
-                   <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-                     <Info size={12} /> Overrides server defaults
-                   </div>
+                   {isLocked(2) ? (
+                     <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                       <Info size={12} /> Professional Tier Required
+                     </div>
+                   ) : (
+                     <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                       <Info size={12} /> Overrides server defaults
+                     </div>
+                   )}
+
                  </div>
-                 <textarea
-                   name="custom_alert"
-                   value={formData.custom_alert}
-                   onChange={(e) => setFormData({...formData, custom_alert: e.target.value})}
-                   className="styled-input-main"
-                   placeholder={`Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
-                   rows={3}
-                   style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.9rem' }}
-                 />
-                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                 <div style={{ position: 'relative' }}>
+                   <textarea
+                     name="custom_alert"
+                     value={formData.custom_alert}
+                     onChange={(e) => setFormData({...formData, custom_alert: e.target.value})}
+                     className="styled-input-main"
+                     placeholder={isLocked(2) ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
+                     rows={3}
+                     style={{ 
+                       resize: 'vertical', 
+                       fontFamily: 'monospace', 
+                       fontSize: '0.9rem',
+                       width: '100%',
+                       opacity: isLocked(2) ? 0.5 : 1
+                     }}
+                     disabled={isLocked(2)}
+                   />
+                   {isLocked(2) && (
+                     <div className="premium-field-overlay">
+                       <span className="lock-tag">Professional Tier+</span>
+                     </div>
+                   )}
+                 </div>
+
+                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked(2) ? 0.3 : 1 }}>
                    {getAvailableVars(selectedPlatform?.id).map(v => (
                      <button
                        key={v}
                        type="button"
                        className="var-btn"
-                       onClick={() => setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
+                       onClick={() => !isLocked(2) && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
                        title={`Insert {${v}}`}
+                       disabled={isLocked(2)}
                      >
                        {`{${v}}`}
                      </button>
                    ))}
                  </div>
+
                </div>
 
                {selectedPlatform?.id !== 'youtube' && (
@@ -546,6 +577,39 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
         }
         .btn-primary:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .premium-field-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          z-index: 5;
+        }
+
+        .premium-field-overlay-small {
+          position: absolute;
+          top: 24px; left: 0; right: 0; bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          z-index: 5;
+        }
+
+        .lock-tag {
+          background: rgba(255, 183, 3, 0.9);
+          color: black;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          pointer-events: auto;
+        }
       `}</style>
     </div>
   );
