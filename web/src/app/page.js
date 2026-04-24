@@ -6,8 +6,10 @@ import { Zap, Shield, Activity, Globe, Play, Rss, Layout, Rocket } from "lucide-
 import FloatingBackground from "@/components/FloatingBackground";
 import PlatformCarousel from "@/components/PlatformCarousel";
 import Footer from "@/components/Footer";
+import AuthErrorNotification from "@/components/AuthErrorNotification";
 
 export const metadata = {
+
   title: "NovaFeeds | Feed-RSS Discord Bot",
   description: "The ultimate Discord bot for automated feeds. Real-time updates from YouTube, Twitch, RSS, Crypto, and Free Games delivered straight to your server.",
   openGraph: {
@@ -29,7 +31,9 @@ export default async function LandingPage() {
 
   return (
     <div className="landing-page is-landing">
+      <AuthErrorNotification />
       <FloatingBackground />
+
       {/* ── Navbar ── */}
       <nav className="lp-navbar">
         <div className="lp-navbar-inner">

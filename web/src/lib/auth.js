@@ -11,7 +11,11 @@ export const authOptions = {
       authorization: { params: { scope: 'identify email guilds' } },
     }),
   ],
+  pages: {
+    error: '/auth/error',
+  },
   callbacks: {
+
     async jwt({ token, profile, account }) {
       if (account) {
         token.accessToken = account.access_token;
