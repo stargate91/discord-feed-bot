@@ -82,7 +82,7 @@ function PremiumRouter() {
         <PremiumComparisonTable />
       </div>
       
-      <Footer />
+      {!guildId && <Footer />}
     </div>
   );
 }
