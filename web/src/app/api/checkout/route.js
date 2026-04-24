@@ -40,7 +40,7 @@ export async function POST(req) {
     // Create Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card", "paypal", "revolut_pay"],
       line_items: [
         {
           price: priceId,
@@ -60,6 +60,7 @@ export async function POST(req) {
         }
       }
     });
+
 
 
     return NextResponse.json({ url: checkoutSession.url });
