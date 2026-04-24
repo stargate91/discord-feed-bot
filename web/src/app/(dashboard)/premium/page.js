@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic';
 const PremiumLanding = dynamic(() => import('@/components/PremiumLanding'), { ssr: false });
 const PremiumDashboard = dynamic(() => import('@/components/PremiumDashboard'), { ssr: false });
 const PremiumComparisonTable = dynamic(() => import('@/components/PremiumComparisonTable'), { ssr: false });
+import Footer from '@/components/Footer';
 
 function PremiumRouter() {
   const searchParams = useSearchParams();
@@ -61,33 +62,27 @@ function PremiumRouter() {
     </div>
   );
 
-  if (guildId) {
-    return (
-      <div style={{ width: '100%' }}>
-        <PremiumDashboard guildId={guildId} session={session} />
-        <div style={{ maxWidth: '1450px', margin: '0 auto', padding: '0 1rem 10rem' }}>
-          <HeaderSection 
-            badge="Advanced Intel"
-            title="Surgical Precision"
-            subtitle="Compare technical limits and find the perfect configuration for your server's needs."
-          />
-          <PremiumComparisonTable />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ width: '100%' }}>
-      <PremiumLanding session={session} />
+      {guildId ? (
+        <PremiumDashboard guildId={guildId} session={session} />
+      ) : (
+        <PremiumLanding session={session} />
+      )}
+      
       <div style={{ maxWidth: '1450px', margin: '0 auto', padding: '0 1rem 10rem' }}>
         <HeaderSection 
-          badge="Master the Feeds"
-          title="Choose Your Power"
-          subtitle="From casual tracking to professional intelligence – discover the tier that drives your community forward."
+          badge={guildId ? "Advanced Intel" : "Master the Feeds"}
+          title={guildId ? "Surgical Precision" : "Choose Your Power"}
+          subtitle={guildId 
+            ? "Compare technical limits and find the perfect configuration for your server's needs."
+            : "From casual tracking to professional intelligence – discover the tier that drives your community forward."
+          }
         />
         <PremiumComparisonTable />
       </div>
+      
+      <Footer />
     </div>
   );
 }

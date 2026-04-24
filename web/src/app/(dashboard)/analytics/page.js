@@ -14,7 +14,8 @@ import {
   Layers,
   Zap,
   ArrowUpRight,
-  Monitor
+  Monitor,
+  Lock
 } from 'lucide-react';
 import LiveTicker from "@/components/LiveTicker";
 import HeatmapChart from "@/components/HeatmapChart";
@@ -52,7 +53,20 @@ function AnalyticsContent() {
     "3": "Last 3 Days",
     "7": "Last 7 Days",
     "30": "Last 30 Days",
-    "999": "∞ All Time"
+    "999": "∞ Lifetime"
+  };
+
+  const getTierLimit = (tier) => {
+    if (tier >= 3) return 999;
+    if (tier >= 2) return 30;
+    if (tier >= 1) return 7;
+    return 3;
+  };
+
+  const isRangeLocked = (val) => {
+    if (!data) return true;
+    const limit = getTierLimit(data.tier || 0);
+    return parseInt(val) > limit;
   };
 
   useEffect(() => {
@@ -120,15 +134,26 @@ function AnalyticsContent() {
           
           {isDropdownOpen && (
             <div className="range-dropdown">
-              {Object.entries(rangeLabels).map(([val, label]) => (
-                <button 
-                  key={val} 
-                  className={range === val ? 'active' : ''} 
-                  onClick={() => { setRange(val); setIsDropdownOpen(false); }}
-                >
-                  {label}
-                </button>
-              ))}
+              {Object.entries(rangeLabels).map(([val, label]) => {
+                const locked = isRangeLocked(val);
+                return (
+                  <button 
+                    key={val} 
+                    className={`${range === val ? 'active' : ''} ${locked ? 'locked' : ''}`} 
+                    onClick={() => { 
+                      if (locked) {
+                        router.push(`/premium?guild=${guildId}`);
+                        return;
+                      }
+                      setRange(val); 
+                      setIsDropdownOpen(false); 
+                    }}
+                  >
+                    <span>{label}</span>
+                    {locked && <Lock size={12} className="lock-icon" />}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -403,6 +428,17 @@ function AnalyticsContent() {
           background: rgba(123, 44, 191, 0.2); 
           color: #9d4edd; 
           font-weight: 700; 
+        }
+
+        .range-dropdown button.locked {
+          opacity: 0.5;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        
+        .lock-icon {
+          color: #ffb703;
         }
 
         .stats-row {
