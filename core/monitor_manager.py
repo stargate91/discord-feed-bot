@@ -240,7 +240,7 @@ class MonitorManager:
                     first = new_items[0]
                     title = first.get('title') or first.get('name') or first.get('symbol')
                     
-                    if monitor.type == 'crypto' and first.get('price'):
+                    if monitor.platform == 'crypto' and first.get('price'):
                         msg = f"Price Alert! {title} is at ${first.get('price')}!"
                     elif title:
                         msg = f"Found {count} new update(s)! Latest: {title}"
@@ -298,7 +298,7 @@ class MonitorManager:
         try:
             log.info(f"Resetting history for monitor: {monitor.name}")
             q = "DELETE FROM published_entries_v2 WHERE platform = $1 AND guild_id = $2"
-            await database._execute(q, monitor.type, monitor.guild_id)
+            await database._execute(q, monitor.platform, monitor.guild_id)
             return True
         except Exception as e:
             log.error(f"Error during history reset for {monitor.name}: {e}")
