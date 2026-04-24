@@ -55,11 +55,23 @@ export async function POST(request) {
 
     if (action === "delete") {
       if (guildId) {
-        query = "DELETE FROM monitors WHERE guild_id = $1::bigint";
-        params = [guildId];
+        // Delete monitors
+        await pool.query("DELETE FROM monitors WHERE guild_id = $1::bigint", [guildId]);
+        
+        // Factory Reset: Wipe all analytics and history for this guild
+        await pool.query("DELETE FROM monitor_stats_daily WHERE guild_id = $1::bigint", [guildId]);
+        await pool.query("DELETE FROM published_entries_v2 WHERE guild_id = $1::bigint", [guildId]);
+        
+        await notifyBotOfChange();
+        return NextResponse.json({ success: true, message: `Factory reset completed successfully` });
       } else {
         // Global delete - exercise caution
-        query = "DELETE FROM monitors";
+        await pool.query("DELETE FROM monitors");
+        await pool.query("DELETE FROM monitor_stats_daily");
+        await pool.query("DELETE FROM published_entries_v2");
+        
+        await notifyBotOfChange();
+        return NextResponse.json({ success: true, message: `Global reset completed successfully` });
       }
     } else if (action === "pause") {
       if (guildId) {

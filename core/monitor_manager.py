@@ -308,7 +308,8 @@ class MonitorManager:
                 "guild_settings", 
                 "premium_codes", 
                 "announcements", 
-                "bot_statuses"
+                "bot_statuses",
+                "monitor_stats_daily"
             ]
             for table in tables:
                 await database._execute(f"TRUNCATE TABLE {table} CASCADE")
