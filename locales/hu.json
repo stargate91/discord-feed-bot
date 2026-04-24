@@ -13,7 +13,6 @@
     "btn_web_dashboard": "<:infocolorful:1496064819588235274> Web Dashboard",
     "btn_support_server": "<:infofilled:1496066005280231444> Support Szerver",
     "btn_close_help": "<:xfilled:1496065915031388271> Bezárás",
-
     "check_success": "<:checkfilledcircle:1495829946248200414> A(z) {name} feed legújabb tartalma sikeresen elküldve.",
     "purge_success": "<:checkfilledcircle:1495829946248200414> Sikeresen töröltem {count} üzenetet a(z) {channel} csatornából!",
     "repost_success": "<:checkfilledcircle:1495829946248200414> Sikeresen újraküldtem **{count}** elemet a(z) **{name}** monitorból az eredeti csatornába.",
@@ -35,7 +34,6 @@
     "check_empty_movie": "<:infofilledcircle:1495831063597940998> Jelenleg nincsenek új filmek a megadott feltételekkel (**{name}**).",
     "check_empty_tv_series": "<:infofilledcircle:1495831063597940998> Jelenleg nincsenek új sorozatok a megadott feltételekkel (**{name}**).",
     "check_empty_crypto": "<:infofilledcircle:1495831063597940998> A(z) **{name}** árfolyama még nem érte el a küszöböt.",
-
     "ui_modal_alert_template_label": "Üzenet formátuma",
     "ui_label_embed_color_hex": "Embed szín (hex)",
     "ui_label_target_ch": "Célcsatorna",
@@ -47,7 +45,6 @@
     "ui_crypto_field_diff": "Eltérés",
     "ui_crypto_status_line": "{emoji} **{sym}**: {price} USD ({diff}% a küszöbtől)",
     "ui_crypto_mock_header": " `[ MOCK ALERT SIMULÁCIÓ ]` ",
-
     "new_youtube_alert": "**{name}** épp most töltött fel egy új videót!",
     "new_stream_alert": "**{name}** mostantól ÉLŐBEN közvetít!",
     "new_twitch_alert": "**{name}** mostantól élőben közvetít Twitch-en!",
@@ -61,8 +58,7 @@
     "new_steam_news_alert": "Új játékfrissítés érkezett a(z) **{name}** játékhoz:",
     "new_tv_series_alert": "Új TV sorozat premier:",
     "new_movie_alert": "Új film a mozikban:",
-    "monitor_assigned_announcement": "🔔 **{name}** frissítések mostantól ide fognak érkezni!",
-
+    "monitor_assigned_announcement": "**{name}** frissítések mostantól ide fognak érkezni!",
     "field_worth": "Érték",
     "field_type": "Típus",
     "field_expiry": "Lejárat",
@@ -72,7 +68,6 @@
     "field_viewers": "Nézők",
     "field_published_at": "Közzétéve",
     "field_release_date": "Megjelenés",
-
     "monitor_platform_movie": "TMDB Filmek",
     "monitor_platform_tv": "TMDB Sorozatok",
     "monitor_platform_twitch": "Twitch",
@@ -80,7 +75,6 @@
     "monitor_twitch_fallback_title": "Új Twitch Közvetítés",
     "monitor_kick_fallback_title": "Új Kick Közvetítés",
     "monitor_stream_fallback_title": "Új Élő Adás",
-
     "error_no_permission": "<:xfilledcircle:1495830088523059341> **Nincs jogosultságod a parancs futtatásához!** (Admin rang vagy Discord Admin szükséges)",
     "error_unexpected": "<:xfilledcircle:1495830088523059341> **Váratlan hiba történt a parancs feldolgozása közben.** A hiba naplózva lett.",
     "error_prefix_msg": "<:xfilledcircle:1495830088523059341> **Hiba történt a parancs futtatása közben:** `{error}`",
@@ -98,7 +92,6 @@
     "error_premium_only_crypto": "<:infocolorful:1496064819588235274> A Kripto monitor a **Nova Premium** része. Kövesd az árfolyamokat élőben!",
     "error_premium_only_repost": "<:infocolorful:1496064819588235274> A Repost funkció a **Nova Premium** része. Emeld új szintre a szerveredet még ma!",
     "error_premium_only_feature": "<:xfilledcircle:1495830088523059341> Ez egy **Prémium** funkció (pl. egyedi színek, műfaj szűrés).",
-
     "syncing_wait": "<:arrowsclockwiseoutlined:1495835392518127666> Szinkronizálás folyamatban...",
     "purge_started": "<:arrowsclockwiseoutlined:1495835392518127666> Üzenetek törlése a(z) #{channel} csatornából... Kérlek várj.",
     "purge_description": "Üzenetek törlése egy csatornából (csak monitorozott csatornák)",
@@ -107,14 +100,15 @@
     "footer_steam_news": "Steam Játék Update",
     "footer_epic_store": "Epic Games Store",
     "footer_github": "GitHub Release",
-
     "default_na": "N/A",
     "default_unknown": "Ismeretlen",
     "default_new_item": "Új elem",
     "preview_success": "<:checkfilledcircle:1495829946248200414> Sikeresen generáltam előnézetet a(z) **{name}** monitorhoz.",
-
-    "dynamic_status": ["{count} monitor aktív", "NovaFeeds Dashboard", "Segítség {count} csatornának"],
-
+    "dynamic_status": [
+        "{count} monitor aktív",
+        "NovaFeeds Dashboard",
+        "Segítség {count} csatornának"
+    ],
     "dashboard_cmd_title": "<:infocolorful:1496064819588235274> NovaFeeds Dashboard",
     "dashboard_cmd_desc": "Kezeld az összes hírfolyamot, beállítást és prémium előfizetést kényelmesen a weboldalunkon.\n\nSegítségre van szükséged vagy ötleted van? Csatlakozz a Discord szerverünkhöz!"
 }

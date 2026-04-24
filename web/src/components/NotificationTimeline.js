@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, ExternalLink, Youtube, Twitch, Rss, Gamepad, Bitcoin, Video, Globe } from "lucide-react";
+import { Clock, ExternalLink, Play, Tv, Rss, Gamepad, Bitcoin, Video, Globe } from "lucide-react";
 
 function formatRelativeTime(date) {
   const diff = Math.floor((new Date() - new Date(date)) / 1000);
@@ -11,8 +11,8 @@ function formatRelativeTime(date) {
 }
 
 const PLATFORM_ICONS = {
-  youtube: { icon: Youtube, color: "#FF0000" },
-  twitch: { icon: Twitch, color: "#9146FF" },
+  youtube: { icon: Play, color: "#FF0000" },
+  twitch: { icon: Tv, color: "#9146FF" },
   kick: { icon: Video, color: "#53FC18" },
   epic_games: { icon: Gamepad, color: "#FFFFFF" },
   steam: { icon: Gamepad, color: "#171a21" },

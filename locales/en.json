@@ -13,7 +13,6 @@
     "btn_web_dashboard": "<:infocolorful:1496064819588235274> Web Dashboard",
     "btn_support_server": "<:infofilled:1496066005280231444> Support Server",
     "btn_close_help": "<:xfilled:1496065915031388271> Close",
-
     "check_success": "<:checkfilledcircle:1495829946248200414> The latest content for {name} was successfully sent.",
     "purge_success": "<:checkfilledcircle:1495829946248200414> Successfully purged {count} messages from {channel}!",
     "repost_success": "<:checkfilledcircle:1495829946248200414> Successfully reposted **{count}** items from **{name}** to the original channel.",
@@ -35,7 +34,6 @@
     "check_empty_movie": "<:infofilledcircle:1495831063597940998> There are currently no new movies matching the criteria (**{name}**).",
     "check_empty_tv_series": "<:infofilledcircle:1495831063597940998> There are currently no new TV series matching the criteria (**{name}**).",
     "check_empty_crypto": "<:infofilledcircle:1495831063597940998> The price of **{name}** has not yet crossed the threshold.",
-
     "ui_modal_alert_template_label": "Alert format",
     "ui_label_embed_color_hex": "Embed Color (hex)",
     "ui_label_target_ch": "Target Channel",
@@ -47,7 +45,6 @@
     "ui_crypto_field_diff": "Diff",
     "ui_crypto_status_line": "{emoji} **{sym}**: {price} USD ({diff}% to threshold)",
     "ui_crypto_mock_header": " `[ MOCK ALERT SIMULATION ]` ",
-
     "new_youtube_alert": "**{name}** just uploaded a new video!",
     "new_stream_alert": "**{name}** is now LIVE!",
     "new_twitch_alert": "**{name}** is now live on Twitch!",
@@ -61,8 +58,7 @@
     "new_steam_news_alert": "New game update published for **{name}**:",
     "new_tv_series_alert": "New TV series premiered:",
     "new_movie_alert": "New movie in theaters:",
-    "monitor_assigned_announcement": "🔔 **{name}** updates will now be sent to this channel!",
-
+    "monitor_assigned_announcement": "**{name}** updates will now be sent to this channel!",
     "field_worth": "Worth",
     "field_type": "Type",
     "field_expiry": "Expiry",
@@ -72,7 +68,6 @@
     "field_viewers": "Viewers",
     "field_published_at": "Published",
     "field_release_date": "Release Date",
-
     "monitor_platform_movie": "TMDB Movies",
     "monitor_platform_tv": "TMDB Series",
     "monitor_platform_twitch": "Twitch",
@@ -80,7 +75,6 @@
     "monitor_twitch_fallback_title": "New Twitch Stream",
     "monitor_kick_fallback_title": "New Kick Stream",
     "monitor_stream_fallback_title": "New Stream",
-
     "error_no_permission": "<:xfilledcircle:1495830088523059341> **You don't have permission to run this command!** (Admin role or Discord Admin required)",
     "error_unexpected": "<:xfilledcircle:1495830088523059341> **An unexpected error occurred while processing the command.** The error has been logged.",
     "error_prefix_msg": "<:xfilledcircle:1495830088523059341> **An error occurred while running the command:** `{error}`",
@@ -98,7 +92,6 @@
     "error_premium_only_crypto": "<:infocolorful:1496064819588235274> The Crypto monitor is part of **Nova Premium**. Track prices live!",
     "error_premium_only_repost": "<:infocolorful:1496064819588235274> The Repost feature is part of **Nova Premium**. Elevate your server today!",
     "error_premium_only_feature": "<:xfilledcircle:1495830088523059341> This is a **Premium** feature (e.g., custom colors, genre filtering).",
-
     "syncing_wait": "<:arrowsclockwiseoutlined:1495835392518127666> Syncing in progress...",
     "purge_started": "<:arrowsclockwiseoutlined:1495835392518127666> Purging messages from #{channel}... Please wait.",
     "purge_description": "Purge messages from a channel (monitored channels only)",
@@ -107,14 +100,15 @@
     "footer_steam_news": "Steam Game Update",
     "footer_epic_store": "Epic Games Store",
     "footer_github": "GitHub Release",
-
     "default_na": "N/A",
     "default_unknown": "Unknown",
     "default_new_item": "New item",
     "preview_success": "<:checkfilledcircle:1495829946248200414> Successfully generated preview for **{name}**.",
-    
-    "dynamic_status": ["{count} monitors active", "NovaFeeds Dashboard", "Helping {count} feeds"],
-
+    "dynamic_status": [
+        "{count} monitors active",
+        "NovaFeeds Dashboard",
+        "Helping {count} feeds"
+    ],
     "dashboard_cmd_title": "<:infocolorful:1496064819588235274> NovaFeeds Dashboard",
     "dashboard_cmd_desc": "Manage all your feeds, settings, and premium subscriptions comfortably on our website.\n\nNeed help or want to suggest a feature? Join our Discord server!"
 }
