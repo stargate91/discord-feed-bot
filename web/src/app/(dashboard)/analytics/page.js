@@ -280,17 +280,19 @@ function AnalyticsContent() {
               <h3>Source Efficiency</h3>
               <p>Performance ranking.</p>
            </div>
-           <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={data.platforms}>
-                 <XAxis dataKey="displayName" hide />
-                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {data.platforms.map((entry, index) => (
-                       <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                 </Bar>
-              </BarChart>
-           </ResponsiveContainer>
+           <div className="chart-content-inner" style={{ flex: 1 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={data.platforms}>
+                   <XAxis dataKey="displayName" hide />
+                   <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {data.platforms.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                   </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+           </div>
         </div>
       </div>
 
@@ -331,8 +333,14 @@ function AnalyticsContent() {
           min-width: 0;
         }
 
+        .range-dropdown-container {
+          position: relative;
+          flex-shrink: 0;
+        }
+
         .dropdown-trigger {
           background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: white;
           padding: 10px 18px;
           border-radius: 12px;
@@ -342,25 +350,59 @@ function AnalyticsContent() {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
+          white-space: nowrap;
+          min-width: 180px;
+          justify-content: space-between;
         }
-        .range-btn:hover, .range-btn.active { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); }
-        .chevron { transition: transform 0.3s; color: rgba(255,255,255,0.3); }
-        .chevron.rotated { transform: rotate(180deg); }
 
-        .dropdown-menu {
-          position: absolute; top: calc(100% + 8px); right: 0;
-          background: #1e1e26; border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; overflow: hidden; z-index: 100;
-          min-width: 180px; box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        .dropdown-trigger:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .range-dropdown {
+          position: absolute;
+          top: calc(100% + 8px);
+          right: 0;
+          background: #1e1e26;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          overflow: hidden;
+          z-index: 1000;
+          min-width: 200px;
+          box-shadow: 0 15px 35px rgba(0,0,0,0.5);
           animation: slideUp 0.2s ease-out;
+          display: flex;
+          flex-direction: column;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes slideUp { 
+          from { opacity: 0; transform: translateY(10px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
         
-        .dropdown-item {
-          padding: 12px 18px; font-size: 0.9rem; cursor: pointer; color: rgba(255,255,255,0.6);
+        .range-dropdown button {
+          padding: 12px 18px;
+          font-size: 0.9rem;
+          cursor: pointer;
+          color: rgba(255,255,255,0.6);
+          background: transparent;
+          border: none;
+          text-align: left;
+          transition: all 0.2s;
+          width: 100%;
         }
-        .dropdown-item:hover { background: rgba(123, 44, 191, 0.1); color: white; }
-        .dropdown-item.selected { background: rgba(123, 44, 191, 0.2); color: #9d4edd; font-weight: 700; }
+
+        .range-dropdown button:hover { 
+          background: rgba(123, 44, 191, 0.1); 
+          color: white; 
+        }
+
+        .range-dropdown button.active { 
+          background: rgba(123, 44, 191, 0.2); 
+          color: #9d4edd; 
+          font-weight: 700; 
+        }
 
         .stats-row {
           display: grid;
