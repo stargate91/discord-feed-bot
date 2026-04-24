@@ -64,7 +64,7 @@ export default function PremiumContent() {
     },
     {
       tier: 1,
-      title: "Scout",
+      title: "Starter",
       description: "Getting serious",
       price: { mo: "3.99", yr: "39" },
       isPopular: false,
@@ -81,9 +81,9 @@ export default function PremiumContent() {
     },
     {
       tier: 2,
-      title: "Operator",
+      title: "Professional",
       description: "Power user favorite",
-      price: { mo: "7.99", yr: "79" },
+      price: { mo: "9.99", yr: "99" },
       isPopular: true,
       features: [
         { text: "50 Feed Monitors" },
@@ -98,9 +98,9 @@ export default function PremiumContent() {
     },
     {
       tier: 3,
-      title: "Architect",
+      title: "Ultimate",
       description: "The ultimate control",
-      price: { mo: "14.99", yr: "149" },
+      price: { mo: "19.99", yr: "199" },
       isPopular: false,
       features: [
         { text: "100 Feed Monitors" },

@@ -10,44 +10,44 @@
         495596107473223700
     ],
     "stripe_config": {
-        "success_url": "https://your-domain.com/dashboard?payment=success",
-        "cancel_url": "https://your-domain.com/premium",
+        "success_url": "https://novafeeds.xyz/dashboard?payment=success",
+        "cancel_url": "https://novafeeds.xyz/premium",
         "products": {
-            "price_1TP3TyDthP6dhebf5tZOcG6D": {
+            "price_1TPsI7DthP6dhebfnlwdZepp": {
                 "tier": 1,
                 "interval": "mo",
                 "days": 30,
-                "label": "Scout Monthly"
+                "label": "Starter Monthly"
             },
             "price_1TP3YCDthP6dhebfX3Zg0zJW": {
                 "tier": 1,
                 "interval": "yr",
                 "days": 365,
-                "label": "Scout Yearly"
+                "label": "Starter Yearly"
             },
             "price_1TP3UNDthP6dhebfypFbzWvi": {
                 "tier": 2,
                 "interval": "mo",
                 "days": 30,
-                "label": "Operator Monthly"
+                "label": "Professional Monthly"
             },
             "price_1TP3X3DthP6dhebfpcMs7YM1": {
                 "tier": 2,
                 "interval": "yr",
                 "days": 365,
-                "label": "Operator Yearly"
+                "label": "Professional Yearly"
             },
-            "price_1TP3UrDthP6dhebf9HuJ3G43": {
+            "price_1TPsLWDthP6dhebfFLcNuE9Y": {
                 "tier": 3,
                 "interval": "mo",
                 "days": 30,
-                "label": "Architect Monthly"
+                "label": "Ultimate Monthly"
             },
             "price_1TP3WCDthP6dhebfNUWRx5vo": {
                 "tier": 3,
                 "interval": "yr",
                 "days": 365,
-                "label": "Architect Yearly"
+                "label": "Ultimate Yearly"
             }
         }
     }

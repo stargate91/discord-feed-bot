@@ -47,7 +47,7 @@ export default function PricingCard({
       <div style={{ fontSize: '0.85rem', color: '#a0a0b0', marginBottom: '2rem', fontWeight: '500', textAlign: 'center' }}>{description}</div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '2.5rem' }}>
-        {!isFree && <span style={{ fontSize: '1.4rem', fontWeight: '700', color: isPopular ? 'white' : 'var(--accent-color)', opacity: 0.8 }}>$</span>}
+        {!isFree && <span style={{ fontSize: '1.4rem', fontWeight: '700', color: isPopular ? 'white' : 'var(--accent-color)', opacity: 0.8 }}>€</span>}
         <span style={{ fontSize: '3.8rem', fontWeight: '900', color: 'white', lineHeight: 1, letterSpacing: '-2px' }}>{price}</span>
         {!isFree && <span style={{ fontSize: '1rem', color: '#a0a0b0', fontWeight: '600' }}>/{interval}</span>}
       </div>
