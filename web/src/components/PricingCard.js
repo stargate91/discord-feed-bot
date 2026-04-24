@@ -56,9 +56,19 @@ export default function PricingCard({
 
       <ul style={{ listStyle: 'none', width: '100%', marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '16px', padding: 0 }}>
         {features.map((feature, idx) => (
-          <li key={idx} style={{ fontSize: '0.92rem', color: feature.disabled ? '#555' : '#e0e0e0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Check size={18} style={{ color: feature.disabled ? '#333' : 'var(--accent-color)', flexShrink: 0 }} />
-            <span style={{ textDecoration: feature.disabled ? 'line-through' : 'none' }}>{feature.text}</span>
+          <li key={idx} style={{ 
+            fontSize: '0.92rem', 
+            color: feature.disabled ? '#555' : feature.highlight ? 'white' : '#e0e0e0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px',
+            fontWeight: feature.highlight ? '800' : '500'
+          }}>
+            <Check size={18} style={{ color: feature.disabled ? '#333' : feature.highlight ? '#9d4edd' : 'var(--accent-color)', flexShrink: 0 }} />
+            <span style={{ 
+              textDecoration: feature.disabled ? 'line-through' : 'none',
+              color: feature.highlight ? 'var(--accent-hover)' : 'inherit'
+            }}>{feature.text}</span>
           </li>
         ))}
       </ul>

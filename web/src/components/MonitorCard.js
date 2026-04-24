@@ -20,13 +20,25 @@ const platformNames = {
   github: "GitHub"
 };
 
-export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium }) {
+const TIER_CONFIG = {
+  0: { name: 'Free', speed: '30m', speedLabel: 'Basic', speedColor: '#94a3b8', canRepost: false, maxPurge: 10, maxMonitors: 3 },
+  1: { name: 'Tier 1', speed: '10m', speedLabel: 'Standard', speedColor: '#4ade80', canRepost: false, maxPurge: 25, maxMonitors: 10 },
+  2: { name: 'Tier 2', speed: '5m', speedLabel: 'Fast', speedColor: '#60a5fa', canRepost: true, maxPurge: 50, maxMonitors: 30 },
+  3: { name: 'Tier 3', speed: '2m', speedLabel: 'Turbo', speedColor: '#f472b6', canRepost: true, maxPurge: 100, maxMonitors: 100 },
+};
+
+export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium, tier = 0 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // 'check', 'repost', 'purge', 'reset'
   const [actionStatus, setActionStatus] = useState({ type: null, message: null });
   const [repostCount, setRepostCount] = useState(1);
+  const [purgeAmount, setPurgeAmount] = useState(50);
+
+  const currentTier = TIER_CONFIG[tier] || TIER_CONFIG[0];
+  const canRepost = currentTier.canRepost;
+  const maxPurge = currentTier.maxPurge;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Never';
@@ -69,7 +81,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   const handleDeleteClick = () => {
     if (!deleteConfirm) {
       setDeleteConfirm(true);
-      setTimeout(() => setDeleteConfirm(false), 3000); // Reset after 3s
+      setTimeout(() => setDeleteConfirm(false), 3000);
     } else {
       onDelete(monitor.id);
     }
@@ -78,18 +90,18 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   const runAction = async (action) => {
     setActionLoading(action);
     setActionStatus({ type: null, message: null });
-    
+
     try {
       const res = await fetch(`/api/monitors/${monitor.id}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action, 
+        body: JSON.stringify({
+          action,
           count: action === 'repost' ? repostCount : 1,
-          amount: action === 'purge' ? 100 : 0 
+          amount: action === 'purge' ? Math.min(purgeAmount, maxPurge) : 0
         })
       });
-      
+
       const data = await res.json();
       if (res.ok) {
         setActionStatus({ type: 'success', message: 'Success!' });
@@ -99,7 +111,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
     } catch (err) {
       setActionStatus({ type: 'error', message: 'Connection error' });
     }
-    
+
     setActionLoading(null);
     setTimeout(() => setActionStatus({ type: null, message: null }), 3000);
   };
@@ -107,7 +119,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   return (
     <div className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''} ${showTools ? 'show-tools' : ''}`}>
       <div className="card-glow"></div>
-      
+
       <div className="card-header">
         <div className="platform-brand">
           <div className="platform-icon-wrapper">
@@ -120,10 +132,27 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           <span className="platform-name">
             {platformNames[monitor.type] || monitor.type.toUpperCase()}
           </span>
+          <div className="speed-badge" style={{
+            background: `${currentTier.speedColor}15`,
+            border: `1px solid ${currentTier.speedColor}30`,
+            color: currentTier.speedColor,
+            padding: '2px 8px',
+            borderRadius: '6px',
+            fontSize: '0.65rem',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginLeft: '8px'
+          }}>
+            <Zap size={10} fill={currentTier.speedColor} />
+            {currentTier.speedLabel} ({currentTier.speed})
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button 
-            className={`tools-toggle ${showTools ? 'active' : ''}`} 
+          <button
+            className={`tools-toggle ${showTools ? 'active' : ''}`}
             onClick={() => setShowTools(!showTools)}
             title="Diagnostic Tools"
           >
@@ -138,7 +167,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
 
       <div className="card-body">
         <h3 className="monitor-name">{monitor.name}</h3>
-        
+
         <div className="monitor-meta">
           <div className="meta-item">
             <span className="meta-label">Last Post</span>
@@ -155,46 +184,54 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
 
       {/* Diagnostics Panel */}
       <div className={`diagnostics-panel ${showTools ? 'expanded' : ''}`}>
-         <div className="tools-grid">
-            <button className="tool-btn" onClick={() => runAction('check')} disabled={actionLoading}>
-              <RefreshCcw size={16} className={actionLoading === 'check' ? 'spin' : ''} />
-              <span>Check</span>
-            </button>
-            
-            <div className={`tool-group ${!isPremium ? 'locked' : ''}`} title={!isPremium ? "Premium feature" : ""}>
-              <button 
-                className={`tool-btn wide ${!isPremium ? 'is-locked' : ''}`} 
-                onClick={() => isPremium && runAction('repost')} 
-                disabled={actionLoading || !isPremium}
-              >
-                {!isPremium ? <Shield size={14} style={{ color: '#ffd700' }} /> : <Send size={16} className={actionLoading === 'repost' ? 'pulse' : ''} />}
-                <span>{!isPremium ? "Repost (Locked)" : `Repost (${repostCount})`}</span>
-              </button>
-              <input 
-                type="range" min="1" max="10" 
-                value={repostCount} 
-                onChange={(e) => isPremium && setRepostCount(parseInt(e.target.value))}
-                className="repost-slider"
-                disabled={!isPremium}
-              />
-            </div>
+        <div className="tools-grid">
+          <button className="tool-btn" onClick={() => runAction('check')} disabled={actionLoading}>
+            <RefreshCcw size={16} className={actionLoading === 'check' ? 'spin' : ''} />
+            <span>Check</span>
+          </button>
 
-            <button className="tool-btn purge" onClick={() => runAction('purge')} disabled={actionLoading} title="Clear Discord Channel">
-              <Trash size={16} className={actionLoading === 'purge' ? 'shake' : ''} />
-              <span>Purge</span>
+          <div className={`tool-group ${!canRepost ? 'locked' : ''}`} title={!canRepost ? `Available on ${TIER_CONFIG[2].name}+` : ""}>
+            <button
+              className={`tool-btn wide ${!canRepost ? 'is-locked' : ''}`}
+              onClick={() => canRepost && runAction('repost')}
+              disabled={actionLoading || !canRepost}
+            >
+              {!canRepost ? <Shield size={14} style={{ color: '#ffd700' }} /> : <Send size={16} className={actionLoading === 'repost' ? 'pulse' : ''} />}
+              <span>{!canRepost ? "Repost (Locked)" : `Repost (${repostCount})`}</span>
             </button>
-         </div>
-         {actionStatus.message && (
-           <div className={`action-feedback ${actionStatus.type}`}>
-             {actionStatus.type === 'success' ? <Check size={12} /> : <AlertCircle size={12} />}
-             {actionStatus.message}
-           </div>
-         )}
-         {!isPremium && showTools && (
-           <div className="premium-lock-message">
-             Upgrade to <Link href={`/premium?guild=${monitor.guild_id}`} style={{ color: '#ffd700', textDecoration: 'underline' }}>Premium</Link> to use Repost tools.
-           </div>
-         )}
+            <input
+              type="range" min="1" max="10"
+              value={repostCount}
+              onChange={(e) => canRepost && setRepostCount(parseInt(e.target.value))}
+              className="repost-slider"
+              disabled={!canRepost}
+            />
+          </div>
+
+          <div className="tool-group">
+            <button className="tool-btn purge wide" onClick={() => runAction('purge')} disabled={actionLoading} title="Clear Discord Channel">
+              <Trash size={16} className={actionLoading === 'purge' ? 'shake' : ''} />
+              <span>Purge ({purgeAmount})</span>
+            </button>
+            <input
+              type="range" min="5" max="100" step="5"
+              value={purgeAmount}
+              onChange={(e) => setPurgeAmount(parseInt(e.target.value))}
+              className="purge-slider"
+            />
+          </div>
+        </div>
+        {actionStatus.message && (
+          <div className={`action-feedback ${actionStatus.type}`}>
+            {actionStatus.type === 'success' ? <Check size={12} /> : <AlertCircle size={12} />}
+            {actionStatus.message}
+          </div>
+        )}
+        {!isPremium && showTools && (
+          <div className="premium-lock-message">
+            Upgrade to <Link href={`/premium?guild=${monitor.guild_id}`} style={{ color: '#ffd700', textDecoration: 'underline' }}>Premium</Link> to use Repost tools.
+          </div>
+        )}
       </div>
 
       <div className="card-actions">
@@ -205,7 +242,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
         >
           <Settings size={18} />
         </button>
-        
+
         <button
           className={`action-btn toggle ${monitor.enabled ? 'pause' : 'resume'}`}
           onClick={handleToggle}
@@ -281,7 +318,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
 
         .tools-grid {
           display: grid;
-          grid-template-columns: 0.8fr 1.5fr 0.8fr;
+          grid-template-columns: repeat(3, 1fr);
           gap: 10px;
           align-items: end;
         }
@@ -330,10 +367,37 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           justify-content: center;
         }
 
+        .tool-btn :global(svg) {
+          flex-shrink: 0;
+        }
+
         .tool-btn.wide {
           width: 100%;
           min-height: 40px;
           flex-direction: row;
+          padding: 8px 12px;
+          gap: 8px;
+          justify-content: center;
+        }
+
+        .purge-slider {
+          -webkit-appearance: none;
+          width: 100%;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(239, 68, 68, 0.1);
+          outline: none;
+          cursor: pointer;
+        }
+
+        .purge-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #ef4444;
+          box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+          cursor: pointer;
         }
 
         .tool-btn:hover:not(:disabled) {

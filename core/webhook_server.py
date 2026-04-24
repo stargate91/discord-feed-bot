@@ -208,6 +208,39 @@ async def purge_channel(monitor_id: int, amount: int = 50):
     else:
         raise HTTPException(status_code=400, detail="Purge failed")
 
+@app.post("/monitors/{monitor_id}/reset")
+async def reset_history(monitor_id: int):
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.reset_history(monitor_id)
+    if success:
+        return {"status": "success", "message": f"History reset for monitor {monitor_id}"}
+    else:
+        raise HTTPException(status_code=400, detail="Monitor not found or reset failed")
+
+@app.post("/monitors/reset-all")
+async def reset_all_history():
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.reset_all_history()
+    if success:
+        return {"status": "success", "message": "ALL monitor history has been reset globally"}
+    else:
+        raise HTTPException(status_code=500, detail="Global reset failed")
+
+@app.post("/admin/factory-reset")
+async def factory_reset():
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.factory_reset()
+    if success:
+        return {"status": "success", "message": "FACTORY RESET COMPLETE. All data has been wiped."}
+    else:
+        raise HTTPException(status_code=500, detail="Factory reset failed")
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

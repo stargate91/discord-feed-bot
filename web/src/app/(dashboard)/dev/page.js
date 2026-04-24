@@ -28,6 +28,16 @@ export default function DevSettings() {
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnounce, setNewAnnounce] = useState({ title: '', content: '', type: 'info' });
   const [announceLoading, setAnnounceLoading] = useState(false);
+  const [showMaintenance, setShowMaintenance] = useState(false);
+  const [resetAllLoading, setResetAllLoading] = useState(false);
+  const [resetAllStatus, setResetAllStatus] = useState(null);
+  const [confirmNuclear, setConfirmNuclear] = useState(false);
+  const [factoryLoading, setFactoryLoading] = useState(false);
+  const [factoryStatus, setFactoryStatus] = useState(null);
+  const [confirmFactory, setConfirmFactory] = useState(false);
+
+  // Custom Modal State
+  const [modalConfig, setModalConfig] = useState({ show: false, title: '', message: '', action: null, type: 'danger' });
 
   // Options Definitions
   const ROTATION_OPTIONS = [
@@ -195,8 +205,95 @@ export default function DevSettings() {
     } catch (err) { console.error(err); }
   };
 
+  const handleResetAllHistory = async () => {
+    if (!modalConfig.show && !confirmNuclear) {
+      setModalConfig({
+        show: true,
+        title: 'Nuclear History Reset',
+        message: 'This will clear publication history for ALL monitors. Every feed entry will be re-posted to Discord. Continue?',
+        type: 'danger',
+        action: () => setConfirmNuclear(true)
+      });
+      return;
+    }
+
+    setResetAllLoading(true);
+    setResetAllStatus(null);
+    try {
+      const res = await fetch('/api/admin/reset-history', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'history' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResetAllStatus({ type: 'success', message: 'Nuclear Reset Complete! ALL monitor history cleared.' });
+        setConfirmNuclear(false);
+      } else {
+        setResetAllStatus({ type: 'error', message: data.error || 'Reset failed' });
+      }
+    } catch (err) {
+      setResetAllStatus({ type: 'error', message: 'Connection failed' });
+    }
+    setResetAllLoading(false);
+  };
+
+  const handleFactoryReset = async () => {
+    if (!modalConfig.show && !confirmFactory) {
+      setModalConfig({
+        show: true,
+        title: 'TOTAL FACTORY RESET',
+        message: 'This is irreversible. All monitors, settings, and premium keys will be permanently deleted. Are you absolutely sure?',
+        type: 'extreme',
+        action: () => setConfirmFactory(true)
+      });
+      return;
+    }
+
+    setFactoryLoading(true);
+    setFactoryStatus(null);
+    try {
+      const res = await fetch('/api/admin/reset-history', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'factory' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFactoryStatus({ type: 'success', message: 'FACTORY RESET COMPLETE. SYSTEM WIPED.' });
+        setConfirmFactory(false);
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setFactoryStatus({ type: 'error', message: data.error || 'Reset failed' });
+      }
+    } catch (err) {
+      setFactoryStatus({ type: 'error', message: 'Connection failed' });
+    }
+    setFactoryLoading(false);
+  };
+
   return (
     <div className="dev-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
+      
+      {/* Custom Confirmation Modal */}
+      {modalConfig.show && (
+        <div className="modal-overlay">
+          <div className={`modal-content ${modalConfig.type}`}>
+            <div className="modal-header">
+              <ShieldAlert size={24} />
+              <h3>{modalConfig.title}</h3>
+            </div>
+            <div className="modal-body">
+              <p>{modalConfig.message}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-btn cancel" onClick={() => setModalConfig({ ...modalConfig, show: false })}>Cancel</button>
+              <button className="modal-btn confirm" onClick={() => { modalConfig.action(); setModalConfig({ ...modalConfig, show: false }); }}>Confirm Intent</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Developer Controls</h2>
@@ -477,6 +574,115 @@ export default function DevSettings() {
         </div>
       </div>
 
+      {/* System Maintenance Section */}
+      <div 
+        onClick={() => setShowMaintenance(!showMaintenance)} 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          padding: '1.25rem 1.5rem',
+          background: 'rgba(239, 68, 68, 0.1)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: showMaintenance ? '24px 24px 0 0' : '24px',
+          transition: 'all 0.3s ease',
+          userSelect: 'none',
+          marginBottom: showMaintenance ? '0' : '1rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <ShieldAlert size={20} color="#ef4444" />
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>System Maintenance</h3>
+        </div>
+        <span style={{ fontSize: '0.9rem', transform: showMaintenance ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#ef4444' }}>▼</span>
+      </div>
+
+      <div style={{ 
+        maxHeight: showMaintenance ? '1000px' : '0', 
+        overflow: 'hidden', 
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity: showMaintenance ? 1 : 0,
+        background: 'rgba(15, 15, 25, 0.4)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(239, 68, 68, 0.2)',
+        borderTop: 'none',
+        borderRadius: '0 0 24px 24px',
+        padding: showMaintenance ? '2rem' : '0 2rem',
+        marginBottom: showMaintenance ? '1rem' : '0'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ padding: '1.5rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '16px', border: '1px dashed rgba(239, 68, 68, 0.2)' }}>
+            <h4 style={{ color: '#ef4444', fontSize: '1rem', marginBottom: '0.5rem' }}>Nuclear Options</h4>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Warning: This will clear the publication history for <strong>ALL</strong> monitors across <strong>ALL</strong> servers. 
+              The bot will re-process every feed and potentially send thousands of messages if not handled carefully.
+            </p>
+            
+            <button 
+              className={`btn danger ${confirmNuclear ? 'confirm-active' : ''}`} 
+              style={{ 
+                padding: '1rem 2rem', 
+                background: confirmNuclear ? '#b91c1c' : '#ef4444',
+                borderColor: '#b91c1c',
+                width: '100%',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                borderRadius: '12px',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }} 
+              onClick={handleResetAllHistory}
+              disabled={resetAllLoading}
+            >
+              {resetAllLoading ? 'Processing Nuclear Reset...' : (confirmNuclear ? 'CONFIRM NUCLEAR RESET (CLICK AGAIN)' : 'RESET ENTIRE SYSTEM HISTORY')}
+            </button>
+
+            {resetAllStatus && (
+              <div style={{ marginTop: '1rem', color: resetAllStatus.type === 'success' ? '#10b981' : '#ef4444', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
+                {resetAllStatus.message}
+              </div>
+            )}
+          </div>
+
+          <div style={{ padding: '1.5rem', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+            <h4 style={{ color: '#ef4444', fontSize: '1rem', marginBottom: '0.5rem' }}>Extreme Danger: Factory Reset</h4>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              This is the ultimate wipe. It will delete <strong>ALL MONITORS</strong>, <strong>ALL SETTINGS</strong>, <strong>ALL PREMIUM KEYS</strong>, and all history. 
+              The system will be completely empty.
+            </p>
+            
+            <button 
+              className={`btn danger ${confirmFactory ? 'confirm-active' : ''}`} 
+              style={{ 
+                padding: '1rem 2rem', 
+                background: confirmFactory ? '#ef4444' : 'transparent',
+                border: '2px solid #ef4444',
+                color: confirmFactory ? 'white' : '#ef4444',
+                width: '100%',
+                fontWeight: 800,
+                letterSpacing: '2px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }} 
+              onClick={handleFactoryReset}
+              disabled={factoryLoading}
+            >
+              {factoryLoading ? 'WIPING SYSTEM...' : (confirmFactory ? 'CONFIRM FULL FACTORY RESET (FINAL WARNING)' : 'FULL FACTORY RESET')}
+            </button>
+
+            {factoryStatus && (
+              <div style={{ marginTop: '1rem', color: factoryStatus.type === 'success' ? '#10b981' : '#ef4444', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
+                {factoryStatus.message}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <style jsx>{`
         .styled-input-basic { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; }
         .styled-input-basic:focus { border-color: var(--accent-color); }
@@ -498,6 +704,83 @@ export default function DevSettings() {
         .icon-btn-danger:hover { color: #ef4444; }
         .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .icon-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+          background: rgba(20, 20, 30, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 2rem;
+          width: 90%;
+          max-width: 450px;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+          animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-content.extreme {
+          border-color: #ef4444;
+          background: linear-gradient(145deg, rgba(30, 10, 10, 0.95), rgba(20, 20, 30, 0.95));
+          box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 1rem;
+          color: #ef4444;
+        }
+
+        .modal-header h3 { margin: 0; font-size: 1.25rem; }
+
+        .modal-body p {
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .modal-footer {
+          display: flex;
+          gap: 12px;
+          margin-top: 2rem;
+        }
+
+        .modal-btn {
+          flex: 1;
+          padding: 0.8rem;
+          border-radius: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+        }
+
+        .modal-btn.cancel {
+          background: rgba(255, 255, 255, 0.05);
+          color: white;
+        }
+
+        .modal-btn.confirm {
+          background: #ef4444;
+          color: white;
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .modal-btn:hover { transform: translateY(-2px); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
       `}</style>
     </div>
   );

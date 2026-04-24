@@ -34,6 +34,7 @@ export default function MonitorsPage() {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [tier, setTier] = useState(0);
 
   const searchParams = useSearchParams();
   const guildId = searchParams.get('guild');
@@ -65,6 +66,7 @@ export default function MonitorsPage() {
         const guilds = await res.json();
         const currentGuild = guilds.find(g => g.id === guildId);
         setIsPremium(!!currentGuild?.isPremium || !!currentGuild?.isMaster);
+        setTier(currentGuild?.tier || 0);
       }
     } catch (err) {
       console.error("Failed to fetch guild info:", err);
@@ -275,6 +277,7 @@ export default function MonitorsPage() {
               key={m.id} 
               monitor={m} 
               isPremium={isPremium}
+              tier={tier}
               onToggle={handleToggle} 
               onDelete={handleDelete} 
               onEdit={openEditModal}

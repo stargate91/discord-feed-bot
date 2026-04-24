@@ -276,14 +276,14 @@ class FeedBot(commands.Bot):
         if tier == 0 and self.is_premium(guild_id):
             tier = 3 # Assume top tier for legacy premium users
 
-        if tier == 3: # Architect
-            return (2, 1440, 5, 100, 15, 15)
-        if tier == 2: # Operator
-            return (2, 1440, 5, 50, 10, 10)
-        if tier == 1: # Scout
-            return (2, 1440, 5, 25, 5, 5)
+        if tier == 3: # Ultimate
+            return (2, 1440, 2, 100, 20, 20)
+        if tier == 2: # Professional
+            return (5, 1440, 5, 30, 10, 10)
+        if tier == 1: # Starter
+            return (10, 1440, 10, 10, 5, 5)
             
-        return (20, 1440, 30, 5, 1, 1) # Free Tier
+        return (30, 1440, 30, 3, 1, 1) # Free Tier
 
     def has_feature(self, guild_id, feature_name):
         """Check if a guild has access to a specific premium feature."""

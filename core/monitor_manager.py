@@ -257,6 +257,56 @@ class MonitorManager:
             log.error(f"Error during repost for {monitor.name}: {e}")
             return False
 
+    async def reset_history(self, monitor_id):
+        """Clear the publication history in DB so the bot thinks items are new."""
+        monitor = next((m for m in self.monitors if m.id == monitor_id), None)
+        if not monitor: return False
+        
+        import database
+        try:
+            log.info(f"Resetting history for monitor: {monitor.name}")
+            q = "DELETE FROM published_entries_v2 WHERE platform = $1 AND guild_id = $2"
+            await database._execute(q, monitor.type, monitor.guild_id)
+            return True
+        except Exception as e:
+            log.error(f"Error during history reset for {monitor.name}: {e}")
+            return False
+
+    async def reset_all_history(self):
+        """Clear ALL publication history for ALL monitors in the entire DB."""
+        import database
+        try:
+            log.warning("NUCLEAR ACTION: Resetting ALL publication history for ALL monitors!")
+            q = "DELETE FROM published_entries_v2"
+            await database._execute(q)
+            return True
+        except Exception as e:
+            log.error(f"Error during global history reset: {e}")
+            return False
+
+    async def factory_reset(self):
+        """WIPE EVERYTHING. Monitors, Settings, Premium Keys, History. Clean Slate."""
+        import database
+        try:
+            log.critical("!!! FACTORY RESET INITIATED !!! Wiping all database tables.")
+            tables = [
+                "published_entries_v2", 
+                "monitors", 
+                "guild_settings", 
+                "premium_codes", 
+                "announcements", 
+                "bot_statuses"
+            ]
+            for table in tables:
+                await database._execute(f"TRUNCATE TABLE {table} CASCADE")
+            
+            # Reload monitors (will be empty)
+            self.monitors = []
+            return True
+        except Exception as e:
+            log.error(f"Error during factory reset: {e}")
+            return False
+
     async def purge_channel(self, monitor_id, amount=50):
         """Delete recent messages in the target Discord channels of this monitor."""
         monitor = next((m for m in self.monitors if m.id == monitor_id), None)

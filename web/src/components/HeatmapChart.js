@@ -74,10 +74,11 @@ export default function HeatmapChart({ data }) {
 
       <style jsx>{`
         .heatmap-container {
+          width: 100%;
           padding: 1rem 0;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 15px;
         }
 
         .heatmap-header {
@@ -89,8 +90,9 @@ export default function HeatmapChart({ data }) {
         .hour-labels {
           position: relative;
           display: flex;
-          margin-left: 45px;
+          margin-left: 38px;
           height: 100%;
+          margin-right: 10px;
         }
 
         .hour-label {
@@ -102,22 +104,23 @@ export default function HeatmapChart({ data }) {
         }
 
         .heatmap-grid-wrapper {
+          width: 100%;
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 3px;
         }
 
         .heatmap-row {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
         }
 
         .day-label {
-          width: 32px;
-          font-size: 0.65rem;
+          width: 30px;
+          font-size: 0.6rem;
           font-weight: 800;
-          color: rgba(255, 255, 255, 0.3);
+          color: rgba(255, 255, 255, 0.2);
           text-transform: uppercase;
         }
 
@@ -125,22 +128,22 @@ export default function HeatmapChart({ data }) {
           flex: 1;
           display: grid;
           grid-template-columns: repeat(24, 1fr);
-          gap: 4px;
+          gap: 2px;
         }
 
         .heatmap-cell {
           aspect-ratio: 1;
-          border-radius: 3px;
-          transition: all 0.3s ease;
+          border-radius: 4px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
-          border: 1px solid rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.01);
         }
 
         .heatmap-cell:hover {
-          transform: scale(1.2);
+          transform: scale(1.4);
           z-index: 10;
-          border-color: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 0 15px rgba(123, 44, 191, 0.5);
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 20px rgba(123, 44, 191, 0.6);
         }
 
         .cell-glow {

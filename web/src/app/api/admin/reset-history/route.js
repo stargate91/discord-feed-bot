@@ -2,37 +2,32 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
 
-export async function POST(request, { params }) {
+export async function POST(request) {
   const session = await getServerSession(authOptions);
+  const { action } = await request.json();
+  
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const { action, count, amount } = await request.json();
   const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8080";
+  let endpoint = "/monitors/reset-all";
+  if (action === "factory") endpoint = "/admin/factory-reset";
 
   try {
-    let endpoint = "";
-    if (action === "check") endpoint = `/monitors/${id}/check`;
-    else if (action === "repost") endpoint = `/monitors/${id}/repost?count=${count || 1}`;
-    else if (action === "purge") endpoint = `/monitors/${id}/purge?amount=${amount || 50}`;
-    else if (action === "reset") endpoint = `/monitors/${id}/reset`;
-    else return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-
     const res = await fetch(`${BOT_WEBHOOK_URL}${endpoint}`, {
       method: "POST",
     });
 
     if (!res.ok) {
       const errorData = await res.json();
-      return NextResponse.json({ error: errorData.detail || "Bot action failed" }, { status: res.status });
+      return NextResponse.json({ error: errorData.detail || "Global reset failed" }, { status: res.status });
     }
 
     const data = await res.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`[API Action] Error performing ${action} for ${id}:`, error);
+    console.error(`[API Admin Reset] Error:`, error);
     return NextResponse.json({ error: "Could not connect to bot server" }, { status: 500 });
   }
 }

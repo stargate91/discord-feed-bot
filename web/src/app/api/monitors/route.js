@@ -65,6 +65,29 @@ export async function POST(request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // --- MONITOR LIMIT ENFORCEMENT ---
+    const guildInfo = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1', [guildId]);
+    const tier = guildInfo.rows[0]?.tier || 0;
+    
+    const countRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1', [guildId]);
+    const currentCount = parseInt(countRes.rows[0].count);
+
+    let maxAllowed = 3;
+    if (session.user.role === "master") maxAllowed = 1000;
+    else {
+      switch (tier) {
+        case 1: maxAllowed = 10; break;
+        case 2: maxAllowed = 30; break;
+        case 3: maxAllowed = 100; break;
+        default: maxAllowed = 3;
+      }
+    }
+
+    if (currentCount >= maxAllowed) {
+      return NextResponse.json({ error: `Limit reached! Your ${tier === 0 ? 'Free' : 'Premium'} plan only allows ${maxAllowed} monitors.` }, { status: 402 });
+    }
+    // ---------------------------------
+
     if (!type || !name || !guildId) {
       return NextResponse.json({ error: "Missing required fields (type, name, guildId)" }, { status: 400 });
     }

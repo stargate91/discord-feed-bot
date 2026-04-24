@@ -64,18 +64,18 @@ async function getGuildStats(guildId, session) {
     const isLifetime = isMasterGuild || (premiumUntil && new Date(premiumUntil) > new Date('2090-01-01'));
     const isPremium = isLifetime || tier >= 1;
 
-    let maxMonitors = 5;
+    let maxMonitors = 3;
     if (isMasterGuild) maxMonitors = 1000;
     else {
       switch (tier) {
-        case 1: maxMonitors = 25; break;
-        case 2: maxMonitors = 50; break;
+        case 1: maxMonitors = 10; break;
+        case 2: maxMonitors = 30; break;
         case 3: maxMonitors = 100; break;
-        default: maxMonitors = 5;
+        default: maxMonitors = 3;
       }
     }
 
-    const tierNames = ["Free", "Scout", "Operator", "Architect"];
+    const tierNames = ["Free", "Starter", "Professional", "Ultimate"];
     const currentTierName = isMasterGuild ? "Master" : tierNames[tier];
 
     return {
