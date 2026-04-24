@@ -125,6 +125,7 @@ async def init_db():
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 0")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT")
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true")
                 
                 # Migration: Move existing premium users to Tier 3 (Architect)
                 await conn.execute("""

@@ -124,9 +124,9 @@ class FeedBot(commands.Bot):
         synced = 0
         for guild in self.guilds:
             try:
-                # Ensure guild exists in database
+                # Ensure guild exists in database and mark as active
                 res = await database._execute(
-                    "INSERT INTO guild_settings (guild_id) VALUES ($1) ON CONFLICT (guild_id) DO NOTHING",
+                    "INSERT INTO guild_settings (guild_id, is_active) VALUES ($1, true) ON CONFLICT (guild_id) DO UPDATE SET is_active = true",
                     guild.id
                 )
                 # If a new row was inserted or if we just want to ensure cache is warm
@@ -152,9 +152,9 @@ class FeedBot(commands.Bot):
         """Called when the bot joins a new guild."""
         log.info(f"Joined new guild: {guild.name} (ID: {guild.id})")
         try:
-            # Ensure guild exists in database
+            # Ensure guild exists in database and mark as active
             await database._execute(
-                "INSERT INTO guild_settings (guild_id) VALUES ($1) ON CONFLICT (guild_id) DO NOTHING",
+                "INSERT INTO guild_settings (guild_id, is_active) VALUES ($1, true) ON CONFLICT (guild_id) DO UPDATE SET is_active = true",
                 guild.id
             )
             # Update local cache with default settings
@@ -173,6 +173,13 @@ class FeedBot(commands.Bot):
     async def on_guild_remove(self, guild):
         """Called when the bot is kicked from a guild."""
         log.info(f"Left guild: {guild.name} (ID: {guild.id})")
+        
+        try:
+            await database._execute("UPDATE guild_settings SET is_active = false WHERE guild_id = $1", guild.id)
+            log.info(f"Marked guild {guild.id} as inactive in database.")
+        except Exception as e:
+            log.error(f"Error marking guild {guild.id} as inactive: {e}")
+
         # We keep the settings in DB for potential re-joins, but we could remove from cache
         if guild.id in self.guild_settings_cache:
             del self.guild_settings_cache[guild.id]

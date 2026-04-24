@@ -36,7 +36,8 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   const [repostCount, setRepostCount] = useState(1);
   const [purgeAmount, setPurgeAmount] = useState(50);
 
-  const currentTier = TIER_CONFIG[tier] || TIER_CONFIG[0];
+  const effectiveTier = (isPremium && tier === 0) ? 3 : tier;
+  const currentTier = TIER_CONFIG[effectiveTier] || TIER_CONFIG[0];
   const canRepost = currentTier.canRepost;
   const maxPurge = currentTier.maxPurge;
 

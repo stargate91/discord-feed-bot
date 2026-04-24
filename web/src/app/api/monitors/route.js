@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 import { canManageGuild } from "@/lib/permissions";
 import { NextResponse } from "next/server";
+import { notifyBotOfChange } from "@/lib/bot-sync";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -141,6 +142,10 @@ export async function POST(request) {
     ];
 
     const res = await pool.query(query, values);
+    
+    // Notify the bot of the new monitor
+    await notifyBotOfChange();
+    
     return NextResponse.json(res.rows[0]);
   } catch (error) {
     console.error("[Monitors POST] Error:", error);
