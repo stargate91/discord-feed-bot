@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import SidebarWrapper from "@/components/SidebarWrapper";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export default async function DashboardLayout({ children }) {
   const session = await getServerSession(authOptions);

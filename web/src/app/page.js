@@ -1,6 +1,6 @@
 import LoginButton from "@/components/LoginButton";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Zap, Shield, Activity, Globe, Play, Rss, Layout, Rocket } from "lucide-react";
 import FloatingBackground from "@/components/FloatingBackground";

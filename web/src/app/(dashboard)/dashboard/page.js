@@ -2,7 +2,7 @@ import StatCard from "@/components/StatCard";
 import NotificationTimeline from "@/components/NotificationTimeline";
 import LoginButton from "@/components/LoginButton";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
