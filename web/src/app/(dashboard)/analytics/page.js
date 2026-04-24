@@ -65,8 +65,15 @@ function AnalyticsContent() {
   };
 
   const isRangeLocked = (val) => {
+    // 1. Bot owner/master role always unlocked
     if (session?.user?.role === "master") return false;
+    
+    // 2. Wait for data
     if (!data) return true;
+    
+    // 3. Guild is master or highest tier
+    if (data.isMaster || data.tier >= 3) return false;
+    
     const limit = getTierLimit(data.tier || 0);
     return parseInt(val) > limit;
   };
@@ -95,7 +102,7 @@ function AnalyticsContent() {
         setData(json);
 
         if (!hasSetDefaultRange && json) {
-          const limit = session?.user?.role === 'master' ? 999 : getTierLimit(json.tier || 0);
+          const limit = (session?.user?.role === 'master' || json.isMaster || json.tier >= 3) ? 999 : getTierLimit(json.tier || 0);
           setRange(String(limit));
           setHasSetDefaultRange(true);
         }

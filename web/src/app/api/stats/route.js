@@ -45,7 +45,7 @@ export async function GET(req) {
 
       const monitorsRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1::bigint AND enabled = true', [guildId]);
 
-      const guildRes = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+      const guildRes = await pool.query('SELECT tier, is_master, is_premium FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
       const tier = guildRes.rows[0]?.tier || 0;
 
       // 4. Heatmap Data (Day/Hour distribution)
@@ -67,7 +67,9 @@ export async function GET(req) {
         activeMonitors: parseInt(monitorsRes.rows[0]?.count) || 0,
         platformCount: parseInt(totalsRes.rows[0]?.platform_count) || 0,
         heatmap: heatmapRes.rows,
-        tier: tier
+        tier: tier,
+        isMaster: guildRes.rows[0]?.is_master || false,
+        isPremium: guildRes.rows[0]?.is_premium || false
       };
 
       console.log(`[API Stats] Success for guild ${guildId}`);
