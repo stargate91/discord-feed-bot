@@ -79,8 +79,6 @@ export default function PremiumLanding({ session }) {
         </div>
       </div>
 
-      </div>
-
       <style jsx>{`
         .premium-landing-root {
           display: flex;
