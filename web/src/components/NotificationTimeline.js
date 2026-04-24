@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, ExternalLink, Play, Tv, Rss, Gamepad, Bitcoin, Video, Globe } from "lucide-react";
+import { Clock, ExternalLink } from "lucide-react";
 
 function formatRelativeTime(date) {
   const diff = Math.floor((new Date() - new Date(date)) / 1000);
@@ -11,14 +11,20 @@ function formatRelativeTime(date) {
 }
 
 const PLATFORM_ICONS = {
-  youtube: { icon: Play, color: "#FF0000" },
-  twitch: { icon: Tv, color: "#9146FF" },
-  kick: { icon: Video, color: "#53FC18" },
-  epic_games: { icon: Gamepad, color: "#FFFFFF" },
-  steam: { icon: Gamepad, color: "#171a21" },
-  rss: { icon: Rss, color: "#FFA500" },
-  crypto: { icon: Bitcoin, color: "#F7931A" },
-  default: { icon: Globe, color: "var(--accent-color)" }
+  youtube: { icon: '/emojis/youtube.png', color: "#FF0000" },
+  twitch: { icon: '/emojis/twitch.png', color: "#9146FF" },
+  stream: { icon: '/emojis/twitch.png', color: "#9146FF" },
+  kick: { icon: '/emojis/kick.png', color: "#53FC18" },
+  epic_games: { icon: '/emojis/epic-games.png', color: "#FFFFFF" },
+  steam: { icon: '/emojis/steam.png', color: "#66c0f4" },
+  steam_free: { icon: '/emojis/steam.png', color: "#66c0f4" },
+  gog_free: { icon: '/emojis/gog.png', color: "#b237c1" },
+  rss: { icon: '/emojis/rss.png', color: "#ee802f" },
+  crypto: { icon: '/emojis/crypto.png', color: "#F7931A" },
+  movie: { icon: '/emojis/tmdb.png', color: "#00d1b2" },
+  tv_series: { icon: '/emojis/tmdb.png', color: "#3273dc" },
+  github: { icon: '/emojis/github.png', color: "#ffffff" },
+  default: { icon: '/emojis/rss.png', color: "var(--accent-color)" }
 };
 
 export default function NotificationTimeline({ notifications }) {
@@ -51,7 +57,7 @@ export default function NotificationTimeline({ notifications }) {
           return (
             <div key={i} className="timeline-item">
               <div className="timeline-icon-wrapper" style={{ '--plat-color': plat.color }}>
-                <Icon size={16} />
+                <img src={plat.icon} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
               </div>
               
               <div className="timeline-content">
