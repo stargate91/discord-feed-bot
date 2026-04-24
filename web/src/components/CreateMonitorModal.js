@@ -97,6 +97,12 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.target_channels || formData.target_channels.length === 0) {
+      addToast('You must select at least one target channel.', 'error', 'Missing Channel');
+      return;
+    }
+
     setCreating(true);
 
     let platformInput = formData.platform_input;

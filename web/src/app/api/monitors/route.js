@@ -99,6 +99,10 @@ export async function POST(request) {
     const tChannels = Array.isArray(target_channels) ? target_channels : [];
     const tRoles = Array.isArray(target_roles) ? target_roles : [];
 
+    if (tChannels.length === 0) {
+      return NextResponse.json({ error: "You must select at least one target channel." }, { status: 400 });
+    }
+
     if (tChannels.length > maxChannelsRoles) {
       return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} target channels per monitor.` }, { status: 402 });
     }
