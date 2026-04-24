@@ -268,28 +268,21 @@ class MonitorManager:
             log.info(f"Live Repost triggered for {monitor.name} (Source: {monitor.type}). Fetching {count} items...")
             
             # 1. Fetch fresh items directly from the platform source
-            if not hasattr(monitor, 'fetch_new_items'):
+            if not hasattr(monitor, 'get_latest_items'):
                 log.warning(f"Monitor {monitor.name} does not support live fetching.")
                 return False
                 
-            items = await monitor.fetch_new_items()
-            if not items:
+            items_to_post = await monitor.get_latest_items(count)
+            if not items_to_post:
                 log.warning(f"No items found at source for {monitor.name}")
                 return False
                 
-            # 2. Take only the requested number of items (latest first)
-            to_post = items[:count]
-            
-            log.info(f"Posting {len(to_post)} items from source for {monitor.name}")
+            log.info(f"Posting {len(items_to_post)} items from source for {monitor.name}")
             
             # 3. Process each item (post to Discord)
-            for item in reversed(to_post): # Oldest of the selection first for better flow
-                item['is_repost'] = True
-                await monitor.process_item(item)
+            for item_data in items_to_post:
+                await monitor.send_update(content=item_data.get("content"), embed=item_data.get("embed"), view=item_data.get("view"))
                 await asyncio.sleep(1) # Safety delay
-            
-            # 4. CRITICAL: Mark these as published in DB so they aren't double-posted by the auto-poller
-            await monitor.mark_items_published(to_post)
             
             return True
         except Exception as e:
