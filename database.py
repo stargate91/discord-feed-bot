@@ -149,8 +149,9 @@ async def init_db():
                 # Add index to speed up the recent notifications/ticker queries
                 await conn.execute("CREATE INDEX IF NOT EXISTS idx_published_entries_time ON published_entries_v2 (published_at DESC)")
                 
-                # Ensure premium_codes has the tier column
+                # Ensure premium_codes has the necessary columns
                 await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 3")
+                await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN DEFAULT false")
 
                 log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
