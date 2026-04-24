@@ -140,6 +140,9 @@ async def init_db():
                 await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS title TEXT")
                 await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS thumbnail_url TEXT")
                 await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS author_name TEXT")
+                
+                # Ensure premium_codes has the tier column
+                await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 3")
 
                 log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
