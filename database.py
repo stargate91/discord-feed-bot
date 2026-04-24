@@ -28,7 +28,9 @@ async def init_db():
             premium_until TIMESTAMP,
             refresh_interval INTEGER,
             tier INTEGER DEFAULT 0,
-            stripe_subscription_id TEXT
+            stripe_subscription_id TEXT,
+            is_master BOOLEAN DEFAULT false,
+            is_premium BOOLEAN DEFAULT false
         )''',
         # 2. Monitors
         '''CREATE TABLE IF NOT EXISTS monitors (
@@ -126,6 +128,8 @@ async def init_db():
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 0")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true")
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_master BOOLEAN DEFAULT false")
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT false")
                 
                 # Migration: Move existing premium users to Tier 3 (Architect)
                 await conn.execute("""

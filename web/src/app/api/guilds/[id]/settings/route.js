@@ -44,7 +44,7 @@ export async function GET(req, { params }) {
     );
 
     let settings = {
-        language: "en",
+        language: "hu",
         admin_role_id: "0",
         premium_until: null,
         refresh_interval: 15,
@@ -77,7 +77,7 @@ export async function GET(req, { params }) {
         }
 
         settings = {
-            language: row.language || "en",
+            language: row.language || "hu",
             admin_role_id: row.admin_role_id ? String(row.admin_role_id) : "0",
             premium_until: row.premium_until,
             refresh_interval: row.refresh_interval || 15,
@@ -111,6 +111,51 @@ export async function PATCH(req, { params }) {
   
   const body = await req.json();
   const { language, admin_role_id, refresh_interval, alert_templates } = body;
+
+  // Validation
+  const allowedLangs = ['en', 'hu'];
+  if (language && !allowedLangs.includes(language)) {
+    return NextResponse.json({ error: "Invalid language. Allowed: en, hu" }, { status: 400 });
+  }
+
+  const interval = parseInt(refresh_interval);
+  if (isNaN(interval) || interval < 1 || interval > 1440) {
+    return NextResponse.json({ error: "Invalid refresh interval (1-1440 minutes)" }, { status: 400 });
+  }
+
+  // Validate Refresh Interval based on Tier
+  const tierRes = await pool.query("SELECT tier, premium_until, is_master FROM guild_settings WHERE guild_id = $1::bigint", [guildId]);
+  let guildTier = tierRes.rows[0]?.tier || 0;
+  const premiumUntil = tierRes.rows[0]?.premium_until;
+  const dbIsMaster = tierRes.rows[0]?.is_master || false;
+  
+  if (guildTier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
+    guildTier = 3;
+  }
+
+  // Check config.json for Master status as well
+  let isMaster = dbIsMaster;
+  if (!isMaster) {
+    try {
+      const configPath = path.resolve(process.cwd(), '../config.json');
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8').replace(/:\s*([0-9]{15,})/g, ': "$1"'));
+        if (config.master_guilds?.hasOwnProperty(guildId)) isMaster = true;
+      }
+    } catch(e) {}
+  }
+
+  let minInterval = 30; // Default: Free Tier
+  if (isMaster) minInterval = 1;
+  else if (guildTier >= 3) minInterval = 2; // Ultimate
+  else if (guildTier >= 2) minInterval = 5; // Professional
+  else if (guildTier >= 1) minInterval = 10; // Starter
+
+  if (interval < minInterval) {
+    return NextResponse.json({ 
+      error: `Access Denied: Refresh interval too low for your tier. Minimum for your level is ${minInterval} minutes.` 
+    }, { status: 400 });
+  }
 
   try {
     const q = `
