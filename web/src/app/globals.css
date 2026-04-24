@@ -1847,8 +1847,7 @@ body:has(.is-landing)::before {
 /* Platform Tabs Styling */
 .platform-tabs-container {
   overflow-x: auto;
-  padding: 10px 0;
-  margin-top: -10px;
+  padding-bottom: 8px;
   margin-bottom: 24px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1862,7 +1861,6 @@ body:has(.is-landing)::before {
   display: flex;
   gap: 8px;
   min-width: max-content;
-  padding: 5px;
 }
 
 .platform-tab {

@@ -167,7 +167,7 @@ export default function MonitorsPage() {
   const platforms = ['all', ...new Set(monitors.map(m => m.type))];
 
   return (
-    <div className="monitors-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto' }}>
+    <div className="monitors-page-wrapper" style={{ maxWidth: '100%', margin: '0 auto' }}>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Manage Monitors</h2>

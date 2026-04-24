@@ -121,7 +121,7 @@ export default async function Dashboard({ searchParams }) {
   }
 
   return (
-    <div className="dashboard-page-content" style={{ maxWidth: '1450px', margin: '0 auto' }}>
+    <div className="dashboard-page-content" style={{ maxWidth: '100%', margin: '0 auto' }}>
       <header className="header" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Dashboard Overview</h2>

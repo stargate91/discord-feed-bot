@@ -8,8 +8,8 @@ import {
   Shield,
   Crown,
   Save,
-  CheckCircle2,
-  AlertCircle,
+  CheckCircle,
+  AlertTriangle,
   Search,
   ChevronDown,
   Clock,
@@ -343,7 +343,7 @@ function SettingsContent() {
 
       {notification && (
         <div className={`notification-banner ${notification.type}`}>
-          {notification.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          {notification.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
           <span>{notification.message}</span>
         </div>
       )}
@@ -518,7 +518,7 @@ function SettingsContent() {
 
               {redeemStatus && (
                 <div className={`redeem-status ${redeemStatus.type}`}>
-                  {redeemStatus.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                  {redeemStatus.type === 'success' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
                   <span>{redeemStatus.message}</span>
                 </div>
               )}
@@ -528,11 +528,11 @@ function SettingsContent() {
       </div>
 
       <style jsx>{`
-        .settings-container { max-width: 1450px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+        .settings-container { max-width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
         .notification-banner { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; border-radius: 12px; animation: slideIn 0.3s ease-out; }
         .notification-banner.success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #4ade80; }
         .notification-banner.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; }
-        .settings-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .settings-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; }
         .settings-main { display: flex; flex-direction: column; gap: 1.5rem; }
         .language-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .lang-btn { display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-weight: 600; }

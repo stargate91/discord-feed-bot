@@ -2,7 +2,9 @@ import LoginButton from "@/components/LoginButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
-import { Rocket, Zap, Link as LinkIcon, Target, Gamepad2, MonitorPlay, Rss, Bitcoin, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Zap, Shield, Activity, Globe, Play, Rss, Layout, Rocket } from "lucide-react";
+import FloatingBackground from "@/components/FloatingBackground";
+import PlatformCarousel from "@/components/PlatformCarousel";
 
 export const metadata = {
   title: "NovaFeeds | Feed-RSS Discord Bot",
@@ -26,6 +28,7 @@ export default async function LandingPage() {
 
   return (
     <div className="landing-page is-landing">
+      <FloatingBackground />
       {/* ── Navbar ── */}
       <nav className="lp-navbar">
         <div className="lp-navbar-inner">
@@ -54,21 +57,21 @@ export default async function LandingPage() {
         <div className="lp-hero-glow"></div>
         <div className="lp-hero-content">
           <div className="lp-hero-left">
-            <div className="lp-badge">
+            <div className="lp-badge parallax-element" data-depth="0.2">
               <span className="lp-badge-dot"></span>
-              <Rocket size={14} className="inline-block mr-1" /> Early access - growing fast
+              <Activity size={14} className="inline-block mr-1" /> Early access - growing fast
             </div>
-            <h1 className="lp-title">
+            <h1 className="lp-title parallax-element" data-depth="0.1">
               Elevate your<br />
               <span className="lp-title-gradient">server&apos;s feeds</span>
             </h1>
-            <p className="lp-subtitle">
+            <p className="lp-subtitle parallax-element" data-depth="0.05">
               Your new favorite bot for Free Games, YouTube, Twitch, RSS, and Crypto - delivered right to your server.
             </p>
             <div className="lp-hero-actions">
               {session ? (
                 <a href="/select-server" className="lp-btn lp-btn-primary">
-                  <LayoutDashboard size={20} />
+                  <Activity size={20} />
                   Go to Servers
                 </a>
               ) : (
@@ -100,12 +103,12 @@ export default async function LandingPage() {
           </div>
           <div className="lp-stat-sep"></div>
           <div className="lp-stat">
-            <span className="lp-stat-num"><LinkIcon size={24} /></span>
+            <span className="lp-stat-num"><Globe size={24} /></span>
             <span className="lp-stat-text">Multi-Platform Feeds</span>
           </div>
           <div className="lp-stat-sep"></div>
           <div className="lp-stat">
-            <span className="lp-stat-num"><Target size={24} /></span>
+            <span className="lp-stat-num"><Zap size={24} /></span>
             <span className="lp-stat-text">Fully Customizable</span>
           </div>
         </div>
@@ -117,12 +120,12 @@ export default async function LandingPage() {
         <h2 className="lp-section-title">All the good stuff, none of the clutter</h2>
         <div className="lp-features-grid">
           {[
-            { icon: <Gamepad2 size={24} />, title: "Free Game Alerts", desc: "Epic, Steam, GOG - we'll make sure you never miss a free drop." },
-            { icon: <MonitorPlay size={24} />, title: "YouTube & Twitch", desc: "Catch every upload and live stream the second it goes live." },
+            { icon: <Zap size={24} />, title: "Free Game Alerts", desc: "Epic, Steam, GOG - we'll make sure you never miss a free drop." },
+            { icon: <Play size={24} />, title: "YouTube & Twitch", desc: "Catch every upload and live stream the second it goes live." },
             { icon: <Rss size={24} />, title: "RSS / Atom Feeds", desc: "Monitor any feed URL. News, blogs, changelogs - totally up to you." },
-            { icon: <Bitcoin size={24} />, title: "Crypto Tracking", desc: "Keep an eye on prices and get real-time market updates." },
-            { icon: <LayoutDashboard size={24} />, title: "Web Dashboard", desc: "Tweak all your settings from a super easy-to-use control panel." },
-            { icon: <ShieldCheck size={24} />, title: "Premium Tiers", desc: "Unlock more feeds, faster updates, and priority support." },
+            { icon: <Activity size={24} />, title: "Crypto Tracking", desc: "Keep an eye on prices and get real-time market updates." },
+            { icon: <Layout size={24} />, title: "Web Dashboard", desc: "Tweak all your settings from a super easy-to-use control panel." },
+            { icon: <Shield size={24} />, title: "Premium Tiers", desc: "Unlock more feeds, faster updates, and priority support." },
           ].map((f, i) => (
             <div className="lp-feature-card" key={i}>
               <div className="lp-feature-icon">{f.icon}</div>
@@ -132,6 +135,8 @@ export default async function LandingPage() {
           ))}
         </div>
       </section>
+
+      <PlatformCarousel />
 
       {/* ── Footer ── */}
       <footer className="lp-footer">
