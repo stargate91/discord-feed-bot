@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Settings, RefreshCcw, Send, Trash, Wrench, Check, AlertCircle, Shield } from 'lucide-react';
+import { Settings, RefreshCcw, Send, Trash, Wrench, Check, AlertCircle, Shield, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 const platformNames = {
