@@ -142,6 +142,9 @@ async def init_db():
                 await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS thumbnail_url TEXT")
                 await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS author_name TEXT")
                 
+                # Add index to speed up the recent notifications/ticker queries
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_published_entries_time ON published_entries_v2 (published_at DESC)")
+                
                 # Ensure premium_codes has the tier column
                 await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 3")
 

@@ -18,7 +18,7 @@ export async function GET(req) {
         published_at,
         author_name
       FROM published_entries_v2 
-      WHERE title IS NOT NULL
+      WHERE title IS NOT NULL AND published_at IS NOT NULL
       ORDER BY published_at DESC 
       LIMIT 15
     `);
