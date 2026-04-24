@@ -322,7 +322,11 @@ function SettingsContent() {
   if (loading) return <div className="loading-container"><div className="loader"></div></div>;
 
   const isPremiumActive = settings.isMaster || (settings.premium_until && new Date(settings.premium_until) > new Date());
-  const minInterval = settings.isMaster ? 1 : (isPremiumActive ? 2 : 15);
+  const minInterval = settings.isMaster ? 1 : 
+                      (settings.tier >= 3) ? 2 : 
+                      (settings.tier >= 2) ? 5 : 
+                      (settings.tier >= 1) ? 10 : 30;
+
   const currentPlatform = PLATFORMS.find(p => p.id === activePlatform);
 
   return (
