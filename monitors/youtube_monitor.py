@@ -1,5 +1,7 @@
 import feedparser
 import discord
+import aiohttp
+import re
 from core.base_monitor import BaseMonitor
 from logger import log
 
@@ -11,14 +13,87 @@ class YouTubeMonitor(BaseMonitor):
         self.channel_id = config.get("channel_id")
         self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
         self.is_first_run = True
+        self.is_resolving = False
+
+    async def _ensure_channel_id(self):
+        """Helper to ensure we have a valid UCID, resolving handles/names if necessary."""
+        if self.channel_id and self.channel_id.startswith("UC") and len(self.channel_id) == 24:
+            return True
+            
+        if self.is_resolving: return False
+        self.is_resolving = True
+        
+        log.info(f"Attempting to resolve YouTube Channel ID for: {self.channel_id}")
+        resolved = await self.resolve_channel_id(self.channel_id)
+        
+        if resolved:
+            log.info(f"Successfully resolved '{self.channel_id}' to '{resolved}'")
+            self.channel_id = resolved
+            self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
+            self.is_resolving = False
+            return True
+        
+        log.warning(f"Could not resolve YouTube Channel ID for: {self.channel_id}")
+        self.is_resolving = False
+        return False
+
+    @staticmethod
+    async def resolve_channel_id(input_str):
+        """Scrapes the YouTube channel page to find the underlying UCID."""
+        if not input_str: return None
+        
+        # If it's already a UC id, just return it
+        if input_str.startswith("UC") and len(input_str) == 24:
+            return input_str
+            
+        url = input_str
+        if not url.startswith("http"):
+            if input_str.startswith("@"):
+                url = f"https://www.youtube.com/{input_str}"
+            else:
+                # Try handle first, then /c/ fallback
+                url = f"https://www.youtube.com/@{input_str}"
+        
+        try:
+            # We use a standard browser-like User-Agent to avoid blocks
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.get(url, timeout=10) as response:
+                    if response.status == 200:
+                        html = await response.text()
+                        
+                        # Pattern 1: Meta tag (most reliable)
+                        match = re.search(r'meta itemprop="channelId" content="(UC[^"]+)"', html)
+                        if match: return match.group(1)
+                        
+                        # Pattern 2: Canonical link
+                        match = re.search(r'link rel="canonical" href="https://www.youtube.com/channel/(UC[^"]+)"', html)
+                        if match: return match.group(1)
+                        
+                        # Pattern 3: Initial Data JSON
+                        match = re.search(r'"channelId":"(UC[^"]+)"', html)
+                        if match: return match.group(1)
+                        
+                        # Pattern 4: Browse ID
+                        match = re.search(r'"browseId":"(UC[^"]+)"', html)
+                        if match: return match.group(1)
+
+                    elif response.status == 404 and not input_str.startswith("@") and "youtube.com/c/" not in url:
+                        # If @handle failed, try /c/ legacy URL as fallback
+                        return await YouTubeMonitor.resolve_channel_id(f"https://www.youtube.com/c/{input_str}")
+                        
+        except Exception as e:
+            log.error(f"Error resolving YouTube channel ID for {input_str}: {e}")
+            
+        return None
 
     def get_shared_key(self):
         return f"youtube:{self.channel_id}"
 
     async def fetch_new_items(self):
         """Fetch YouTube RSS feed and look for new videos."""
-        if not self.channel_id:
-            log.warning(f"No channel ID for YouTube monitor: {self.name}")
+        if not await self._ensure_channel_id():
+            log.warning(f"No valid channel ID for YouTube monitor: {self.name} (Input: {self.config.get('channel_id')})")
             return []
 
         shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
@@ -104,7 +179,7 @@ class YouTubeMonitor(BaseMonitor):
 
     async def get_latest_items(self, count=1):
         """Fetch the N most recent YouTube videos from the feed."""
-        if not self.channel_id:
+        if not await self._ensure_channel_id():
             return []
 
         import asyncio
