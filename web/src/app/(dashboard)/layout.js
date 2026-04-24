@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }) {
           <SidebarWrapper session={session} isMaster={isMaster} />
         </Suspense>
       )}
-      <main className="main-content">
+      <main className="main-content app-grid-bg">
         {children}
       </main>
     </div>

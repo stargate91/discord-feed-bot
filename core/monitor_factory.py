@@ -32,8 +32,19 @@ def create_monitor_instance(bot, m_config):
         return MovieMonitor(bot, m_config)
     elif m_type == "tv_series":
         return TVSeriesMonitor(bot, m_config)
+    elif m_type == "twitch":
+        from monitors.stream_monitor import TwitchMonitor
+        return TwitchMonitor(bot, m_config)
+    elif m_type == "kick":
+        from monitors.stream_monitor import KickMonitor
+        return KickMonitor(bot, m_config)
     elif m_type == "stream":
-        return StreamMonitor(bot, m_config)
+        # Backwards compatibility for existing 'stream' monitors
+        from monitors.stream_monitor import TwitchMonitor, KickMonitor
+        platform = m_config.get("platform", "twitch").lower()
+        if platform == "kick":
+            return KickMonitor(bot, m_config)
+        return TwitchMonitor(bot, m_config)
     elif m_type == "crypto":
         if bot.has_feature(m_config.get("guild_id", 0), "crypto"):
             return CryptoMonitor(bot, m_config)

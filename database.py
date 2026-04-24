@@ -37,6 +37,13 @@ async def init_db():
             currency TEXT,
             status TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''',
+        # 9. Premium Redemptions
+        '''CREATE TABLE IF NOT EXISTS premium_redemptions (
+            id SERIAL PRIMARY KEY,
+            code VARCHAR(50),
+            guild_id BIGINT,
+            redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )'''
     ]
 
@@ -74,28 +81,6 @@ async def init_db():
 
 # --- API Methods ---
 
-async def add_monitor(m_config, guild_id):
-    extra_settings = m_config.copy()
-    for k in ["type", "name", "discord_channel_id", "ping_role_id", "target_channels", "target_roles", "enabled", "id", "guild_id", "target_genres", "target_languages"]:
-        extra_settings.pop(k, None)
-        
-    extra_settings["target_channels"] = m_config.get("target_channels", [])
-    extra_settings["target_roles"] = m_config.get("target_roles", [])
-    if "target_genres" in m_config: extra_settings["target_genres"] = m_config["target_genres"]
-    if "target_languages" in m_config: extra_settings["target_languages"] = m_config["target_languages"]
-
-    q = '''INSERT INTO monitors (guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)'''
-    
-    args = (
-        guild_id, m_config.get('type'), m_config.get('name'),
-        0, 0,
-        bool(m_config.get('enabled', True)),
-        json.dumps(extra_settings)
-    )
-    
-    pool = await get_pool()
-    await pool.execute(q, *args)
 
 async def get_all_monitors():
     q = "SELECT id, guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings, last_post_at FROM monitors"
@@ -161,70 +146,13 @@ async def get_monitors_for_guild(guild_id):
         monitors.append(m)
     return monitors
 
-async def update_monitor_status(monitor_id, guild_id, is_enabled):
-    q = "UPDATE monitors SET enabled = $1 WHERE id = $2 AND guild_id = $3"
-    pool = await get_pool()
-    await pool.execute(q, bool(is_enabled), monitor_id, guild_id)
 
-async def update_monitor_details(monitor_id, guild_id, name, target_channels, target_roles, embed_color=None, steam_patch_only=None, target_genres=None, target_languages=None):
-    q_sel = "SELECT extra_settings FROM monitors WHERE id = $1 AND guild_id = $2"
-    pool = await get_pool()
-    row = await pool.fetchrow(q_sel, monitor_id, guild_id)
-    
-    if not row:
-        return # Should not happen if monitor exists
-    
-    extra_settings_json = row[0]
-    extra_settings = {}
-    if extra_settings_json:
-        try: extra_settings = json.loads(extra_settings_json)
-        except: pass
-    
-    if target_channels is not None:
-        if len(target_channels) == 1 and target_channels[0] == -1:
-            extra_settings["target_channels"] = []
-        elif len(target_channels) > 0:
-            extra_settings["target_channels"] = target_channels
-            
-    if target_roles is not None:
-        if len(target_roles) == 1 and target_roles[0] == -1:
-            extra_settings["target_roles"] = []
-        elif len(target_roles) > 0:
-            extra_settings["target_roles"] = target_roles
-        
-    if embed_color is not None:
-        if embed_color.strip(): extra_settings["embed_color"] = embed_color.strip()
-        else: extra_settings.pop("embed_color", None)
-
-    if steam_patch_only is not None:
-        extra_settings["steam_patch_only"] = steam_patch_only
-        
-    if target_genres is not None:
-        extra_settings["target_genres"] = target_genres
-
-    if target_languages is not None:
-        extra_settings["target_languages"] = target_languages
-        
-    q_upd = '''UPDATE monitors SET name = $1, extra_settings = $2 
-               WHERE id = $3 AND guild_id = $4'''
-    
-    await pool.execute(q_upd, name, json.dumps(extra_settings), monitor_id, guild_id)
-    log.info(f"Monitor {monitor_id} updated in DB: name={name}, chs={extra_settings.get('target_channels', [])}, roles={extra_settings.get('target_roles', [])}")
 
 async def update_last_post_at(monitor_id):
     q = "UPDATE monitors SET last_post_at = $1 WHERE id = $2"
     pool = await get_pool()
     await pool.execute(q, datetime.now(), monitor_id)
 
-async def remove_monitor(monitor_id, guild_id):
-    q = "DELETE FROM monitors WHERE id = $1 AND guild_id = $2"
-    pool = await get_pool()
-    await pool.execute(q, monitor_id, guild_id)
-
-async def remove_all_monitors(guild_id):
-    q = "DELETE FROM monitors WHERE guild_id = $1"
-    pool = await get_pool()
-    await pool.execute(q, guild_id)
 
 async def add_premium_days(guild_id, days):
     """Adds premium days to a guild. If already has premium, it stacks."""
@@ -401,86 +329,6 @@ async def _execute(query, *args):
 
 # --- Premium Codes ---
 
-async def create_premium_code(code: str, duration_days: int, max_uses: int = 1, tier: int = 3):
-    q = "INSERT INTO premium_codes (code, duration_days, max_uses, tier, created_at) VALUES ($1, $2, $3, $4, $5)"
-    pool = await get_pool()
-    await pool.execute(q, code, duration_days, max_uses, tier, datetime.now())
-
-async def get_premium_code(code: str):
-    q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked, tier FROM premium_codes WHERE code = $1"
-    pool = await get_pool()
-    return await pool.fetchrow(q, code)
-
-async def redeem_premium_code(code: str, guild_id: int):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            # Check code validity with a lock
-            row = await conn.fetchrow("SELECT duration_days, max_uses, used_count, is_revoked, tier FROM premium_codes WHERE code = $1 FOR UPDATE", code)
-            if not row:
-                return False, "Invalid Code"
-            
-            if row['is_revoked']:
-                return False, "Code Revoked"
-            
-            duration_days = row['duration_days']
-            max_uses = row['max_uses']
-            used_count = row['used_count']
-            tier = row['tier'] or 3
-            
-            if used_count >= max_uses:
-                return False, "Code already used"
-                
-            # Valid code, increment used_count
-            await conn.execute("UPDATE premium_codes SET used_count = used_count + 1 WHERE code = $1", code)
-            
-            # Fetch current guild premium settings
-            g_row = await conn.fetchrow("SELECT premium_until FROM guild_settings WHERE guild_id = $1", guild_id)
-            current_until = g_row['premium_until'] if g_row else None
-            
-            from datetime import timedelta
-            now = datetime.now()
-            
-            # Lifetime logic
-            if duration_days == 0:
-                new_until = datetime(2099, 12, 31)
-            else:
-                if current_until and current_until > now:
-                    new_until = current_until + timedelta(days=duration_days)
-                else:
-                    new_until = now + timedelta(days=duration_days)
-                    
-            # Insert or Update guild settings directly inside existing transaction
-            q_update = '''INSERT INTO guild_settings (guild_id, premium_until, tier) VALUES ($1, $2, $3)
-                          ON CONFLICT (guild_id) DO UPDATE SET 
-                            premium_until = EXCLUDED.premium_until,
-                            tier = EXCLUDED.tier'''
-            await conn.execute(q_update, guild_id, new_until, tier)
-            
-            return True, new_until
-
-async def get_premium_codes(filter_type: str = "all"):
-    pool = await get_pool()
-    if filter_type == "used":
-        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked, tier FROM premium_codes WHERE used_count >= max_uses ORDER BY created_at DESC"
-    elif filter_type == "unused":
-        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked, tier FROM premium_codes WHERE used_count < max_uses ORDER BY created_at DESC"
-    else:
-        q = "SELECT code, duration_days, max_uses, used_count, created_at, is_revoked, tier FROM premium_codes ORDER BY created_at DESC"
-    return await pool.fetch(q)
-
-async def delete_premium_code(code: str):
-    pool = await get_pool()
-    await pool.execute("DELETE FROM premium_codes WHERE code = $1", code)
-
-async def revoke_premium_code(code: str):
-    pool = await get_pool()
-    await pool.execute("UPDATE premium_codes SET is_revoked = TRUE WHERE code = $1", code)
-
-async def revoke_guild_premium(guild_id: int):
-    pool = await get_pool()
-    q = "UPDATE guild_settings SET premium_until = NULL WHERE guild_id = $1"
-    await pool.execute(q, guild_id)
 
 async def close():
     global _pool

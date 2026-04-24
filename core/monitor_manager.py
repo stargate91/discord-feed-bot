@@ -39,6 +39,12 @@ class MonitorManager:
         from core.monitor_factory import create_monitor_instance
         
         try:
+            # Track old assignments to detect new ones
+            old_assignments = {}
+            if self.monitors:
+                for m in self.monitors:
+                    old_assignments[m.id] = set(m.target_channels)
+
             db_monitors = await database.get_all_monitors()
             new_monitors = []
             
@@ -47,6 +53,18 @@ class MonitorManager:
                 if monitor:
                     new_monitors.append(monitor)
             
+            # If we had monitors before, check for new channel assignments
+            if old_assignments:
+                for m in new_monitors:
+                    if not m.enabled: continue
+                    
+                    old_chans = old_assignments.get(m.id, set())
+                    new_chans = set(m.target_channels)
+                    added_chans = new_chans - old_chans
+                    
+                    for ch_id in added_chans:
+                        asyncio.create_task(self.announce_monitor(m, ch_id))
+
             # Atomic update of the monitor list
             self.monitors = new_monitors
             
@@ -59,6 +77,20 @@ class MonitorManager:
         except Exception as e:
             log.error(f"Failed to sync monitors: {e}", exc_info=True)
             return False
+
+    async def announce_monitor(self, monitor, channel_id):
+        """Send a localized announcement message to a newly assigned channel."""
+        try:
+            channel = self.bot.get_channel(int(channel_id))
+            if not channel:
+                channel = await self.bot.fetch_channel(int(channel_id))
+            
+            if channel:
+                msg = self.bot.get_feedback("monitor_assigned_announcement", name=monitor.name, guild_id=monitor.guild_id)
+                await channel.send(msg)
+                log.info(f"Announced monitor '{monitor.name}' in channel #{channel.name} ({channel_id})")
+        except Exception as e:
+            log.error(f"Failed to announce monitor '{monitor.name}' in channel {channel_id}: {e}")
 
     async def start_loop(self):
         """Start the background monitoring loop centrally."""

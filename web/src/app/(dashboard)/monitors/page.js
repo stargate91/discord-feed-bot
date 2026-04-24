@@ -6,7 +6,7 @@ import MonitorCard from '@/components/MonitorCard';
 import Link from 'next/link';
 import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
-import { Plus, Play, Pause, Trash2 } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Globe } from 'lucide-react';
 
 const platformNames = {
   all: "All Feeds",
@@ -192,16 +192,41 @@ export default function MonitorsPage() {
       </header>
 
       {/* Platform Tabs */}
-      <div className="filter-tabs">
-        {platforms.map(p => (
+      <div className="filter-tabs-container">
+        <div className="filter-tabs">
           <button 
-            key={p} 
-            className={`filter-tab ${filter === p ? 'active' : ''}`}
-            onClick={() => setFilter(p)}
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
           >
-            {platformNames[p] || p.toUpperCase()}
+            <Globe size={16} className="tab-icon-lucide" />
+            All Feeds
           </button>
-        ))}
+          {platforms.filter(p => p !== 'all').map(p => {
+            let iconSrc = `/emojis/${p.replace('_news', '').replace('_free', '').replace('_', '-')}.png`;
+            if (p === 'stream') iconSrc = '/emojis/twitch.png';
+            if (p === 'movie' || p === 'tv_series') iconSrc = '/emojis/tmdb.png';
+            
+            return (
+              <button 
+                key={p} 
+                className={`filter-tab ${filter === p ? 'active' : ''}`}
+                onClick={() => setFilter(p)}
+              >
+                <img 
+                  src={iconSrc} 
+                  alt="" 
+                  style={{ 
+                    width: '16px', 
+                    height: '16px', 
+                    objectFit: 'contain',
+                    filter: filter === p ? 'none' : 'grayscale(1) opacity(0.6)'
+                  }} 
+                />
+                {platformNames[p] || p.toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Bulk Actions Bar */}
@@ -310,31 +335,57 @@ export default function MonitorsPage() {
         .search-input:focus {
           border-color: var(--accent-color);
         }
+        .filter-tabs-container {
+          overflow-x: auto;
+          padding: 10px 0;
+          margin-top: -10px;
+          margin-bottom: 24px;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .filter-tabs-container::-webkit-scrollbar {
+          display: none;
+        }
         .filter-tabs {
           display: flex;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          overflow-x: auto;
-          padding-bottom: 0.5rem;
+          gap: 10px;
+          min-width: max-content;
+          padding: 5px;
         }
         .filter-tab {
-          background: transparent;
-          border: none;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: var(--text-secondary);
-          padding: 0.5rem 1rem;
+          padding: 10px 18px;
+          border-radius: 12px;
           cursor: pointer;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 0.85rem;
-          border-bottom: 2px solid transparent;
-          transition: all 0.2s;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           white-space: nowrap;
         }
         .filter-tab:hover {
-          color: var(--text-primary);
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.1);
+          transform: translateY(-2px);
         }
         .filter-tab.active {
+          background: rgba(123, 44, 191, 0.1);
+          border-color: var(--accent-color);
+          color: white;
+          box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2);
+        }
+        .tab-icon-lucide {
+          transition: all 0.2s;
+          opacity: 0.6;
+        }
+        .filter-tab.active .tab-icon-lucide {
           color: var(--accent-color);
-          border-bottom-color: var(--accent-color);
+          opacity: 1;
+          transform: scale(1.1);
         }
         .bulk-actions-bar {
           display: flex;

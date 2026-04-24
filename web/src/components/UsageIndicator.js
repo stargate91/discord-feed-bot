@@ -1,3 +1,5 @@
+"use client";
+
 export default function UsageIndicator({ label, current, max, unit = "" }) {
   const percentage = Math.min(Math.round((current / max) * 100), 100);
   
@@ -14,18 +16,39 @@ export default function UsageIndicator({ label, current, max, unit = "" }) {
         </span>
       </div>
       
-      <div style={{ height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+      <div style={{ 
+        height: '10px', 
+        background: 'rgba(255, 255, 255, 0.03)', 
+        borderRadius: '10px', 
+        overflow: 'hidden', 
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        position: 'relative'
+      }}>
         <div 
           style={{ 
             height: '100%', 
-            borderRadius: '4px', 
-            transition: 'width 0.5s ease',
+            borderRadius: '10px', 
+            transition: 'width 1s cubic-bezier(0.16, 1, 0.3, 1)',
             width: `${percentage}%`,
-            background: color,
-            boxShadow: `0 0 10px ${percentage >= 80 ? color : 'transparent'}`
+            background: percentage >= 100 ? 'linear-gradient(90deg, #ef4444, #b91c1c)' : `linear-gradient(90deg, ${color} 0%, var(--accent-hover) 100%)`,
+            boxShadow: `0 0 20px ${percentage >= 80 ? color : 'rgba(123, 44, 191, 0.4)'}`,
+            position: 'relative'
           }}
-        ></div>
+        >
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+            animation: 'shimmer 1.5s infinite linear'
+          }}></div>
+        </div>
       </div>
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 }

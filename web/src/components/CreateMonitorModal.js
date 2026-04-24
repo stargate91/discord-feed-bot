@@ -7,9 +7,10 @@ import { useToast } from "@/context/ToastContext";
 
 const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: 'UC... or @handle', hint: 'The alphanumeric ID or the @handle of the channel.' },
-  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#3d3f45', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Provide the full URL to the RSS or Atom feed.' },
-  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#171a21', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'The application ID from the Steam store URL.' },
-  { id: 'stream', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'The exact Twitch username of the creator.' },
+  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#ee802f', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Provide the full URL to the RSS or Atom feed.' },
+  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'The application ID from the Steam store URL.' },
+  { id: 'twitch', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'The exact Twitch username of the creator.' },
+  { id: 'kick', name: 'Kick', logo: '/emojis/kick.png', color: '#53fc18', description: 'Go live alerts for Kick streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'kick_user', hint: 'The exact Kick username of the creator.' },
   { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "username/repository-name".' },
   { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', isCrypto: true },
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
@@ -18,6 +19,19 @@ const PLATFORMS = [
   { id: 'movie', name: 'Movies', logo: '/emojis/tmdb.png', color: '#00d1b2', description: 'Trending and new popular movies.', isGlobal: true },
   { id: 'tv_series', name: 'TV Series', logo: '/emojis/tmdb.png', color: '#3273dc', description: 'Daily trending and new TV shows.', isGlobal: true }
 ];
+
+const getAvailableVars = (platformId) => {
+  if (platformId === 'youtube') return ['name', 'title'];
+  if (platformId === 'crypto') return ['name', 'price', 'percent', 'direction'];
+  if (platformId === 'steam_news') return ['name', 'author', 'title'];
+  if (platformId === 'github') return ['name', 'version'];
+  if (platformId === 'movie' || platformId === 'tv_series') return ['name', 'title'];
+  if (platformId === 'epic_games' || platformId === 'steam_free' || platformId === 'gog_free') return ['name', 'title'];
+  if (platformId === 'rss') return ['name', 'title'];
+  if (platformId === 'twitch') return ['name', 'game', 'title', 'viewers', 'platform'];
+  if (platformId === 'kick') return ['name', 'game', 'title', 'viewers', 'platform'];
+  return ['name'];
+};
 
 export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess }) {
   const { addToast, showSuccess } = useToast();
@@ -29,6 +43,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     target_roles: [],
     embed_color: '#3d3f45',
     platform_input: '',
+    custom_alert: '',
+    include_upcoming: false,
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -53,7 +69,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     if (!isOpen) {
       setStep(1);
       setSelectedPlatform(null);
-      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '' });
+      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
@@ -74,8 +90,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
   const removeCryptoPair = (index) => setCryptoPairs(cryptoPairs.filter((_, i) => i !== index));
   const updateCryptoPair = (index, field, value) => {
     const next = [...cryptoPairs];
-    next[index][field] = value.toUpperCase();
-    if (field === 'threshold') next[index][field] = value; // Don't uppercase numbers
+    if (field === 'symbol') next[index][field] = value.toUpperCase();
+    else next[index][field] = value;
     setCryptoPairs(next);
   };
 
@@ -98,6 +114,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       target_channels: formData.target_channels,
       target_roles: formData.target_roles,
       embed_color: formData.embed_color,
+      custom_alert: formData.custom_alert,
+      include_upcoming: formData.include_upcoming,
     };
 
     if (!selectedPlatform.isGlobal) {
@@ -139,16 +157,24 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
         {step === 1 ? (
           <div className="platform-grid">
-            {PLATFORMS.map(p => (
-              <div key={p.id} className="platform-card" onClick={() => handlePlatformSelect(p)}>
+             {PLATFORMS.map(p => (
+              <div 
+                key={p.id} 
+                className="platform-card" 
+                onClick={() => handlePlatformSelect(p)}
+                style={{"--platform-color": p.color}}
+              >
                 <div className="p-icon">
                   <img src={p.logo} alt={p.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                  <div className="p-icon-glow"></div>
                 </div>
                 <div className="p-info">
                   <span className="p-name">{p.name}</span>
                   <span className="p-desc">{p.description}</span>
                 </div>
-                <ChevronRight size={18} className="p-arrow" />
+                <div className="p-arrow-wrapper">
+                  <ChevronRight size={18} className="p-arrow" />
+                </div>
               </div>
             ))}
           </div>
@@ -234,6 +260,23 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                    />
                  </div>
                )}
+
+               {selectedPlatform?.id === 'epic_games' && (
+                 <div className="checkbox-card">
+                   <div className="checkbox-wrapper">
+                     <input 
+                       type="checkbox" 
+                       id="include_upcoming"
+                       checked={formData.include_upcoming} 
+                       onChange={(e) => setFormData({...formData, include_upcoming: e.target.checked})} 
+                     />
+                     <div className="checkbox-text">
+                       <label htmlFor="include_upcoming">Include Upcoming Games</label>
+                       <span>Also notify about the free games coming next week.</span>
+                     </div>
+                   </div>
+                 </div>
+               )}
             </div>
 
             <div className="form-section">
@@ -256,6 +299,37 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                      onChange={(val) => setFormData({...formData, target_roles: val})}
                      placeholder={loadingContext ? "Loading..." : "Select roles"}
                    />
+                 </div>
+               </div>
+
+               <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                   <label>Custom Alert Message</label>
+                   <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                     <Info size={12} /> Overrides server defaults
+                   </div>
+                 </div>
+                 <textarea
+                   name="custom_alert"
+                   value={formData.custom_alert}
+                   onChange={(e) => setFormData({...formData, custom_alert: e.target.value})}
+                   className="styled-input-main"
+                   placeholder={`Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
+                   rows={3}
+                   style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                 />
+                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                   {getAvailableVars(selectedPlatform?.id).map(v => (
+                     <button
+                       key={v}
+                       type="button"
+                       className="var-btn"
+                       onClick={() => setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
+                       title={`Insert {${v}}`}
+                     >
+                       {`{${v}}`}
+                     </button>
+                   ))}
                  </div>
                </div>
 
@@ -306,7 +380,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           z-index: 1000; padding: 2rem; overflow-y: auto;
         }
         .modal-content {
-          width: 100%; max-width: 650px;
+          width: 100%; max-width: 700px;
           background: rgba(15, 15, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
           animation: modalAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -327,8 +401,9 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           border-radius: 18px; cursor: pointer; transition: all 0.25s;
         }
         .platform-card:hover {
-          background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.05); border-color: var(--platform-color, rgba(255, 255, 255, 0.15));
           transform: translateX(8px);
+          box-shadow: -5px 0 20px -5px var(--platform-color, transparent);
         }
         .p-icon { 
           width: 44px; height: 44px; 
@@ -336,16 +411,33 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           border: 1px solid rgba(255,255,255,0.05);
           border-radius: 12px; display: flex; align-items: center; justify-content: center; 
           transition: all 0.3s ease;
+          position: relative;
         }
+        .p-icon-glow {
+          position: absolute; width: 100%; height: 100%;
+          background: var(--platform-color); opacity: 0;
+          filter: blur(15px); border-radius: 12px;
+          transition: opacity 0.3s; z-index: -1;
+        }
+        .platform-card:hover .p-icon-glow { opacity: 0.3; }
         .platform-card:hover .p-icon {
           background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.2);
+          border-color: var(--platform-color);
           transform: scale(1.05) rotate(-2deg);
           box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .p-info { flex: 1; display: flex; flex-direction: column; }
         .p-name { font-weight: 700; font-size: 1.05rem; }
         .p-desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
+        .p-arrow-wrapper {
+          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.03); border-radius: 10px;
+          transition: all 0.3s;
+        }
+        .platform-card:hover .p-arrow-wrapper {
+          background: var(--platform-color);
+          transform: rotate(15deg);
+        }
         .p-arrow { color: rgba(255,255,255,0.2); transition: color 0.2s; }
         .platform-card:hover .p-arrow { color: white; }
 
@@ -369,6 +461,23 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
         .compact-input {
           padding: 0.6rem 0.8rem !important;
           font-size: 0.9rem !important;
+        }
+
+        .var-btn {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: var(--accent-color);
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-family: monospace;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .var-btn:hover {
+          background: var(--accent-color);
+          color: white;
+          border-color: var(--accent-color);
         }
 
         .delete-icon-btn {

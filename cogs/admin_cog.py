@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from logger import log
 import database
-from ui.views.help_views import HelpView
+
 
 
 def is_admin():
@@ -106,6 +106,17 @@ class AdminCog(commands.Cog):
                 await interaction.response.send_message(self.bot.get_feedback("error_channel_not_found", guild_id=interaction.guild_id), ephemeral=True)
                 return
 
+        # Security check: Ensure channel is monitored
+        monitors = await database.get_monitors_for_guild(interaction.guild_id)
+        monitored_channel_ids = {str(m.get("discord_channel_id", "")) for m in monitors}
+        
+        if str(target_channel.id) not in monitored_channel_ids:
+            err_msg = self.bot.get_feedback("error_purge_not_monitored", guild_id=interaction.guild_id)
+            if err_msg == "error_purge_not_monitored": # Fallback
+                err_msg = "<:xfilledcircle:1495830088523059341> You can only purge channels that are assigned to a monitor."
+            await interaction.response.send_message(err_msg, ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
         
         try:
@@ -170,199 +181,28 @@ class AdminCog(commands.Cog):
             except:
                 await interaction.channel.send(err_msg)
 
-    @app_commands.command(name="help", description="Show the bot documentation and command list")
-    async def show_help(self, interaction: discord.Interaction):
-        """Displays a categorized help menu with bot commands and support links."""
+    @app_commands.command(name="dashboard", description="Manage your bot settings and monitors")
+    async def show_dashboard(self, interaction: discord.Interaction):
+        """Sends a link to the web dashboard and support server."""
         await interaction.response.defer(ephemeral=True)
         
-        # Load guild translations just in case (already usually done in bot, but safe)
-        from core.bot import FeedBot
-        if isinstance(self.bot, FeedBot):
-            # This triggers a refresh if needed
-            self.bot.get_feedback("help_title", guild_id=interaction.guild_id)
-
-        view = HelpView(self.bot, interaction.guild_id or 0)
-        await interaction.followup.send(view=view, ephemeral=True)
-
-class MasterCog(commands.GroupCog, name="master"):
-    def __init__(self, bot):
-        self.bot = bot
-        super().__init__()
-
-
-
-
-
-
-
-    @app_commands.command(name="generate-premium", description="Generate a new premium code (Master Admin only)")
-    @app_commands.describe(tier="Subscription level", days="Duration in days (0 for lifetime)", uses="How many times can it be redeemed?")
-    @app_commands.choices(tier=[
-        app_commands.Choice(name="Scout (Tier 1)", value=1),
-        app_commands.Choice(name="Operator (Tier 2)", value=2),
-        app_commands.Choice(name="Architect (Tier 3)", value=3)
-    ])
-    @is_master_only()
-    async def master_generate_premium(self, interaction: discord.Interaction, tier: app_commands.Choice[int], days: int, uses: int = 1):
-        import secrets
-        import string
+        embed = discord.Embed(
+            title=self.bot.get_feedback("dashboard_cmd_title", guild_id=interaction.guild_id),
+            description=self.bot.get_feedback("dashboard_cmd_desc", guild_id=interaction.guild_id),
+            color=0x2b2d31
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         
-        # Generate format PREM-XXXX-YYYY-ZZZZ-WWWW
-        chars = string.ascii_uppercase + string.digits
-        parts = [''.join(secrets.choice(chars) for _ in range(4)) for _ in range(4)]
-        code = "PREM-" + "-".join(parts)
+        view = discord.ui.View()
         
-        await database.create_premium_code(code, days, uses, tier.value)
-        tier_name = tier.name.split(" (")[0]
-        await interaction.response.send_message(self.bot.get_feedback("master_premium_gen_success", code=code, days=days, uses=uses, tier=tier_name), ephemeral=True)
-
-    @app_commands.command(name="list-premium", description="List generated premium codes (Master Admin only)")
-    @app_commands.describe(filter_type="Filter by usage")
-    @app_commands.choices(filter_type=[
-        app_commands.Choice(name="All", value="all"),
-        app_commands.Choice(name="Used", value="used"),
-        app_commands.Choice(name="Unused", value="unused")
-    ])
-    @is_master_only()
-    async def master_list_premium(self, interaction: discord.Interaction, filter_type: app_commands.Choice[str]):
-        codes = await database.get_premium_codes(filter_type.value)
-        if not codes:
-            await interaction.response.send_message(self.bot.get_feedback("master_premium_list_empty"), ephemeral=True)
-            return
-
-        lines = []
-        tier_names = {1: "Scout", 2: "Operator", 3: "Architect"}
-        for r in codes:
-            code, days, max_uses, used_count, created_at, is_revoked, tier = r
-            duration = "Lifetime" if days == 0 else f"{days} days"
-            t_name = tier_names.get(tier, "Architect")
-            rev_str = " [REV]" if is_revoked else ""
-            lines.append(f"`{code}` | **{t_name}** | {duration} | Uses: {used_count}/{max_uses}{rev_str}")
-
-        msg = self.bot.get_feedback("master_premium_list_title", filter=filter_type.name) + "\n" + "\n".join(lines)
-        if len(msg) > 2000:
-            msg = msg[:1996] + "..."
-        await interaction.response.send_message(msg, ephemeral=True)
-
-    async def autocomplete_premium_code(self, interaction: discord.Interaction, current: str):
-        codes = await database.get_premium_codes("all")
-        choices = []
-        for r in codes:
-            code = r['code']
-            if current.lower() in code.lower():
-                choices.append(app_commands.Choice(name=code, value=code))
-        return choices[:25]
-
-    @app_commands.command(name="delete-premium", description="Delete a premium code completely (Master Admin only)")
-    @app_commands.describe(code="Premium code to delete")
-    @app_commands.autocomplete(code=autocomplete_premium_code)
-    @is_master_only()
-    async def master_delete_premium(self, interaction: discord.Interaction, code: str):
-        await database.delete_premium_code(code)
-        await interaction.response.send_message(self.bot.get_feedback("master_premium_delete_success", code=code), ephemeral=True)
-
-    @app_commands.command(name="revoke-premium", description="Revoke premium access from a server (Master Admin only)")
-    @app_commands.describe(guild_id="Guild ID to revoke premium from")
-    @is_master_only()
-    async def master_revoke_premium(self, interaction: discord.Interaction, guild_id: str):
-        if not guild_id.isdigit():
-            await interaction.response.send_message(self.bot.get_feedback("master_premium_revoke_error"), ephemeral=True)
-            return
-            
-        g_id = int(guild_id)
-        await database.revoke_guild_premium(g_id)
+        db_label, db_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_web_dashboard", guild_id=interaction.guild_id))
+        sup_label, sup_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_support_server", guild_id=interaction.guild_id))
         
-        # Invalidate cache
-        if g_id in self.bot.guild_settings_cache:
-            self.bot.guild_settings_cache[g_id]["premium_until"] = None
-            
-        await interaction.response.send_message(self.bot.get_feedback("master_premium_revoke_success", guild_id=guild_id), ephemeral=True)
-
-    # --- Status Commands ---
-    
-    status_group = app_commands.Group(name="status", description="Bot rich presence configuration (master)")
-
-    @status_group.command(name="add", description="Add a new bot status to the rotation")
-    @app_commands.describe(activity_type="Type of activity", text="Status text (use {count} for feed count)")
-    @app_commands.choices(activity_type=[
-        app_commands.Choice(name="Playing", value="playing"),
-        app_commands.Choice(name="Watching", value="watching"),
-        app_commands.Choice(name="Listening to", value="listening"),
-        app_commands.Choice(name="Streaming", value="streaming"),
-        app_commands.Choice(name="Competing in", value="competing")
-    ])
-    @is_master_only()
-    async def status_add(self, interaction: discord.Interaction, activity_type: app_commands.Choice[str], text: str):
-        await database.add_bot_status(activity_type.value, text[:128])
-        await interaction.response.send_message(self.bot.get_feedback("status_add_success", type=activity_type.name, text=text), ephemeral=True)
-
-    @status_group.command(name="list", description="List all configured bot statuses")
-    @is_master_only()
-    async def status_list(self, interaction: discord.Interaction):
-        statuses = await database.get_bot_statuses()
-        if not statuses:
-            await interaction.response.send_message(self.bot.get_feedback("status_list_empty"), ephemeral=True)
-            return
-            
-        lines = [f"`{s['id']}` - **{s['type'].capitalize()}** {s['text']}" for s in statuses]
-        msg = self.bot.get_feedback("status_list_title") + "\n" + "\n".join(lines)
-        await interaction.response.send_message(msg[:2000], ephemeral=True)
-
-    async def autocomplete_status(self, interaction: discord.Interaction, current: str):
-        statuses = await database.get_bot_statuses()
-        choices = []
-        for s in statuses:
-            name_str = f"[{s['type']}] {s['text']}"
-            if current.lower() in name_str.lower():
-                choices.append(app_commands.Choice(name=name_str[:100], value=str(s['id'])))
-        return choices[:25]
-
-    @status_group.command(name="remove", description="Remove an existing bot status")
-    @app_commands.describe(status_id="Status to delete")
-    @app_commands.autocomplete(status_id=autocomplete_status)
-    @is_master_only()
-    async def status_remove(self, interaction: discord.Interaction, status_id: str):
-        if not status_id.isdigit():
-            await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
-            return
-            
-        await database.remove_bot_status(int(status_id))
-        await interaction.response.send_message(self.bot.get_feedback("status_remove_success", id=status_id), ephemeral=True)
-
-    @status_group.command(name="edit", description="Edit an existing bot status")
-    @app_commands.describe(status_id="Status to edit", activity_type="New type", text="New text")
-    @app_commands.autocomplete(status_id=autocomplete_status)
-    @app_commands.choices(activity_type=[
-        app_commands.Choice(name="Playing", value="playing"),
-        app_commands.Choice(name="Watching", value="watching"),
-        app_commands.Choice(name="Listening to", value="listening"),
-        app_commands.Choice(name="Streaming", value="streaming"),
-        app_commands.Choice(name="Competing in", value="competing")
-    ])
-    @is_master_only()
-    async def status_edit(self, interaction: discord.Interaction, status_id: str, activity_type: app_commands.Choice[str], text: str):
-        if not status_id.isdigit():
-            await interaction.response.send_message(self.bot.get_feedback("status_remove_invalid"), ephemeral=True)
-            return
-            
-        await database.update_bot_status(int(status_id), activity_type.value, text[:128])
-        await interaction.response.send_message(self.bot.get_feedback("status_edit_success", id=status_id, type=activity_type.name, text=text), ephemeral=True)
-
-    @status_group.command(name="setup", description="Configure how the status changes")
-    @app_commands.describe(mode="Status rotation mode", interval="Seconds per rotation")
-    @app_commands.choices(mode=[
-        app_commands.Choice(name="Random", value="random"),
-        app_commands.Choice(name="Sequential", value="sequential")
-    ])
-    @is_master_only()
-    async def status_setup(self, interaction: discord.Interaction, mode: app_commands.Choice[str], interval: app_commands.Range[int, 10, 3600]):
-        await database.set_bot_setting("status_rotation_mode", mode.value)
-        await database.set_bot_setting("presence_interval_seconds", interval)
-        self.bot.config["presence_interval_seconds"] = interval
+        view.add_item(discord.ui.Button(label=db_label, emoji=db_emoji, url="https://novafeeds.xyz", style=discord.ButtonStyle.link))
+        view.add_item(discord.ui.Button(label=sup_label, emoji=sup_emoji, url="https://discord.gg/novafeeds", style=discord.ButtonStyle.link))
         
-        await interaction.response.send_message(self.bot.get_feedback("status_setup_success", mode=mode.name, val=interval), ephemeral=True)
-
+        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(AdminCog(bot))
-    await bot.add_cog(MasterCog(bot))
+

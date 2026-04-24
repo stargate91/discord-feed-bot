@@ -7,7 +7,7 @@ from logger import log
 from core.base_monitor import BaseMonitor
 import database
 from core.emojis import (
-    TYPE_CRYPTO, STATUS_SUCCESS, STATUS_ERROR,
+    STATUS_SUCCESS, STATUS_ERROR,
     CRYPTO_UP, CRYPTO_DOWN, CRYPTO_BULLET_FILLED, CRYPTO_BULLET_EMPTY, CRYPTO_CHART_COLORFUL
 )
 

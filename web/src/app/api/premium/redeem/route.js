@@ -77,6 +77,12 @@ export async function POST(request) {
           tier = EXCLUDED.tier
       `, [guildId, new_until, tier]);
 
+      // 6. Log redemption
+      await client.query(
+        "INSERT INTO premium_redemptions (code, guild_id) VALUES ($1, $2::bigint)",
+        [code.toUpperCase().trim(), guildId]
+      );
+
       await client.query('COMMIT');
       return NextResponse.json({ success: true, newUntil: new_until });
 

@@ -5,7 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import pool from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Shield, MessageSquare } from "lucide-react";
+import { Plus, Shield, MessageSquare, Activity, Send, Award, Zap, Globe } from "lucide-react";
 import fs from "fs";
 import path from "path";
 import UsageIndicator from "@/components/UsageIndicator";
@@ -133,14 +133,25 @@ export default async function Dashboard({ searchParams }) {
       </header>
 
       <section className="dashboard-grid" style={{ marginBottom: '3rem' }}>
-        <StatCard title="Active Monitors" value={stats ? stats.activeMonitors : "0"} description="Running on this server" />
-        <StatCard title="Messages Sent" value={stats ? stats.totalPosts.toLocaleString() : "0"} description="Lifetime stats" />
+        <StatCard 
+          title="Active Monitors" 
+          value={stats ? stats.activeMonitors : "0"} 
+          description="Running on this server" 
+          icon={Activity}
+        />
+        <StatCard 
+          title="Messages Sent" 
+          value={stats ? stats.totalPosts.toLocaleString() : "0"} 
+          description="Lifetime stats" 
+          icon={Send}
+        />
         <StatCard
           title="Premium Status"
           value={stats?.tierName || "Free"}
           valueColor={stats?.tier >= 1 || stats?.isLifetime ? "var(--accent-color)" : "var(--text-secondary)"}
           actionButton={stats?.tier === 0 && !stats?.isLifetime && guildId ? "Upgrade Server" : null}
           actionHref={guildId ? `/premium?guild=${guildId}` : "/premium"}
+          icon={Award}
         />
       </section>
 
@@ -211,7 +222,7 @@ export default async function Dashboard({ searchParams }) {
 
         </div>
 
-        <QuickActions guildId={guildId} />
+      <QuickActions guildId={guildId} />
       </div>
     </div>
   );

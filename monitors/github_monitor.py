@@ -145,7 +145,8 @@ class GitHubMonitor(BaseMonitor):
         alert_text = self.get_alert_message({
             "name": self.repo_path,
             "title": name,
-            "url": html_url
+            "url": html_url,
+            "author": author
         })
         
         view = discord.ui.View()

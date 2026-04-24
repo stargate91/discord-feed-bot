@@ -13,14 +13,16 @@ function QuickActionItem({ href, icon: Icon, label }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-        background: hovered ? 'rgba(123, 44, 191, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-        border: `1px solid ${hovered ? 'rgba(123, 44, 191, 0.35)' : 'rgba(255, 255, 255, 0.08)'}`,
-        borderRadius: '12px', color: 'white', textDecoration: 'none',
-        transition: 'all 0.25s ease',
-        fontWeight: '600', fontSize: '0.95rem',
-        transform: hovered ? 'translateX(8px)' : 'translateX(0)',
-        boxShadow: hovered ? '0 5px 20px rgba(0, 0, 0, 0.25)' : 'none',
+        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem 1rem',
+        background: hovered ? 'rgba(123, 44, 191, 0.08)' : 'rgba(255, 255, 255, 0.01)',
+        border: `1px solid ${hovered ? 'rgba(123, 44, 191, 0.4)' : 'rgba(255, 255, 255, 0.05)'}`,
+        borderRadius: '16px', color: 'white', textDecoration: 'none',
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        fontWeight: '700', fontSize: '0.9rem',
+        transform: hovered ? 'translateX(10px) scale(1.02)' : 'translateX(0)',
+        boxShadow: hovered ? '0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(123, 44, 191, 0.1)' : 'none',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
       <Icon size={18} style={{

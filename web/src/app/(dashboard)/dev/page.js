@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { Trash2, Copy, Check, Zap, X, ShieldAlert, RefreshCcw, Activity } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 
 export default function DevSettings() {
@@ -303,7 +304,7 @@ export default function DevSettings() {
                 onClick={() => handleDeleteStatus(s.id)}
                 style={{ color: '#ef4444', height: '30px', width: '30px' }}
               >
-                🗑️
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
@@ -395,7 +396,7 @@ export default function DevSettings() {
                     title="Copy to clipboard"
                     style={{ fontSize: '1.2rem' }}
                   >
-                    {copying === k.code ? '✓' : '⎘'}
+                    {copying === k.code ? <Check size={18} /> : <Copy size={18} />}
                   </button>
                   <button 
                     className="icon-btn" 
@@ -404,7 +405,7 @@ export default function DevSettings() {
                     title="Revoke Key"
                     disabled={k.is_revoked}
                   >
-                    {k.is_revoked ? '⊘' : '⚡'}
+                    {k.is_revoked ? <ShieldAlert size={18} /> : <Zap size={18} />}
                   </button>
                   <button 
                     className="icon-btn" 
@@ -412,7 +413,7 @@ export default function DevSettings() {
                     style={{ color: '#ef4444', fontSize: '1.2rem' }}
                     title="Delete Key"
                   >
-                    ✕
+                    <X size={18} />
                   </button>
                 </div>
               </div>

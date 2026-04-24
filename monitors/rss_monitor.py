@@ -99,7 +99,9 @@ class RSSMonitor(BaseMonitor):
 
         alert_text = self.get_alert_message({
             "name": author_name,
-            "url": entry_link
+            "title": entry_title,
+            "url": entry_link,
+            "author": author_name
         })
 
         view = discord.ui.View()
@@ -179,7 +181,9 @@ class RSSMonitor(BaseMonitor):
 
         alert_text = self.get_alert_message({
             "name": author_name,
-            "url": entry_link
+            "title": entry_title,
+            "url": entry_link,
+            "author": author_name
         })
         
         view = discord.ui.View()

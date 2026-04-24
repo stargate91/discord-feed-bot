@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, HelpCircle, MessageSquare, Zap, ShieldCheck } from 'lucide-react';
+import { ChevronDown, HelpCircle, MessageSquare, Zap, ShieldCheck, Terminal } from 'lucide-react';
 
 const FAQ_DATA = [
   {
@@ -49,6 +49,36 @@ const FAQ_DATA = [
         a: "Premium is bound to a specific Discord Server. Once purchased, any administrator of that server can manage the premium monitors."
       }
     ]
+  },
+  {
+    category: "Discord Commands",
+    icon: <Terminal size={20} />,
+    questions: [
+      {
+        q: "What commands can I use in Discord?",
+        a: "NovaFeeds uses Slash Commands. Type '/' in your Discord server to see all available commands. Key commands include /monitor check, /monitor preview, /purge, and /dashboard."
+      },
+      {
+        q: "/monitor check",
+        a: "Manually triggers an immediate check for a specific monitor. Great for testing if your setup works correctly without waiting for the automatic cycle."
+      },
+      {
+        q: "/monitor preview",
+        a: "Generates a mock alert for a monitor. This allows you to see exactly how your embed, custom color, and ping roles will look in the channel."
+      },
+      {
+        q: "/monitor repost (Premium)",
+        a: "Allows you to resend the last 1-10 items from a specific monitor. This is useful if you've accidentally deleted messages or moved to a new channel."
+      },
+      {
+        q: "/purge",
+        a: "Quickly cleans up messages in the current channel. For safety, this only works in channels that are actively assigned to a monitor."
+      },
+      {
+        q: "/dashboard",
+        a: "Sends a private message with a direct link to this web dashboard and the support server."
+      }
+    ]
   }
 ];
 
@@ -75,29 +105,44 @@ function FAQItem({ q, a }) {
 export default function FAQPage() {
   return (
     <div className="faq-page">
+      {/* Decorative Glows */}
+      <div className="glow-top-right"></div>
+      <div className="glow-bottom-left"></div>
+
       <header className="header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <div className="header-info">
+          <div className="badge">KNOWLEDGE BASE</div>
           <h2>Frequently Asked Questions</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Find answers to common questions and support information for NovaFeeds.
+          <p>
+            Everything you need to know about NovaFeeds. Can't find what you're looking for? 
+            Our support team is always ready to help.
           </p>
         </div>
-        <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">
-          <button className="btn btn-support">
-            <MessageSquare size={18} />
-            Support Server
-          </button>
-        </a>
+        <div className="header-actions">
+          <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">
+            <button className="btn btn-support">
+              <MessageSquare size={18} />
+              <span>Join Support Server</span>
+              <div className="btn-glow"></div>
+            </button>
+          </a>
+        </div>
       </header>
 
       <div className="faq-content">
         {FAQ_DATA.map((section, idx) => (
-          <div key={idx} className="faq-section">
+          <div key={idx} className="faq-section" style={{"--delay": `${idx * 0.1}s`}}>
             <div className="section-header">
-              <span className="section-icon">{section.icon}</span>
-              <h3>{section.category}</h3>
+              <div className="section-icon-wrapper">
+                <span className="section-icon">{section.icon}</span>
+                <div className="icon-pulse"></div>
+              </div>
+              <div className="section-title-group">
+                <h3>{section.category}</h3>
+                <div className="section-line"></div>
+              </div>
             </div>
-            <div className="questions-list">
+            <div className="questions-grid">
               {section.questions.map((item, i) => (
                 <FAQItem key={i} q={item.q} a={item.a} />
               ))}
@@ -108,170 +153,296 @@ export default function FAQPage() {
 
       <style jsx global>{`
         .faq-page {
-          max-width: 1450px;
+          max-width: 1400px;
           margin: 0 auto;
-          animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+          min-height: 100vh;
+          padding-bottom: 5rem;
         }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+
+        /* Decorative Glows */
+        .glow-top-right {
+          position: absolute;
+          top: -100px;
+          right: -100px;
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(123, 44, 191, 0.15) 0%, transparent 70%);
+          pointer-events: none;
+          z-index: -1;
         }
-        .btn-support {
-          background: rgba(88, 101, 242, 0.08);
-          border: 1px solid rgba(88, 101, 242, 0.2);
-          color: #5865F2;
-          padding: 0.75rem 1.6rem;
-          border-radius: 14px;
-          font-weight: 700;
+        .glow-bottom-left {
+          position: fixed;
+          bottom: -100px;
+          left: -100px;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(123, 44, 191, 0.1) 0%, transparent 70%);
+          pointer-events: none;
+          z-index: -1;
+        }
+
+        .header {
           display: flex;
-          align-items: center;
-          gap: 10px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
+          justify-content: space-between;
+          align-items: flex-end;
+          padding: 2rem 0;
+          margin-bottom: 2rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .btn-support:hover {
+
+        .header-info {
+          max-width: 600px;
+        }
+
+        .badge {
+          background: rgba(123, 44, 191, 0.15);
+          color: var(--accent-color);
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 0.7rem;
+          font-weight: 900;
+          letter-spacing: 2px;
+          width: fit-content;
+          margin-bottom: 1rem;
+          border: 1px solid rgba(123, 44, 191, 0.2);
+          box-shadow: 0 0 15px rgba(123, 44, 191, 0.1);
+        }
+
+        .header h2 {
+          font-size: 2.8rem;
+          margin: 0 0 1rem 0;
+          background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.6) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-weight: 900;
+          letter-spacing: -1px;
+        }
+
+        .header p {
+          color: var(--text-secondary);
+          font-size: 1.1rem;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .btn-support {
+          position: relative;
           background: #5865F2;
           color: white;
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 10px 25px rgba(88, 101, 242, 0.3);
+          padding: 1rem 2rem;
+          border-radius: 18px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          overflow: hidden;
         }
+
+        .btn-support:hover {
+          transform: translateY(-5px) scale(1.02);
+          box-shadow: 0 15px 30px rgba(88, 101, 242, 0.4);
+        }
+
+        .btn-glow {
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .btn-support:hover .btn-glow {
+          opacity: 1;
+          animation: rotateGlow 4s linear infinite;
+        }
+
+        @keyframes rotateGlow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
         .faq-content {
           display: flex;
           flex-direction: column;
-          gap: 4.5rem;
+          gap: 6rem;
           margin-top: 4rem;
         }
+
         .faq-section {
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
+          animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+          animation-delay: var(--delay);
         }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         .section-header {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding-left: 0.5rem;
-        }
-        .section-icon {
-          color: var(--accent-color);
-          background: rgba(123, 44, 191, 0.1);
-          padding: 8px;
-          border-radius: 12px;
-          display: flex;
-        }
-        .section-header h3 {
-          margin: 0;
-          font-size: 0.95rem;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: 2.5px;
-          color: rgba(255, 255, 255, 0.6);
-        }
-        .questions-list {
-          display: flex;
-          flex-direction: column;
+          gap: 20px;
+          margin-bottom: 2.5rem;
         }
 
-        /* FAQ Item Styles (Global within FAQPage) */
+        .section-icon-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .section-icon {
+          color: white;
+          background: var(--accent-gradient);
+          padding: 14px;
+          border-radius: 16px;
+          display: flex;
+          z-index: 2;
+          box-shadow: 0 10px 20px rgba(123, 44, 191, 0.3);
+        }
+
+        .icon-pulse {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          background: var(--accent-color);
+          border-radius: 16px;
+          z-index: 1;
+          animation: pulseIcon 3s infinite;
+        }
+
+        @keyframes pulseIcon {
+          0% { transform: scale(1); opacity: 0.5; }
+          70% { transform: scale(1.6); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+
+        .section-title-group {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .section-header h3 {
+          margin: 0;
+          font-size: 1.4rem;
+          font-weight: 900;
+          color: white;
+          white-space: nowrap;
+        }
+
+        .section-line {
+          height: 1px;
+          flex: 1;
+          background: linear-gradient(to right, rgba(255, 255, 255, 0.1), transparent);
+        }
+
+        .questions-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.2rem;
+        }
+
+        /* FAQ Item Redesign */
         .faq-item {
           background: rgba(255, 255, 255, 0.02);
           border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 20px;
-          margin-bottom: 16px;
+          border-radius: 24px;
           cursor: pointer;
-          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-          backdrop-filter: blur(10px);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          backdrop-filter: blur(12px);
           position: relative;
           overflow: hidden;
         }
-        .faq-item::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background: var(--accent-color);
-          transform: scaleY(0);
-          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          transform-origin: center;
-        }
+
         .faq-item:hover {
           background: rgba(255, 255, 255, 0.04);
-          border-color: rgba(255, 255, 255, 0.12);
-          transform: translateX(4px);
+          border-color: rgba(255, 255, 255, 0.15);
+          transform: translateY(-3px) translateX(4px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
+
         .faq-item.active {
-          background: linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(20, 20, 30, 0.4) 100%);
-          border-color: rgba(123, 44, 191, 0.3);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(123, 44, 191, 0.05);
-          transform: translateX(0);
+          background: rgba(255, 255, 255, 0.03);
+          border-color: rgba(123, 44, 191, 0.4);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), inset 0 0 30px rgba(123, 44, 191, 0.05);
         }
-        .faq-item.active::before {
-          transform: scaleY(0.6);
-          border-radius: 0 4px 4px 0;
-        }
+
         .faq-question {
-          padding: 1.75rem 2rem;
+          padding: 2rem 2.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
           font-weight: 700;
-          font-size: 1.15rem;
-          color: rgba(255, 255, 255, 0.85);
-          transition: color 0.3s;
+          font-size: 1.2rem;
+          color: rgba(255, 255, 255, 0.9);
+          transition: all 0.3s;
         }
+
         .faq-item.active .faq-question {
           color: white;
+          padding-bottom: 1.5rem;
         }
+
         .faq-chevron-wrapper {
-          width: 36px;
-          height: 36px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 14px;
+          transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+
         .faq-item.active .faq-chevron-wrapper {
-          background: var(--accent-color);
-          border-color: var(--accent-color);
+          background: var(--accent-gradient);
+          border-color: transparent;
           transform: rotate(180deg);
-          box-shadow: 0 0 20px rgba(123, 44, 191, 0.4);
+          box-shadow: 0 5px 15px rgba(123, 44, 191, 0.4);
         }
+
         .faq-chevron {
-          transition: color 0.3s;
-          color: rgba(255, 255, 255, 0.3);
+          color: rgba(255, 255, 255, 0.4);
         }
+
         .faq-item.active .faq-chevron {
           color: white;
         }
+
         .faq-answer {
           max-height: 0;
           opacity: 0;
-          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-          transform: translateY(-10px);
-          pointer-events: none;
+          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          overflow: hidden;
         }
+
         .faq-item.active .faq-answer {
-          max-height: 800px;
+          max-height: 1000px;
           opacity: 1;
-          transform: translateY(0);
-          pointer-events: auto;
         }
+
         .faq-answer-inner {
-          padding: 0 2rem 2rem 2rem;
+          padding: 0 2.5rem 2.5rem 2.5rem;
         }
+
         .faq-answer p {
           margin: 0;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.5);
           line-height: 1.8;
-          font-size: 1rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          font-size: 1.05rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
           padding-top: 1.5rem;
-          letter-spacing: 0.2px;
         }
       `}</style>
     </div>

@@ -39,7 +39,7 @@ export async function GET(req, { params }) {
     }
 
     const res = await pool.query(
-      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier FROM guild_settings WHERE guild_id = $1::bigint",
+      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier, stripe_subscription_id FROM guild_settings WHERE guild_id = $1::bigint",
       [guildId]
     );
 
@@ -50,7 +50,8 @@ export async function GET(req, { params }) {
         refresh_interval: 15,
         alert_templates: {},
         tier: 0,
-        isMaster: isMaster
+        isMaster: isMaster,
+        hasStripeSubscription: false
     };
 
     if (res.rows.length > 0) {
@@ -82,7 +83,8 @@ export async function GET(req, { params }) {
             refresh_interval: row.refresh_interval || 15,
             alert_templates: templates,
             tier: tier,
-            isMaster: isMaster
+            isMaster: isMaster,
+            hasStripeSubscription: !!row.stripe_subscription_id
         };
     }
 

@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { 
-  Globe, 
-  Hash, 
-  Shield, 
-  Crown, 
-  Save, 
-  CheckCircle2, 
+import {
+  Globe,
+  Hash,
+  Shield,
+  Crown,
+  Save,
+  CheckCircle2,
   AlertCircle,
   Search,
   ChevronDown,
@@ -23,27 +23,31 @@ import SettingCard from '@/components/SettingCard';
 
 // --- PLATFORM CONFIG ---
 const PLATFORMS = [
-  { id: 'youtube', name: 'YouTube', tags: ['{name}', '{title}', '{url}'] },
-  { id: 'rss', name: 'RSS Feed', tags: ['{name}', '{title}', '{url}', '{description}'] },
-  { id: 'epic_games', name: 'Epic Games', tags: ['{name}', '{title}', '{url}'] },
-  { id: 'crypto', name: 'Crypto Alerts', tags: ['{name}', '{price}', '{threshold}', '{direction}', '{percent}'] },
-  { id: 'steam_free', name: 'Steam Free', tags: ['{name}', '{title}', '{url}'] },
-  { id: 'gog_free', name: 'GOG Free', tags: ['{name}', '{title}', '{url}'] },
-  { id: 'stream', name: 'Live Stream', tags: ['{name}', '{url}', '{status}'] },
-  { id: 'movie', name: 'Movies', tags: ['{name}', '{title}', '{url}', '{rating}', '{year}'] },
-  { id: 'tv_series', name: 'TV Series', tags: ['{name}', '{title}', '{url}', '{rating}', '{year}'] },
+  { id: 'twitch', name: 'Twitch', icon: '/emojis/twitch.png', tags: ['{name}', '{game}', '{title}', '{viewers}', '{platform}'] },
+  { id: 'kick', name: 'Kick', icon: '/emojis/kick.png', tags: ['{name}', '{game}', '{title}', '{viewers}', '{platform}'] },
+  { id: 'youtube', name: 'YouTube', icon: '/emojis/youtube.png', tags: ['{name}', '{title}'] },
+  { id: 'rss', name: 'RSS Feed', icon: '/emojis/rss.png', tags: ['{name}', '{author}', '{title}', '{description}'] },
+  { id: 'steam_news', name: 'Steam News', icon: '/emojis/steam.png', tags: ['{name}', '{author}', '{title}'] },
+  { id: 'epic_games', name: 'Epic Games', icon: '/emojis/epic-games.png', tags: ['{name}', '{title}'] },
+  { id: 'crypto', name: 'Crypto Alerts', icon: '/emojis/crypto.png', tags: ['{name}', '{price}', '{threshold}', '{direction}', '{percent}'] },
+  { id: 'steam_free', name: 'Steam Free', icon: '/emojis/steam.png', tags: ['{name}', '{title}'] },
+  { id: 'gog_free', name: 'GOG Free', icon: '/emojis/gog.png', tags: ['{name}', '{title}'] },
+  { id: 'movie', name: 'Movies', icon: '/emojis/tmdb.png', tags: ['{name}', '{title}', '{rating}', '{year}'] },
+  { id: 'tv_series', name: 'TV Series', icon: '/emojis/tmdb.png', tags: ['{name}', '{title}', '{rating}', '{year}'] },
 ];
 
 const TAG_DESCRIPTIONS = {
-  '{name}': 'Platform or Channel name',
-  '{title}': 'Content title or Video title',
-  '{url}': 'Direct link to the post/video',
-  '{description}': 'Short summary or description',
+  '{name}': 'Platform, Channel or Monitor name',
+  '{title}': 'Content title, Stream title or Video title',
+  '{description}': 'Short summary or description (mostly RSS)',
   '{price}': 'Current cryptocurrency price (USD)',
   '{threshold}': 'The price limit you set',
   '{direction}': 'Up or Down direction emoji',
   '{percent}': 'Percentage difference from threshold',
-  '{status}': 'Online or Offline status',
+  '{game}': 'The game currently being played',
+  '{viewers}': 'Current viewer count',
+  '{platform}': 'Platform name (Twitch or Kick)',
+  '{author}': 'Author or creator name (RSS/Steam)',
   '{rating}': 'Movie or TV Show rating (e.g., 8.5)',
   '{year}': 'Release year of the content'
 };
@@ -55,7 +59,7 @@ function CustomRoleSelect({ roles, value, onChange }) {
   const dropdownRef = useRef(null);
 
   const selectedRole = roles.find(r => r.id === value);
-  const filteredRoles = roles.filter(r => 
+  const filteredRoles = roles.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -71,13 +75,13 @@ function CustomRoleSelect({ roles, value, onChange }) {
 
   return (
     <div className="custom-select-container" ref={dropdownRef}>
-      <div 
-        className={`select-trigger ${isOpen ? 'open' : ''}`} 
+      <div
+        className={`select-trigger ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="selected-value">
-          <div 
-            className="role-dot" 
+          <div
+            className="role-dot"
             style={{ backgroundColor: selectedRole?.color || 'transparent', border: !selectedRole?.color ? '1px dashed rgba(255,255,255,0.3)' : 'none' }}
           ></div>
           <span className={!selectedRole ? 'placeholder' : ''}>
@@ -91,19 +95,19 @@ function CustomRoleSelect({ roles, value, onChange }) {
         <div className="select-dropdown">
           <div className="select-search-wrapper">
             <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              className="select-search-input" 
-              placeholder="Search roles..." 
+            <input
+              type="text"
+              className="select-search-input"
+              placeholder="Search roles..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               autoFocus
             />
           </div>
-          
+
           <div className="select-options">
-            <div 
+            <div
               className={`select-option ${value === '0' || !value ? 'active' : ''}`}
               onClick={() => {
                 onChange('0');
@@ -115,16 +119,16 @@ function CustomRoleSelect({ roles, value, onChange }) {
             </div>
 
             {filteredRoles.map(role => (
-              <div 
-                key={role.id} 
+              <div
+                key={role.id}
                 className={`select-option ${value === role.id ? 'active' : ''}`}
                 onClick={() => {
                   onChange(role.id);
                   setIsOpen(false);
                 }}
               >
-                <div 
-                  className="role-dot" 
+                <div
+                  className="role-dot"
                   style={{ backgroundColor: role.color || '#99aab5' }}
                 ></div>
                 <span style={{ color: role.color || 'white' }}>{role.name}</span>
@@ -157,7 +161,7 @@ function CustomRoleSelect({ roles, value, onChange }) {
           position: absolute; top: calc(100% + 8px); left: 0; right: 0;
           background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 100; overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 9999; overflow: hidden;
           animation: dropIn 0.2s ease-out;
         }
         @keyframes dropIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -190,10 +194,11 @@ function SettingsContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState(null);
-  
+
   // Redemption State
   const [redeemCode, setRedeemCode] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [redeemStatus, setRedeemStatus] = useState(null); // { type: 'success'|'error', message: string }
 
   // Template Editor State
@@ -211,7 +216,7 @@ function SettingsContent() {
         const sData = await settingsRes.json();
         setSettings(sData);
       }
-      
+
       if (rolesRes.ok) {
         const rData = await rolesRes.json();
         setRoles(rData);
@@ -284,6 +289,26 @@ function SettingsContent() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/api/billing/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guildId })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setNotification({ type: 'error', message: data.error || 'Failed to open billing portal' });
+      }
+    } catch (err) {
+      setNotification({ type: 'error', message: 'An error occurred' });
+    }
+    setPortalLoading(false);
+  };
+
   const updateTemplate = (val) => {
     setSettings({
       ...settings,
@@ -302,16 +327,16 @@ function SettingsContent() {
 
   return (
     <div className="settings-container">
-      <header className="header">
+      <header className="header" style={{ marginBottom: '3rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Server Settings</h2>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: '900', letterSpacing: '-1px' }}>Server Settings</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             Adjust bot preferences, management roles, and custom alert templates.
           </p>
         </div>
-        
-        <button className="save-button" onClick={handleSave} disabled={saving}>
-          {saving ? <div className="button-loader"></div> : <Save size={18} />}
+
+        <button className="save-button" onClick={handleSave} disabled={saving} style={{ padding: '0.8rem 2rem', fontSize: '1rem', borderRadius: '14px' }}>
+          {saving ? <div className="button-loader"></div> : <Save size={20} />}
           <span>{saving ? 'Saving...' : 'Save Changes'}</span>
         </button>
       </header>
@@ -328,28 +353,38 @@ function SettingsContent() {
           {/* 1. Language */}
           <SettingCard title="System Language" description="Default language for bot messages" icon={Globe}>
             <div className="language-toggle">
-              <button className={`lang-btn ${settings.language === 'en' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'en'})}>
+              <button className={`lang-btn ${settings.language === 'en' ? 'active' : ''}`} onClick={() => setSettings({ ...settings, language: 'en' })}>
                 <img src="https://flagcdn.com/w40/gb.png" alt="English" className="flag-icon-img" />
                 <span>English</span>
               </button>
-              <button className={`lang-btn ${settings.language === 'hu' ? 'active' : ''}`} onClick={() => setSettings({...settings, language: 'hu'})}>
+              <button className={`lang-btn ${settings.language === 'hu' ? 'active' : ''}`} onClick={() => setSettings({ ...settings, language: 'hu' })}>
                 <img src="https://flagcdn.com/w40/hu.png" alt="Magyar" className="flag-icon-img" />
                 <span>Magyar</span>
               </button>
             </div>
           </SettingCard>
 
-          {/* 2. Refresh Interval */}
+          {/* 2. Management Role */}
+          <SettingCard 
+            title="Management Role" 
+            description="Role allowed to configure the bot" 
+            icon={Shield}
+            style={{ zIndex: 10 }}
+          >
+            <CustomRoleSelect roles={roles} value={settings.admin_role_id} onChange={(newId) => setSettings({ ...settings, admin_role_id: newId })} />
+          </SettingCard>
+
+          {/* 3. Refresh Interval */}
           <SettingCard title="Refresh Frequency" description={`How often the bot checks for updates (Min. ${minInterval}m)`} icon={Clock}>
             <div className="interval-input-wrapper">
               <div className="number-input-container">
-                <input type="number" className="interval-number-input" min={minInterval} max={1440} value={settings.refresh_interval} onChange={(e) => setSettings({...settings, refresh_interval: parseInt(e.target.value) || minInterval})} />
+                <input type="number" className="interval-number-input" min={minInterval} max={1440} value={settings.refresh_interval} onChange={(e) => setSettings({ ...settings, refresh_interval: parseInt(e.target.value) || minInterval })} />
                 <span className="unit-label">minutes</span>
               </div>
             </div>
           </SettingCard>
 
-          {/* 3. Alert Templates (Premium) */}
+          {/* 4. Alert Templates (Premium) */}
           <SettingCard title="Alert Templates" description="Customize how bot messages look per platform" icon={MessageSquare}>
             {!isPremiumActive ? (
               <div className="premium-lock-overlay">
@@ -361,14 +396,30 @@ function SettingsContent() {
               </div>
             ) : (
               <div className="template-editor-wrapper">
-                <div className="platform-tabs">
-                  {PLATFORMS.map(p => (
-                    <button key={p.id} className={`platform-tab ${activePlatform === p.id ? 'active' : ''}`} onClick={() => setActivePlatform(p.id)}>
-                      {p.name}
-                    </button>
-                  ))}
+                <div className="platform-tabs-container">
+                  <div className="platform-tabs">
+                    {PLATFORMS.map(p => (
+                      <button 
+                        key={p.id} 
+                        className={`platform-tab ${activePlatform === p.id ? 'active' : ''}`} 
+                        onClick={() => setActivePlatform(p.id)}
+                      >
+                        {p.icon && (
+                          <img 
+                            src={p.icon} 
+                            alt="" 
+                            className="tab-icon-img"
+                            style={{ 
+                              filter: activePlatform === p.id ? 'none' : 'grayscale(1) opacity(0.6)' 
+                            }} 
+                          />
+                        )}
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                
+
                 <div className="editor-container">
                   <div className="tags-hint">
                     <Zap size={14} />
@@ -376,8 +427,8 @@ function SettingsContent() {
                     <div className="tags-list">
                       {currentPlatform?.tags.map(tag => (
                         <div key={tag} className="tag-wrapper">
-                          <code 
-                            className="tag-pill" 
+                          <code
+                            className="tag-pill"
                             onClick={() => updateTemplate((settings.alert_templates[activePlatform] || "") + tag)}
                             data-tooltip={TAG_DESCRIPTIONS[tag]}
                           >
@@ -387,14 +438,14 @@ function SettingsContent() {
                       ))}
                     </div>
                   </div>
-                  
-                  <textarea 
+
+                  <textarea
                     className="template-textarea"
                     placeholder="Enter your custom template..."
                     value={settings.alert_templates[activePlatform] || ""}
                     onChange={(e) => updateTemplate(e.target.value)}
                   />
-                  
+
                   <p className="template-tip">
                     <Info size={14} />
                     Leave empty to use the system default template.
@@ -402,11 +453,6 @@ function SettingsContent() {
                 </div>
               </div>
             )}
-          </SettingCard>
-
-          {/* 4. Roles */}
-          <SettingCard title="Management Role" description="Role allowed to configure the bot" icon={Shield}>
-            <CustomRoleSelect roles={roles} value={settings.admin_role_id} onChange={(newId) => setSettings({...settings, admin_role_id: newId})} />
           </SettingCard>
         </div>
 
@@ -420,14 +466,27 @@ function SettingsContent() {
               </div>
             </div>
             {isPremiumActive ? (
-               <div className="premium-details">
-                 <p className="expiry-label">Access Level:</p>
-                 <p className="expiry-date">{settings.isMaster ? 'LIFETIME' : new Date(settings.premium_until).toLocaleDateString()}</p>
-               </div>
+              <div className="premium-details">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+                  <div>
+                    <p className="expiry-label">Access Level:</p>
+                    <p className="expiry-date">{settings.isMaster ? 'LIFETIME' : new Date(settings.premium_until).toLocaleDateString()}</p>
+                  </div>
+                  {!settings.isMaster && settings.hasStripeSubscription && (
+                    <button 
+                      className="manage-sub-btn" 
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                    >
+                      {portalLoading ? '...' : 'Manage'}
+                    </button>
+                  )}
+                </div>
+              </div>
             ) : (
-                <Link href={`/premium?guild=${guildId}`}>
-                  <button className="upgrade-btn">Upgrade to Premium</button>
-                </Link>
+              <Link href={`/premium?guild=${guildId}`}>
+                <button className="upgrade-btn">Upgrade to Premium</button>
+              </Link>
             )}
           </div>
 
@@ -438,18 +497,18 @@ function SettingsContent() {
                 <h4>Redeem Code</h4>
               </div>
               <p className="card-hint">Have a premium key? Enter it below to activate features.</p>
-              
+
               <div className="redeem-form">
-                <input 
-                  type="text" 
-                  className="redeem-input" 
-                  placeholder="PREM-XXXX-XXXX-XXXX" 
+                <input
+                  type="text"
+                  className="redeem-input"
+                  placeholder="PREM-XXXX-XXXX-XXXX"
                   value={redeemCode}
                   onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                   disabled={redeemLoading}
                 />
-                <button 
-                  className="redeem-btn" 
+                <button
+                  className="redeem-btn"
                   onClick={handleRedeem}
                   disabled={redeemLoading || !redeemCode.trim()}
                 >
@@ -529,14 +588,58 @@ function SettingsContent() {
         .template-textarea:focus { border-color: var(--accent-color); }
         .template-tip { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); }
 
-        .save-button { display: flex; align-items: center; gap: 0.75rem; background: var(--accent-color); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .save-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 20px rgba(123, 44, 191, 0.3); }
+        .save-button { display: flex; align-items: center; gap: 0.75rem; background: var(--accent-color); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 20px var(--accent-glow); }
+        .save-button:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 15px 30px var(--accent-glow); }
         .save-button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .premium-status-card { background: linear-gradient(135deg, rgba(123, 44, 191, 0.15), rgba(60, 9, 108, 0.15)); border: 1px solid rgba(123, 44, 191, 0.3); border-radius: 20px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-        .premium-header { display: flex; gap: 1rem; align-items: center; }
-        .premium-icon { color: #ffb703; }
-        .expiry-date { font-size: 1.2rem; font-weight: 700; margin: 0; }
-        .upgrade-btn { width: 100%; background: #ffb703; color: #3c096c; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .premium-status-card { 
+          background: linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(60, 9, 108, 0.05) 100%); 
+          border: 1px solid rgba(123, 44, 191, 0.2); 
+          border-radius: 24px; 
+          padding: 2rem; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 1.5rem;
+          position: relative;
+          overflow: hidden;
+        }
+        .premium-status-card::before {
+          content: ''; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px;
+          background: var(--accent-color); opacity: 0.05; filter: blur(40px); border-radius: 50%;
+        }
+        .premium-header { display: flex; gap: 1.25rem; align-items: center; }
+        .premium-icon { 
+          width: 48px; height: 48px; background: rgba(255, 183, 3, 0.1); 
+          border-radius: 14px; display: flex; align-items: center; justify-content: center;
+          color: #ffb703; 
+        }
+        .premium-header h4 { margin: 0; font-size: 1.1rem; font-weight: 800; }
+        .premium-header p { margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+        .expiry-date { font-size: 1.4rem; font-weight: 900; margin: 0; color: white; letter-spacing: -0.5px; }
+        .upgrade-btn { 
+          width: 100%; background: #ffb703; color: #3c096c; border: none; 
+          padding: 1rem; border-radius: 14px; font-weight: 800; font-size: 1rem;
+          cursor: pointer; transition: all 0.3s; 
+          box-shadow: 0 10px 20px rgba(255, 183, 3, 0.2);
+        }
+        .upgrade-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255, 183, 3, 0.3); }
+
+        .manage-sub-btn {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 10px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .manage-sub-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.3);
+          transform: translateY(-2px);
+        }
+        .manage-sub-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Redeem Card Styling */
         .redeem-card {

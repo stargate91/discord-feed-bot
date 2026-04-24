@@ -79,14 +79,6 @@ class FeedBot(commands.Bot):
         # Load Cogs
         await self.load_all_extensions()
 
-        # Register Master and Status groups to master guilds
-        master_guilds = self.config.get("master_guild_ids", [])
-        for mg_id in master_guilds:
-            guild_obj = discord.Object(id=mg_id)
-            master_cog = self.get_cog("master")
-            if master_cog:
-                self.tree.add_command(master_cog.app_command, guild=guild_obj)
-                
 
         # Load monitors from DB
         from core.monitor_factory import create_monitor_instance
@@ -118,11 +110,6 @@ class FeedBot(commands.Bot):
                 except Exception as e:
                     log.error(f"Failed to load extension {filename}: {e}", exc_info=True)
 
-    def restart_monitor_task(self):
-        if hasattr(self, 'monitor_task') and not self.monitor_task.done():
-            self.monitor_task.cancel()
-        self.monitor_manager.is_running = False
-        self.monitor_task = self.loop.create_task(self.monitor_manager.start_loop())
 
     async def on_ready(self):
         log.info(f"--- FEED BOT ONLINE ---")
