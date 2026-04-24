@@ -3,7 +3,6 @@ from monitors.rss_monitor import RSSMonitor
 from monitors.epic_games_monitor import EpicGamesMonitor
 from monitors.steam_free_monitor import SteamFreeMonitor
 from monitors.gog_free_monitor import GOGFreeMonitor
-from monitors.stream_monitor import StreamMonitor
 from monitors.steam_news_monitor import SteamNewsMonitor
 from monitors.movie_monitor import MovieMonitor
 from monitors.tv_series_monitor import TVSeriesMonitor
