@@ -213,22 +213,48 @@ class MonitorManager:
         monitor = next((m for m in self.monitors if m.id == monitor_id), None)
         if not monitor:
             log.warning(f"Manual check failed: Monitor {monitor_id} not found.")
-            return False
+            return False, "Monitor not found in memory."
             
         try:
             log.info(f"Manual check triggered for monitor: {monitor.name}")
+            
+            # Streaming platforms (Twitch, Kick, etc.) have _fetch_platform_data
+            if hasattr(monitor, '_fetch_platform_data'):
+                stream_data = await monitor._fetch_platform_data()
+                if stream_data and stream_data.get('is_live'):
+                    viewers = stream_data.get('viewers', 0)
+                    title = stream_data.get('title', 'No Title')
+                    msg = f"🔴 LIVE NOW! {viewers:,} viewers. Title: {title}"
+                    return True, msg
+                else:
+                    return True, "⚫ Currently OFFLINE."
+
             if hasattr(monitor, 'fetch_new_items'):
                 new_items = await monitor.fetch_new_items()
                 if new_items:
                     for item in new_items:
                         await monitor.process_item(item)
                     await monitor.mark_items_published(new_items)
+                    
+                    count = len(new_items)
+                    first = new_items[0]
+                    title = first.get('title') or first.get('name') or first.get('symbol')
+                    
+                    if monitor.type == 'crypto' and first.get('price'):
+                        msg = f"📈 Price Alert! {title} is at ${first.get('price')}!"
+                    elif title:
+                        msg = f"✨ Found {count} new update(s)! Latest: {title}"
+                    else:
+                        msg = f"✨ Found {count} new update(s)!"
+                    return True, msg
+                else:
+                    return True, "✅ Checked successfully. No new updates found."
             else:
                 await monitor.check_for_updates()
-            return True
+                return True, "✅ Manual check complete."
         except Exception as e:
             log.error(f"Error during manual check for {monitor.name}: {e}")
-            return False
+            return False, f"Check error: {str(e)}"
 
     async def repost_recent(self, monitor_id, count=1):
         """Fetch latest items directly from source and post them (useful for new monitors or recovery)."""

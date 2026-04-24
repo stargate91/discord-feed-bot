@@ -105,7 +105,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
 
       const data = await res.json();
       if (res.ok) {
-        setActionStatus({ type: 'success', message: 'Success!' });
+        setActionStatus({ type: 'success', message: data.message || 'Success!' });
       } else {
         setActionStatus({ type: 'error', message: data.error || 'Failed' });
       }
@@ -114,7 +114,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
     }
 
     setActionLoading(null);
-    setTimeout(() => setActionStatus({ type: null, message: null }), 3000);
+    setTimeout(() => setActionStatus({ type: null, message: null }), 6000); // 6s duration for longer messages
   };
 
   return (
@@ -433,18 +433,22 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
         }
 
         .action-feedback {
-          margin-top: 8px;
-          font-size: 0.65rem;
-          font-weight: 700;
+          margin-top: 12px;
+          padding: 10px;
+          border-radius: 8px;
+          background: rgba(0, 0, 0, 0.2);
+          font-size: 0.75rem;
+          font-weight: 600;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 8px;
           justify-content: center;
-          text-transform: uppercase;
+          border-left: 3px solid transparent;
+          word-break: break-word;
         }
 
-        .action-feedback.success { color: #10b981; }
-        .action-feedback.error { color: #ef4444; }
+        .action-feedback.success { color: #10b981; border-left-color: #10b981; }
+        .action-feedback.error { color: #ef4444; border-left-color: #ef4444; }
 
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .spin { animation: spin 1s linear infinite; }

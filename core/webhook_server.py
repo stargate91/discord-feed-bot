@@ -180,11 +180,11 @@ async def manual_check(monitor_id: int):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
-    success = await app.state.bot.monitor_manager.manual_check(monitor_id)
+    success, message = await app.state.bot.monitor_manager.manual_check(monitor_id)
     if success:
-        return {"status": "success", "message": f"Manual check triggered for monitor {monitor_id}"}
+        return {"status": "success", "message": message}
     else:
-        raise HTTPException(status_code=400, detail="Monitor not found or check failed")
+        raise HTTPException(status_code=400, detail=message)
 
 @app.post("/monitors/{monitor_id}/repost")
 async def repost_recent(monitor_id: int, count: int = 1):
