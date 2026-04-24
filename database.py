@@ -26,7 +26,7 @@ async def init_db():
             admin_role_id BIGINT DEFAULT 0,
             alert_templates TEXT,
             premium_until TIMESTAMP,
-            refresh_interval INTEGER,
+            refresh_interval INTEGER DEFAULT 30,
             tier INTEGER DEFAULT 0,
             stripe_subscription_id TEXT,
             is_master BOOLEAN DEFAULT false,
@@ -103,7 +103,6 @@ async def init_db():
             guild_id BIGINT,
             redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''',
-        # 10. Global Announcements
         '''CREATE TABLE IF NOT EXISTS announcements (
             id SERIAL PRIMARY KEY,
             title TEXT NOT NULL,
@@ -112,8 +111,18 @@ async def init_db():
             is_active BOOLEAN DEFAULT true,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             expires_at TIMESTAMP
+        )''',
+        # 11. YouTube Resolution Cache
+        '''CREATE TABLE IF NOT EXISTS youtube_cache (
+            query TEXT PRIMARY KEY,
+            channel_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            thumbnail TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )'''
     ]
+
+
 
     async with pool.acquire() as conn:
         async with conn.transaction():
@@ -130,6 +139,9 @@ async def init_db():
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_master BOOLEAN DEFAULT false")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT false")
+                
+                # Migration: Update default refresh interval to 30 for free guilds
+                await conn.execute("UPDATE guild_settings SET refresh_interval = 30 WHERE refresh_interval IS NULL OR (refresh_interval = 15 AND tier = 0)")
                 
                 # Migration: Move existing premium users to Tier 3 (Architect)
                 await conn.execute("""

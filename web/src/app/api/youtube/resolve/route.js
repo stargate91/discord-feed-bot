@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import pool from "@/lib/db";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -9,58 +10,87 @@ export async function GET(request) {
     return NextResponse.json({ error: "Input is required" }, { status: 400 });
   }
 
+  // 0. Check Cache First
+  try {
+    const cacheRes = await pool.query(
+      "SELECT channel_id, title, thumbnail, updated_at FROM youtube_cache WHERE query = $1",
+      [input.toLowerCase()]
+    );
+
+    if (cacheRes.rows.length > 0) {
+      const row = cacheRes.rows[0];
+      const ageInDays = (new Date() - new Date(row.updated_at)) / (1000 * 60 * 60 * 24);
+      
+      if (ageInDays < 7) {
+        return NextResponse.json({
+          id: row.channel_id,
+          title: row.title,
+          thumbnail: row.thumbnail,
+          cached: true
+        });
+      }
+    }
+  } catch (cacheErr) {
+    console.error("[YouTube Cache] Error:", cacheErr);
+  }
+
   if (!apiKey) {
     return NextResponse.json({ error: "YouTube API Key not configured on server" }, { status: 500 });
   }
 
   try {
-    let channelId = null;
-    let channelTitle = "";
-    let channelThumb = "";
+    let result = null;
 
     // 1. If it's already a UCID
     if (input.startsWith("UC") && input.length === 24) {
       const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${input}&key=${apiKey}`);
       const data = await res.json();
       if (data.items?.length > 0) {
-        return NextResponse.json({
+        result = {
           id: data.items[0].id,
           title: data.items[0].snippet.title,
           thumbnail: data.items[0].snippet.thumbnails.default.url
-        });
+        };
       }
     }
 
-    // 2. Try to resolve handle (@handle)
-    let handle = input;
-    if (input.includes("youtube.com/")) {
-        // Extract handle from URL
-        const match = input.match(/youtube\.com\/(@[a-zA-Z0-9._-]+)/);
-        if (match) handle = match[1];
-    }
-    
-    if (handle.startsWith("@")) {
-        // Search by handle
+    if (!result) {
+        // 2. Try to resolve handle (@handle) or Search
+        let handle = input;
+        if (input.includes("youtube.com/")) {
+            const match = input.match(/youtube\.com\/(@[a-zA-Z0-9._-]+)/);
+            if (match) handle = match[1];
+        }
+        
         const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(handle)}&key=${apiKey}&maxResults=1`);
         const data = await res.json();
         if (data.items?.length > 0) {
-            return NextResponse.json({
+            result = {
                 id: data.items[0].snippet.channelId,
                 title: data.items[0].snippet.title,
                 thumbnail: data.items[0].snippet.thumbnails.default.url
-            });
+            };
         }
     }
 
-    // 3. Final Fallback: Search
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(input)}&key=${apiKey}&maxResults=1`);
-    const data = await res.json();
-    if (data.items?.length > 0) {
-      return NextResponse.json({
-        id: data.items[0].snippet.channelId,
-        title: data.items[0].snippet.title,
-        thumbnail: data.items[0].snippet.thumbnails.default.url
-      });
+    if (result) {
+        // Store in Cache
+        try {
+            await pool.query(
+                `INSERT INTO youtube_cache (query, channel_id, title, thumbnail, updated_at) 
+                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                 ON CONFLICT (query) DO UPDATE SET 
+                    channel_id = EXCLUDED.channel_id,
+                    title = EXCLUDED.title,
+                    thumbnail = EXCLUDED.thumbnail,
+                    updated_at = CURRENT_TIMESTAMP`,
+                [input.toLowerCase(), result.id, result.title, result.thumbnail]
+            );
+        } catch (saveErr) {
+            console.error("[YouTube Cache] Save Error:", saveErr);
+        }
+        
+        return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: "Channel not found" }, { status: 404 });

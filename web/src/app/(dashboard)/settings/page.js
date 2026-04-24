@@ -186,7 +186,7 @@ function SettingsContent() {
   const [settings, setSettings] = useState({
     language: 'en',
     admin_role_id: '0',
-    refresh_interval: 15,
+    refresh_interval: 30,
     alert_templates: {},
     isMaster: false
   });
