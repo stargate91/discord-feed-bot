@@ -36,8 +36,18 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: true });
     }
 
+    // --- Tier enforcement for premium fields ---
+    const isMaster = session.user?.role === "master";
+    let tier = 0;
+    if (!isMaster) {
+      const guildRes = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1', [guildId]);
+      tier = guildRes.rows[0]?.tier || 0;
+    } else {
+      tier = 99; // Master bypasses all
+    }
+
     // Full update logic
-    const { name, target_channels, target_roles, embed_color, ...extra } = body;
+    const { name, target_channels, target_roles, embed_color, custom_alert, target_genres, target_languages, ...extra } = body;
     
     // Fetch current extra_settings to merge
     const currentRes = await pool.query('SELECT extra_settings FROM monitors WHERE id = $1', [id]);
@@ -48,10 +58,39 @@ export async function PATCH(request, { params }) {
       await pool.query('UPDATE monitors SET name = $1 WHERE id = $2', [name, id]);
     }
 
-    // Merge extra settings
+    // Merge extra settings with tier checks
     if (target_channels !== undefined) extraSettings.target_channels = target_channels;
     if (target_roles !== undefined) extraSettings.target_roles = target_roles;
-    if (embed_color !== undefined) extraSettings.embed_color = embed_color;
+
+    // Custom Embed Color — Tier 1+ (Starter)
+    if (embed_color !== undefined) {
+      if (tier < 1) {
+        return NextResponse.json({ error: "Custom embed color requires Starter tier or higher" }, { status: 403 });
+      }
+      extraSettings.embed_color = embed_color;
+    }
+
+    // Custom Alert Template — Tier 2+ (Professional)
+    if (custom_alert !== undefined) {
+      if (tier < 2) {
+        return NextResponse.json({ error: "Custom templates require Professional tier or higher" }, { status: 403 });
+      }
+      extraSettings.custom_alert = custom_alert;
+    }
+
+    // Advanced Filters (Genre/Language) — Tier 1+ (Starter)
+    if (target_genres !== undefined) {
+      if (tier < 1) {
+        return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
+      }
+      extraSettings.target_genres = target_genres;
+    }
+    if (target_languages !== undefined) {
+      if (tier < 1) {
+        return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
+      }
+      extraSettings.target_languages = target_languages;
+    }
     
     // Merge any other platform-specific settings
     extraSettings = { ...extraSettings, ...extra };
