@@ -59,7 +59,28 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
   const [guildRoles, setGuildRoles] = useState([]);
   const [loadingContext, setLoadingContext] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [resolvedChannel, setResolvedChannel] = useState(null);
   const colorInputRef = useRef(null);
+
+  const handleYouTubeResolve = async () => {
+    if (!formData.platform_input) return;
+    setResolving(true);
+    try {
+      const res = await fetch(`/api/youtube/resolve?input=${encodeURIComponent(formData.platform_input)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setResolvedChannel(data);
+        setFormData(prev => ({ ...prev, platform_input: data.id, name: data.title }));
+        addToast(`Found: ${data.title}`, 'success', 'YouTube Found');
+      } else {
+        addToast('Could not find YouTube channel. Check the name/link.', 'error', 'Not Found');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setResolving(false);
+  };
 
   useEffect(() => {
     if (isOpen && guildId) {
@@ -263,14 +284,36 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                      <label>{selectedPlatform.inputLabel}</label>
                      <div className="hint-pill"><Info size={12} /> {selectedPlatform.hint}</div>
                    </div>
-                   <input 
-                     type="text" 
-                     value={formData.platform_input} 
-                     onChange={(e) => setFormData({...formData, platform_input: e.target.value})}
-                     required 
-                     className="styled-input-main accent-border"
-                     placeholder={selectedPlatform.placeholder}
-                   />
+                   <div style={{ display: 'flex', gap: '10px' }}>
+                     <input 
+                       type="text" 
+                       value={formData.platform_input} 
+                       onChange={(e) => setFormData({...formData, platform_input: e.target.value})}
+                       required 
+                       className="styled-input-main accent-border"
+                       style={{ flex: 1 }}
+                       placeholder={selectedPlatform.placeholder}
+                     />
+                     {selectedPlatform.id === 'youtube' && (
+                       <button 
+                         type="button" 
+                         onClick={handleYouTubeResolve}
+                         className="resolve-btn"
+                         disabled={resolving || !formData.platform_input}
+                       >
+                         {resolving ? '...' : 'Find'}
+                       </button>
+                     )}
+                   </div>
+                   {selectedPlatform.id === 'youtube' && resolvedChannel && (
+                     <div className="channel-preview">
+                       <img src={resolvedChannel.thumbnail} alt="" />
+                       <div className="channel-info">
+                         <span className="channel-name">{resolvedChannel.title}</span>
+                         <span className="channel-id">{resolvedChannel.id}</span>
+                       </div>
+                     </div>
+                   )}
                  </div>
                )}
 
@@ -609,6 +652,59 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           text-transform: uppercase;
           letter-spacing: 0.5px;
           pointer-events: auto;
+        }
+
+        .resolve-btn {
+          background: var(--accent-color);
+          color: white;
+          border: none;
+          padding: 0 1.5rem;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .resolve-btn:hover:not(:disabled) {
+          filter: brightness(1.2);
+          transform: translateY(-2px);
+        }
+        .resolve-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .channel-preview {
+          margin-top: 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 12px;
+          animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .channel-preview img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 2px solid var(--accent-color);
+        }
+        .channel-info {
+          display: flex;
+          flex-direction: column;
+        }
+        .channel-name {
+          font-weight: 700;
+          font-size: 0.9rem;
+          color: white;
+        }
+        .channel-id {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          font-family: monospace;
         }
       `}</style>
     </div>
