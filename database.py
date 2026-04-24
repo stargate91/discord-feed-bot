@@ -44,6 +44,16 @@ async def init_db():
             code VARCHAR(50),
             guild_id BIGINT,
             redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''',
+        # 10. Global Announcements
+        '''CREATE TABLE IF NOT EXISTS announcements (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            type TEXT DEFAULT 'info',
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP
         )'''
     ]
 

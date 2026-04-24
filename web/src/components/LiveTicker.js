@@ -75,17 +75,16 @@ export default function LiveTicker() {
 
       <style jsx>{`
         .ticker-container {
-          background: rgba(0, 0, 0, 0.2);
+          background: rgba(0, 0, 0, 0.1);
           backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          height: 40px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          height: 36px;
           display: flex;
           align-items: center;
           overflow: hidden;
-          border-radius: 12px;
-          margin-bottom: 0.5rem;
+          border-radius: 10px;
           position: relative;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+          width: 800px;
         }
 
         .ticker-header {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import LiveTicker from "@/components/LiveTicker";
 import HeatmapChart from "@/components/HeatmapChart";
+import { useSession } from "next-auth/react";
 
 // Custom Chart Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -39,6 +40,7 @@ function AnalyticsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const guildId = searchParams.get("guild");
+  const { data: session } = useSession();
   
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,53 +86,53 @@ function AnalyticsContent() {
     fetchStats();
   }, [guildId, range, router]);
 
+  const chartData = useMemo(() => {
+    if (!data || !data.history) return [];
+    return data.history.map(item => ({
+      date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      posts: parseInt(item.count)
+    }));
+  }, [data]);
+
   if (loading && !data) return <div className="loading-container"><div className="loader"></div></div>;
   if (error) return <div className="error-container"><h3>Error: {error}</h3></div>;
   if (!data) return null;
-
-  const chartData = data.history.map(item => ({
-    date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    posts: parseInt(item.count)
-  }));
 
   const PIE_COLORS = ['#7b2cbf', '#9d4edd', '#3c096c', '#5a189a', '#c19ee0'];
 
   return (
     <div className="analytics-wrapper" onClick={() => setIsDropdownOpen(false)}>
-      <LiveTicker />
-      <header className="page-header">
-        <div className="header-text">
-          <div className="badge">INSIGHTS</div>
+      <header className="analytics-header">
+        <div className="header-left-group">
           <h2>Analytics Dashboard</h2>
-          <p>Real-time performance metrics for your feed monitors.</p>
+          <LiveTicker />
         </div>
         
-        <div className="range-picker">
-          <button 
-            className={`range-btn ${isDropdownOpen ? 'active' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDropdownOpen(!isDropdownOpen);
-            }}
-          >
-            <Calendar size={16} />
-            <span>{rangeLabels[range]}</span>
-            <ChevronDown size={14} className={`chevron ${isDropdownOpen ? 'rotated' : ''}`} />
-          </button>
-
-          {isDropdownOpen && (
-            <div className="dropdown-menu">
-              {Object.entries(rangeLabels).map(([value, label]) => (
-                <div 
-                  key={value}
-                  className={`dropdown-item ${range === value ? 'selected' : ''}`}
-                  onClick={() => setRange(value)}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="header-actions-group">
+          <div className="range-dropdown-container">
+            <button 
+              className="dropdown-trigger"
+              onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
+            >
+              <Calendar size={18} />
+              <span>{rangeLabels[range]}</span>
+              <ChevronDown size={16} className={isDropdownOpen ? 'rotate' : ''} />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="range-dropdown">
+                {Object.entries(rangeLabels).map(([val, label]) => (
+                  <button 
+                    key={val} 
+                    className={range === val ? 'active' : ''} 
+                    onClick={() => { setRange(val); setIsDropdownOpen(false); }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -226,16 +228,6 @@ function AnalyticsContent() {
            </div>
         </div>
 
-        <div className="chart-large-card">
-           <div className="chart-header-inner">
-              <h3>Global Heatmap</h3>
-              <p>Peak activity hours and days for your feed monitors.</p>
-           </div>
-           <div className="chart-content-inner">
-              <HeatmapChart data={data.heatmap || []} />
-           </div>
-        </div>
-
         <div className="chart-small-card">
            <div className="chart-header-inner">
               <h3>Platform Distribution</h3>
@@ -276,6 +268,16 @@ function AnalyticsContent() {
            </div>
         </div>
 
+        <div className="chart-large-card">
+           <div className="chart-header-inner">
+              <h3>Global Heatmap</h3>
+              <p>Peak activity hours and days for your feed monitors.</p>
+           </div>
+           <div className="chart-content-inner">
+              <HeatmapChart data={data.heatmap || []} />
+           </div>
+        </div>
+
         <div className="chart-small-card">
            <div className="chart-header-inner">
               <h3>Source Efficiency</h3>
@@ -293,7 +295,6 @@ function AnalyticsContent() {
               </BarChart>
            </ResponsiveContainer>
         </div>
-
       </div>
 
       <style jsx>{`
@@ -309,31 +310,36 @@ function AnalyticsContent() {
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .page-header {
+        .analytics-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-end;
+          align-items: center;
+          margin-bottom: 2rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .badge {
-          display: inline-block;
-          background: rgba(123, 44, 191, 0.1);
-          color: #7b2cbf;
-          font-size: 0.65rem;
-          font-weight: 800;
-          padding: 4px 10px;
-          border-radius: 6px;
-          letter-spacing: 1px;
-          margin-bottom: 0.5rem;
+        .header-left-group {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
         }
 
-        .header-text h2 { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
-        .header-text p { color: rgba(255,255,255,0.4); margin: 0.2rem 0 0; }
+        .header-left-group h2 {
+          font-size: 2.2rem;
+          font-weight: 900;
+          margin: 0;
+          background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
 
-        .range-picker { position: relative; }
-        .range-btn {
+        .live-ticker-inline {
+          max-width: 600px;
+        }
+
+        .dropdown-trigger {
           background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
           color: white;
           padding: 10px 18px;
           border-radius: 12px;
@@ -418,21 +424,23 @@ function AnalyticsContent() {
         .chart-header-inner h3 { font-size: 1.3rem; font-weight: 700; margin: 0; }
         .chart-header-inner p { color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-top: 4px; }
 
-        .side-charts-row { 
-          display: grid; 
-          grid-template-columns: 2fr 1fr; 
-          gap: 1.5rem; 
-          grid-column: span 2;
-        }
-        @media (max-width: 1100px) { .side-charts-row { grid-template-columns: 1fr; } }
-
         .chart-small-card {
           background: rgba(255, 255, 255, 0.02);
           border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: 24px;
           padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
         }
-        .chart-small-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem; color: rgba(255,255,255,0.6); }
+        .chart-small-card h3 { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.6); margin: 0; }
+        .chart-content-inner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+        }
 
         .pie-container-vertical { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         .pie-legend-grid { 
@@ -442,11 +450,36 @@ function AnalyticsContent() {
           width: 100%; 
           margin-top: 0.5rem;
           padding: 0 10px;
+          justify-items: center;
         }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
         .legend-item .dot { width: 8px; height: 8px; border-radius: 50%; }
         .legend-item .name { color: rgba(255,255,255,0.5); }
         .legend-item .val { font-weight: 700; margin-left: 6px; }
+
+        .custom-tooltip p { margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+
+        .logs-section {
+          margin-top: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .section-header-simple {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: rgba(255,255,255,0.5);
+        }
+
+        .section-header-simple h3 {
+          font-size: 1.1rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin: 0;
+        }
 
         .custom-tooltip {
           background: rgba(26, 26, 32, 0.9);

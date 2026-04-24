@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Trash2, Copy, Check, Zap, X, ShieldAlert, RefreshCcw, Activity } from 'lucide-react';
+import { Trash2, Copy, Check, Zap, X, ShieldAlert, RefreshCcw, Activity, Terminal } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
+import LogStreamer from '@/components/LogStreamer';
 
 export default function DevSettings() {
   const [keys, setKeys] = useState([]);
@@ -22,6 +23,11 @@ export default function DevSettings() {
   const [newStatusText, setNewStatusText] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
   const [showPresence, setShowPresence] = useState(false);
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [newAnnounce, setNewAnnounce] = useState({ title: '', content: '', type: 'info' });
+  const [announceLoading, setAnnounceLoading] = useState(false);
 
   // Options Definitions
   const ROTATION_OPTIONS = [
@@ -56,12 +62,8 @@ export default function DevSettings() {
     try {
       const res = await fetch('/api/premium');
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setKeys(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (Array.isArray(data)) setKeys(data);
+    } catch (err) { console.error(err); }
     setLoading(false);
   };
 
@@ -82,55 +84,51 @@ export default function DevSettings() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch('/api/announcements');
+      if (!res.ok) return;
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) return;
+
+      const data = await res.json();
+      if (Array.isArray(data)) setAnnouncements(data);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
     fetchKeys();
     fetchStatuses();
     fetchBotSettings();
+    fetchAnnouncements();
   }, []);
 
   const handleGenerate = async () => {
     setGenerating(true);
     const daysToGenerate = duration === 'custom' ? parseInt(customDays) : parseInt(duration);
-    
     try {
       const res = await fetch('/api/premium/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          days: daysToGenerate,
-          uses: parseInt(maxUses),
-          tier: parseInt(tier)
-        })
+        body: JSON.stringify({ days: daysToGenerate, uses: parseInt(maxUses), tier: parseInt(tier) })
       });
-      if (res.ok) {
-        fetchKeys();
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (res.ok) fetchKeys();
+    } catch (err) { console.error(err); }
     setGenerating(false);
   };
 
   const handleDelete = async (code) => {
     try {
       const res = await fetch(`/api/premium?code=${code}`, { method: 'DELETE' });
-      if (res.ok) {
-        setKeys(keys.filter(k => k.code !== code));
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (res.ok) setKeys(keys.filter(k => k.code !== code));
+    } catch (err) { console.error(err); }
   };
 
   const handleRevoke = async (code) => {
     try {
       const res = await fetch(`/api/premium?code=${code}`, { method: 'PATCH' });
-      if (res.ok) {
-        setKeys(keys.map(k => k.code === code ? { ...k, is_revoked: true } : k));
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (res.ok) setKeys(keys.map(k => k.code === code ? { ...k, is_revoked: true } : k));
+    } catch (err) { console.error(err); }
   };
 
   const copyToClipboard = (text) => {
@@ -173,17 +171,145 @@ export default function DevSettings() {
     } catch (err) { console.error(err); }
   };
 
+  const handleSendAnnouncement = async () => {
+    if (!newAnnounce.title || !newAnnounce.content) return;
+    setAnnounceLoading(true);
+    try {
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAnnounce)
+      });
+      if (res.ok) {
+        setNewAnnounce({ title: '', content: '', type: 'info' });
+        fetchAnnouncements();
+      }
+    } catch (err) { console.error(err); }
+    setAnnounceLoading(false);
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    try {
+      const res = await fetch(`/api/announcements?id=${id}`, { method: 'DELETE' });
+      if (res.ok) fetchAnnouncements();
+    } catch (err) { console.error(err); }
+  };
+
   return (
-    <div className="dev-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="dev-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
       <header className="header">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Developer Controls</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Master administrator tools for premium keys and bot presence management.
+            Master administrator tools for logs, announcements, and premium management.
           </p>
         </div>
       </header>
 
+      <section style={{ marginBottom: '1rem' }}>
+        <LogStreamer />
+      </section>
+
+      {/* Broadcast Notifications Section */}
+      <div 
+        onClick={() => setShowBroadcast(!showBroadcast)} 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          padding: '1.25rem 1.5rem',
+          background: 'rgba(59, 130, 246, 0.1)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: showBroadcast ? '24px 24px 0 0' : '24px',
+          transition: 'all 0.3s ease',
+          userSelect: 'none',
+          marginBottom: showBroadcast ? '0' : '1rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Activity size={20} color="#60a5fa" />
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Global Broadcasts</h3>
+        </div>
+        <span style={{ fontSize: '0.9rem', transform: showBroadcast ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#60a5fa' }}>▼</span>
+      </div>
+
+      <div style={{ 
+        maxHeight: showBroadcast ? '1000px' : '0', 
+        overflow: 'hidden', 
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity: showBroadcast ? 1 : 0,
+        background: 'rgba(15, 15, 25, 0.4)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        borderTop: 'none',
+        borderRadius: '0 0 24px 24px',
+        padding: showBroadcast ? '2rem' : '0 2rem',
+        marginBottom: showBroadcast ? '1rem' : '0'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Message Title</label>
+              <input 
+                type="text" 
+                value={newAnnounce.title} 
+                onChange={(e) => setNewAnnounce({ ...newAnnounce, title: e.target.value })}
+                placeholder="e.g. Scheduled Maintenance"
+                className="styled-input-basic"
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Content Markdown</label>
+              <textarea 
+                value={newAnnounce.content} 
+                onChange={(e) => setNewAnnounce({ ...newAnnounce, content: e.target.value })}
+                placeholder="Details of the announcement..."
+                className="styled-input-basic"
+                style={{ minHeight: '120px', resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end' }}>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Alert Type</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {['info', 'warning', 'danger'].map(type => (
+                      <button 
+                        key={type}
+                        onClick={() => setNewAnnounce({ ...newAnnounce, type })}
+                        className={`type-btn ${newAnnounce.type === type ? 'active' : ''} ${type}`}
+                      >
+                        {type.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+               </div>
+               <button className="btn" style={{ padding: '0.8rem 2rem' }} onClick={handleSendAnnouncement} disabled={announceLoading}>
+                 {announceLoading ? 'Sending...' : 'Broadcast to Owners'}
+               </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h4 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Active Broadcasts</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+              {announcements.map(a => (
+                <div key={a.id} className="announce-mini-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className={`mini-type ${a.type}`}>{a.type}</span>
+                    <button onClick={() => handleDeleteAnnouncement(a.id)} className="icon-btn-small"><X size={12} /></button>
+                  </div>
+                  <p className="mini-title">{a.title}</p>
+                </div>
+              ))}
+              {announcements.length === 0 && <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: '2rem' }}>No active broadcasts.</p>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Discord Presence Section */}
       <div 
         onClick={() => setShowPresence(!showPresence)} 
         style={{ 
@@ -195,26 +321,17 @@ export default function DevSettings() {
           background: 'rgba(123, 44, 191, 0.1)',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(123, 44, 191, 0.3)',
-          borderRadius: showPresence ? '16px 16px 0 0' : '16px',
+          borderRadius: showPresence ? '24px 24px 0 0' : '24px',
           transition: 'all 0.3s ease',
-          marginBottom: showPresence ? '0' : '2rem',
           userSelect: 'none',
-          boxShadow: showPresence ? '0 10px 30px rgba(0,0,0,0.3)' : '0 4px 15px rgba(0,0,0,0.1)'
+          marginBottom: showPresence ? '0' : '1rem'
         }}
-        className="glass-presence-header"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></div>
-          <h3 style={{ margin: 0, fontSize: '1.1rem', letterSpacing: '0.5px' }}>Discord Rich Presence</h3>
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Discord Rich Presence</h3>
         </div>
-        <span style={{ 
-          fontSize: '0.9rem', 
-          transition: 'transform 0.3s', 
-          transform: showPresence ? 'rotate(180deg)' : 'rotate(0deg)',
-          color: 'var(--accent-hover)'
-        }}>
-          {showPresence ? 'HIDE CONFIG' : 'OPEN CONFIG'} ▼
-        </span>
+        <span style={{ fontSize: '0.9rem', transform: showPresence ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: 'var(--accent-hover)' }}>▼</span>
       </div>
       
       <div style={{ 
@@ -226,65 +343,37 @@ export default function DevSettings() {
         backdropFilter: 'blur(12px)',
         border: '1px solid rgba(123, 44, 191, 0.2)',
         borderTop: 'none',
-        borderRadius: '0 0 16px 16px',
-        marginBottom: '3rem',
-        padding: showPresence ? '2rem' : '0 2rem'
+        borderRadius: '0 0 24px 24px',
+        padding: showPresence ? '2rem' : '0 2rem',
+        marginBottom: showPresence ? '1rem' : '0'
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Global Configuration</h4>
+            <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Global Configuration</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rotation Mode</label>
-              <CustomSelect 
-                options={ROTATION_OPTIONS}
-                value={rotationMode}
-                onChange={(val) => {
-                  setRotationMode(val);
-                  handleUpdateBotSetting('status_rotation_mode', val);
-                }}
-              />
+              <CustomSelect options={ROTATION_OPTIONS} value={rotationMode} onChange={(val) => { setRotationMode(val); handleUpdateBotSetting('status_rotation_mode', val); }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rotation Interval</label>
               <div style={{ position: 'relative' }}>
-                <input 
-                  type="number" 
-                  value={rotationInterval} 
-                  onChange={(e) => setRotationInterval(e.target.value)}
-                  onBlur={(e) => handleUpdateBotSetting('presence_interval_seconds', e.target.value)}
-                  className="styled-input-basic"
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.3)', paddingRight: '3rem' }}
-                  min="10"
-                />
+                <input type="number" value={rotationInterval} onChange={(e) => setRotationInterval(e.target.value)} onBlur={(e) => handleUpdateBotSetting('presence_interval_seconds', e.target.value)} className="styled-input-basic" style={{ width: '100%', paddingRight: '3rem' }} min="10" />
                 <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>sec</span>
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Add New Pattern</h4>
+            <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Add New Pattern</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Activity Type</label>
-              <CustomSelect 
-                options={ACTIVITY_OPTIONS}
-                value={newStatusType}
-                onChange={(val) => setNewStatusType(val)}
-              />
+              <CustomSelect options={ACTIVITY_OPTIONS} value={newStatusType} onChange={(val) => setNewStatusType(val)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Text Pattern</label>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input 
-                  type="text" 
-                  value={newStatusText} 
-                  onChange={(e) => setNewStatusText(e.target.value)}
-                  placeholder="e.g. {count} servers"
-                  className="styled-input-basic"
-                  style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }}
-                />
-                <button className="btn" onClick={handleAddStatus} disabled={statusLoading}>
-                  {statusLoading ? '...' : 'ADD'}
-                </button>
+                <input type="text" value={newStatusText} onChange={(e) => setNewStatusText(e.target.value)} placeholder="e.g. {count} servers" className="styled-input-basic" style={{ flex: 1 }} />
+                <button className="btn" onClick={handleAddStatus} disabled={statusLoading}>{statusLoading ? '...' : 'ADD'}</button>
               </div>
             </div>
           </div>
@@ -292,225 +381,123 @@ export default function DevSettings() {
 
         <div style={{ marginTop: '2.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
           {statuses.map(s => (
-            <div key={s.id} className="key-card" style={{ padding: '0.6rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div key={s.id} className="status-mini-card">
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <span style={{ fontSize: '0.6rem', color: 'var(--accent-hover)', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                  {s.type}
-                </span>
+                <span className="mini-type-badge">{s.type}</span>
                 <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.text}</span>
               </div>
-              <button 
-                className="icon-btn" 
-                onClick={() => handleDeleteStatus(s.id)}
-                style={{ color: '#ef4444', height: '30px', width: '30px' }}
-              >
-                <Trash2 size={16} />
-              </button>
+              <button className="icon-btn-danger" onClick={() => handleDeleteStatus(s.id)}><Trash2 size={16} /></button>
             </div>
           ))}
-          {statuses.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center', gridColumn: '1/-1' }}>No custom statuses defined.</p>}
         </div>
       </div>
 
-      <section className="card" style={{ marginBottom: '2rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '20px' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Premium Key Generator</h3>
-        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+      {/* Premium Key Management Section */}
+      <div 
+        onClick={() => setShowPremium(!showPremium)} 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          padding: '1.25rem 1.5rem',
+          background: 'rgba(168, 85, 247, 0.1)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(168, 85, 247, 0.3)',
+          borderRadius: showPremium ? '24px 24px 0 0' : '24px',
+          transition: 'all 0.3s ease',
+          userSelect: 'none',
+          marginBottom: showPremium ? '0' : '1rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Zap size={20} color="#c084fc" />
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Premium Key Management</h3>
+        </div>
+        <span style={{ fontSize: '0.9rem', transform: showPremium ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#c084fc' }}>▼</span>
+      </div>
+
+      <div style={{ 
+        maxHeight: showPremium ? '3000px' : '0', 
+        overflow: 'hidden', 
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity: showPremium ? 1 : 0,
+        background: 'rgba(15, 15, 25, 0.4)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(168, 85, 247, 0.2)',
+        borderTop: 'none',
+        borderRadius: '0 0 24px 24px',
+        padding: showPremium ? '2rem' : '0 2rem',
+        marginBottom: showPremium ? '1rem' : '0'
+      }}>
+        <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Generate New Access Keys</h4>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '3rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Duration</label>
-            <CustomSelect 
-              options={DURATION_OPTIONS}
-              value={duration}
-              onChange={(val) => setDuration(val)}
-              width="250px"
-            />
+            <CustomSelect options={DURATION_OPTIONS} value={duration} onChange={(val) => setDuration(val)} width="250px" />
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tier</label>
-            <CustomSelect 
-              options={TIER_OPTIONS}
-              value={tier}
-              onChange={(val) => setTier(val)}
-              width="200px"
-            />
+            <CustomSelect options={TIER_OPTIONS} value={tier} onChange={(val) => setTier(val)} width="200px" />
           </div>
-
           {duration === 'custom' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Days</label>
-              <input 
-                type="number" 
-                value={customDays} 
-                onChange={(e) => setCustomDays(e.target.value)}
-                className="styled-input-basic"
-                style={{ width: '100px' }}
-                min="1"
-              />
+              <input type="number" value={customDays} onChange={(e) => setCustomDays(e.target.value)} className="styled-input-basic" style={{ width: '100px' }} min="1" />
             </div>
           )}
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Uses</label>
-            <input 
-              type="number" 
-              value={maxUses} 
-              onChange={(e) => setMaxUses(e.target.value)}
-              className="styled-input-basic"
-              style={{ width: '100px' }}
-              min="1"
-            />
+            <input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className="styled-input-basic" style={{ width: '100px' }} min="1" />
           </div>
-
-          <button 
-            className="btn" 
-            onClick={handleGenerate} 
-            disabled={generating}
-          >
-            {generating ? 'Generating...' : 'Generate New Key'}
-          </button>
+          <button className="btn" onClick={handleGenerate} disabled={generating}>{generating ? 'Generating...' : 'Generate New Key'}</button>
         </div>
-      </section>
 
-      <h3 style={{ marginBottom: '1.5rem', marginTop: '3rem' }}>Active & Unused Keys</h3>
-      
-      <div className="keys-container">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading keys...</div>
-        ) : (
-          <div className="keys-grid">
-            {keys.map(k => (
-              <div key={k.code} className="key-card">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span className="key-code">{k.code}</span>
-                  <span className="key-meta">
-                    <span className={`tier-badge tier-${k.tier || 3}`}>Tier {k.tier || 3}</span> • {k.duration_days === 0 ? 'Lifetime' : `${k.duration_days} Days`} • Uses: {k.used_count}/{k.max_uses}
-                    {k.is_revoked && <span style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: '8px' }}>[REVOKED]</span>}
-                  </span>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  <button 
-                    className="icon-btn" 
-                    onClick={() => copyToClipboard(k.code)}
-                    title="Copy to clipboard"
-                    style={{ fontSize: '1.2rem' }}
-                  >
-                    {copying === k.code ? <Check size={18} /> : <Copy size={18} />}
-                  </button>
-                  <button 
-                    className="icon-btn" 
-                    onClick={() => handleRevoke(k.code)}
-                    style={{ color: '#f59e0b', fontSize: '1.2rem' }}
-                    title="Revoke Key"
-                    disabled={k.is_revoked}
-                  >
-                    {k.is_revoked ? <ShieldAlert size={18} /> : <Zap size={18} />}
-                  </button>
-                  <button 
-                    className="icon-btn" 
-                    onClick={() => handleDelete(k.code)}
-                    style={{ color: '#ef4444', fontSize: '1.2rem' }}
-                    title="Delete Key"
-                  >
-                    <X size={18} />
-                  </button>
+        <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Active & Unused Keys</h4>
+        <div className="keys-grid">
+          {loading ? <div style={{ textAlign: 'center', padding: '2rem', gridColumn: '1/-1' }}>Loading...</div> : keys.map(k => (
+            <div key={k.code} className="key-card">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="key-code">{k.code}</span>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={`tier-badge tier-${k.tier || 3}`}>Tier {k.tier || 3}</span>
+                  <span>• {k.duration_days === 0 ? 'Lifetime' : `${k.duration_days}d`}</span>
+                  <span>• {k.used_count}/{k.max_uses} uses</span>
+                  {k.is_revoked && <span style={{ color: '#ef4444' }}>[REVOKED]</span>}
                 </div>
               </div>
-            ))}
-            
-            {keys.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', gridColumn: '1/-1' }}>
-                No premium keys generated yet.
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="icon-btn" onClick={() => copyToClipboard(k.code)}>{copying === k.code ? <Check size={16} /> : <Copy size={16} />}</button>
+                <button className="icon-btn" onClick={() => handleRevoke(k.code)} style={{ color: '#f59e0b' }} disabled={k.is_revoked}><ShieldAlert size={16} /></button>
+                <button className="icon-btn" onClick={() => handleDelete(k.code)} style={{ color: '#ef4444' }}><X size={16} /></button>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          ))}
+          {!loading && keys.length === 0 && <div style={{ textAlign: 'center', padding: '2rem', gridColumn: '1/-1', color: 'var(--text-secondary)' }}>No keys found.</div>}
+        </div>
       </div>
 
-
       <style jsx>{`
-        .styled-input-basic {
-          background: rgba(15, 15, 25, 0.8);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          padding: 0.75rem 1rem;
-          border-radius: 12px;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-        .styled-input-basic:focus {
-          border-color: var(--accent-color);
-        }
-        .keys-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-          gap: 1.25rem;
-        }
-        .key-card {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border-color);
-          padding: 1.25rem 1.5rem;
-          border-radius: 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          transition: all 0.2s;
-        }
-        .key-card:hover {
-          border-color: var(--accent-color);
-          background: rgba(123, 44, 191, 0.05);
-          transform: translateY(-2px);
-        }
-        .glass-presence-header:hover {
-          background: rgba(123, 44, 191, 0.2) !important;
-          border-color: rgba(123, 44, 191, 0.5) !important;
-        }
-        .key-code {
-          font-family: var(--font-mono);
-          font-weight: 700;
-          color: var(--accent-hover);
-          letter-spacing: 1px;
-        }
-        .key-meta {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-        .icon-btn {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid var(--border-color);
-          color: white;
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-        .icon-btn:hover {
-          background: rgba(255,255,255,0.1);
-          transform: translateY(-2px);
-        }
-        .icon-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-          filter: grayscale(1);
-          transform: none;
-        }
-        .tier-badge {
-          display: inline-block;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.65rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          margin-right: 8px;
-        }
-        .tier-1 { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-        .tier-2 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .tier-3 { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .styled-input-basic { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; }
+        .styled-input-basic:focus { border-color: var(--accent-color); }
+        .keys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1rem; }
+        .key-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .key-code { font-family: monospace; font-weight: 700; color: var(--accent-hover); letter-spacing: 1px; }
+        .tier-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
+        .tier-1 { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+        .tier-2 { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+        .tier-3 { background: rgba(168, 85, 247, 0.1); color: #c084fc; }
+        .type-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.4); font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .type-btn.active.info { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: #3b82f6; }
+        .type-btn.active.warning { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: #f59e0b; }
+        .type-btn.active.danger { background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; }
+        .announce-mini-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 14px; }
+        .status-mini-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .mini-type-badge { font-size: 0.6rem; font-weight: 900; color: var(--accent-hover); text-transform: uppercase; margin-bottom: 2px; }
+        .icon-btn-danger { background: transparent; border: none; color: rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
+        .icon-btn-danger:hover { color: #ef4444; }
+        .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .icon-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
       `}</style>
     </div>
   );
