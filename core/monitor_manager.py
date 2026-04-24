@@ -147,6 +147,13 @@ class MonitorManager:
                             for item in new_items:
                                 for mon in monitors_in_group:
                                     try:
+                                        # Per-guild publication check for shared items
+                                        item_id = mon.get_item_id(item)
+                                        if item_id:
+                                            is_pub = await database.is_published(item_id, mon.platform, mon.guild_id)
+                                            if is_pub:
+                                                continue
+                                                
                                         await mon.process_item(item)
                                     except Exception as e:
                                         log.error(f"Error processing item centrally for {mon.name}: {e}")

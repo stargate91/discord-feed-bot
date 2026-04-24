@@ -69,9 +69,9 @@ class TVSeriesMonitor(BaseMonitor):
             series_id = str(series.get("id"))
             if not series_id: continue
 
-            if not await database.is_published(series_id, "tmdb_tv"):
+            if not await database.is_published(series_id, "tmdb_tv", self.guild_id):
                 if self.is_first_run:
-                    await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", title=series.get("name") or series.get("original_name"))
+                    await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", guild_id=self.guild_id, title=series.get("name") or series.get("original_name"))
                 else:
                     new_entries.append(series)
                     log.info(f"New TV Series detected: {series.get('name')} ({series_id})")
@@ -167,9 +167,12 @@ class TVSeriesMonitor(BaseMonitor):
 
         await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
 
+    def get_item_id(self, item):
+        return str(item.get("id"))
+
     async def mark_items_published(self, items):
         for series in items:
-            series_id = str(series.get("id"))
+            series_id = self.get_item_id(series)
             if series_id:
                 tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
                 title = series.get("name") or series.get("original_name")
@@ -177,6 +180,7 @@ class TVSeriesMonitor(BaseMonitor):
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
                 await database.mark_as_published(
                     series_id, "tmdb_tv", tmdb_url,
+                    guild_id=self.guild_id,
                     title=title,
                     thumbnail_url=thumbnail,
                     author_name="TMDB TV"

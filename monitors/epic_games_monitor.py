@@ -89,10 +89,10 @@ class EpicGamesMonitor(BaseMonitor):
             status_type = "active" if is_active else "upcoming"
             db_id = f"{game_id}_{status_type}"
 
-            if not await database.is_published(db_id, "epic_games"):
+            if not await database.is_published(db_id, "epic_games", self.guild_id):
                 if self.is_first_run:
                     log.debug(f"Seeding database with Epic Game: {title} ({status_type})")
-                    await database.mark_as_published(db_id, "epic_games", self.api_url, title=title)
+                    await database.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
                 else:
                     new_entries.append({
                         "game": game,
@@ -160,6 +160,9 @@ class EpicGamesMonitor(BaseMonitor):
         
         await self.send_update(content=f"{alert_text}\n{game_url}", embed=embed, view=view)
 
+    def get_item_id(self, item):
+        return item.get("db_id")
+
     async def mark_items_published(self, items):
         for item in items:
             game = item["game"]
@@ -167,6 +170,7 @@ class EpicGamesMonitor(BaseMonitor):
             image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
             await database.mark_as_published(
                 item["db_id"], "epic_games", self.api_url,
+                guild_id=self.guild_id,
                 title=title,
                 thumbnail_url=image_url,
                 author_name="Epic Games"

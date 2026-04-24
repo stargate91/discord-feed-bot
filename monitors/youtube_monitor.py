@@ -46,7 +46,7 @@ class YouTubeMonitor(BaseMonitor):
             if not video_id:
                 continue
 
-            if not await database.is_published(video_id, "youtube"):
+            if not await database.is_published(video_id, "youtube", self.guild_id):
                 if self.is_first_run:
                     log.debug(f"Seeding database with existing video: {video_id}")
                     # Seed with minimal info or try to extract it
@@ -62,7 +62,7 @@ class YouTubeMonitor(BaseMonitor):
         return new_entries
 
     async def process_item(self, entry):
-        video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+        video_id = self.get_item_id(entry)
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
@@ -79,9 +79,12 @@ class YouTubeMonitor(BaseMonitor):
         
         await self.send_update(content=f"{alert_text}\n{short_link}", embed=None, view=view)
 
+    def get_item_id(self, entry):
+        return entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+
     async def mark_items_published(self, items):
         for entry in items:
-            video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
+            video_id = self.get_item_id(entry)
             if video_id:
                 thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
                 title = entry.get("title", "Unknown Video")

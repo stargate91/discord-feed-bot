@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { getServerSession } from "next-auth/next";
+import pool from "@/lib/db";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(req) {
@@ -11,7 +11,7 @@ export async function GET(req) {
     }
 
     // Fetch last 15 global notifications with titles and platforms
-    const result = await query(`
+    const result = await pool.query(`
       SELECT 
         platform, 
         title, 

@@ -147,9 +147,9 @@ class MovieMonitor(BaseMonitor):
             movie_id = str(movie.get("id"))
             if not movie_id: continue
 
-            if not await database.is_published(movie_id, entry_type):
+            if not await database.is_published(movie_id, entry_type, self.guild_id):
                 if self.is_first_run:
-                    await database.mark_as_published(movie_id, entry_type, self.api_url, title=movie.get("title") or movie.get("original_title"))
+                    await database.mark_as_published(movie_id, entry_type, self.api_url, guild_id=self.guild_id, title=movie.get("title") or movie.get("original_title"))
                 else:
                     new_entries.append(movie)
                     log.info(f"New Movie detected ({self.tmdb_lang}): {movie.get('title')} ({movie_id})")
@@ -246,16 +246,20 @@ class MovieMonitor(BaseMonitor):
         
         await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
 
+    def get_item_id(self, movie):
+        return str(movie.get("id"))
+
     async def mark_items_published(self, items):
         entry_type = f"movie:{self.tmdb_lang}"
         for movie in items:
-            movie_id = str(movie.get("id"))
+            movie_id = self.get_item_id(movie)
             if movie_id:
                 title = movie.get("title") or movie.get("original_title")
                 poster_path = movie.get("poster_path")
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
                 await database.mark_as_published(
                     movie_id, entry_type, self.api_url,
+                    guild_id=self.guild_id,
                     title=title,
                     thumbnail_url=thumbnail,
                     author_name="TMDB Movies"

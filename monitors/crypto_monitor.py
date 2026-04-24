@@ -160,7 +160,7 @@ class CryptoMonitor(BaseMonitor):
                     monitor_id = self.config.get("id", "0")
                     pub_id = f"crypto_{monitor_id}_{sym}_{threshold}_{direction}_{hour_bucket}"
                     
-                    if not await database.is_published(pub_id):
+                    if not await database.is_published(pub_id, "crypto", self.guild_id):
                         events.append({
                             "sym": sym,
                             "cid": cid,
@@ -184,9 +184,12 @@ class CryptoMonitor(BaseMonitor):
             event["percent_str"]
         )
 
+    def get_item_id(self, event):
+        return event.get("pub_id")
+
     async def mark_items_published(self, items):
         for event in items:
-            pub_id = event.get("pub_id")
+            pub_id = self.get_item_id(event)
             if pub_id:
                 title = f"{event['sym']} {event['direction'].upper()} {event['percent_str']}"
                 await database.mark_as_published(

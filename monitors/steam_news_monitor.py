@@ -50,9 +50,9 @@ class SteamNewsMonitor(BaseMonitor):
             gid = item.get("gid")
             if not gid: continue
 
-            if not await database.is_published(gid, "steam_news"):
+            if not await database.is_published(gid, "steam_news", self.guild_id):
                 if self.is_first_run:
-                    await database.mark_as_published(gid, "steam_news", self.api_url)
+                    await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
                 else:
                     new_entries.append(item)
                     log.info(f"New Steam News detected: {item.get('title')} ({gid})")
@@ -103,11 +103,14 @@ class SteamNewsMonitor(BaseMonitor):
         
         await self.send_update(content=f"{alert_text}\n{url}", embed=embed, view=view)
 
+    def get_item_id(self, item):
+        return item.get("gid")
+
     async def mark_items_published(self, items):
         for item in items:
-            gid = item.get("gid")
+            gid = self.get_item_id(item)
             if gid:
-                await database.mark_as_published(gid, "steam_news", self.api_url)
+                await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

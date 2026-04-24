@@ -49,10 +49,10 @@ class GOGFreeMonitor(BaseMonitor):
         for game in reversed(data):
             giveaway_id = str(game.get("id"))
             
-            if not await database.is_published(giveaway_id, "gog_free"):
+            if not await database.is_published(giveaway_id, "gog_free", self.guild_id):
                 if self.is_first_run:
                     log.debug(f"Seeding database with GOG giveaway: {game.get('title')}")
-                    await database.mark_as_published(giveaway_id, "gog_free", self.api_url)
+                    await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id)
                 else:
                     new_entries.append(game)
                     log.info(f"New GOG giveaway detected: {game.get('title')}")
@@ -114,11 +114,14 @@ class GOGFreeMonitor(BaseMonitor):
         
         await self.send_update(content=f"{alert_text}\n{final_url}", embed=embed, view=view)
 
+    def get_item_id(self, game):
+        return str(game.get("id"))
+
     async def mark_items_published(self, items):
         for game in items:
-            giveaway_id = str(game.get("id"))
+            giveaway_id = self.get_item_id(game)
             if giveaway_id != "None":
-                await database.mark_as_published(giveaway_id, "gog_free", self.api_url)
+                await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

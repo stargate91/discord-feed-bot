@@ -110,9 +110,12 @@ class RSSMonitor(BaseMonitor):
 
         await self.send_update(content=f"{alert_text}\n{entry_link}", embed=embed, view=view)
 
+    def get_item_id(self, entry):
+        return entry.get("id") or entry.get("link")
+
     async def mark_items_published(self, items):
         for entry in items:
-            entry_id = entry.get("id") or entry.get("link")
+            entry_id = self.get_item_id(entry)
             if entry_id:
                 title = entry.get("title", "New RSS Update")
                 author = entry.get("author") or entry.get("author_detail", {}).get("name")

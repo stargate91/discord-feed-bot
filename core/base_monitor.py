@@ -72,6 +72,11 @@ class BaseMonitor(ABC):
         """Process and send the new item to discord."""
         pass
         
+    def get_item_id(self, item):
+        """Return the unique identifier for an item from fetch_new_items.
+        Should be overridden by subclasses."""
+        return None
+        
     async def mark_items_published(self, items):
         """Mark a list of items as published globally (guild_id=0)."""
         pass
