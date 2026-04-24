@@ -28,12 +28,15 @@ export async function GET() {
 
     // 2. Fetch our bot's guild settings from DB
     console.log("[API/Guilds] Fetching bot settings from DB...");
-    const dbRes = await pool.query('SELECT guild_id, premium_until FROM guild_settings');
+    const dbRes = await pool.query('SELECT guild_id, premium_until, is_active FROM guild_settings');
     const botGuildsMap = {};
     dbRes.rows.forEach(row => {
-      // In node-postgres, bigint is returned as string, but let's be safe
-      botGuildsMap[String(row.guild_id)] = row.premium_until;
+        botGuildsMap[String(row.guild_id)] = {
+            premiumUntil: row.premium_until,
+            isActive: row.is_active !== false // Treat null as true for legacy, only false is inactive
+        };
     });
+
 
     // 3. Load Master Guilds from config.json
     console.log("[API/Guilds] Loading config.json...");
@@ -63,10 +66,12 @@ export async function GET() {
         const isManageGuild = (perms & BigInt(0x20)) === BigInt(0x20);
         
         const guildIdStr = String(guild.id);
-        const hasBot = botGuildsMap.hasOwnProperty(guildIdStr);
-        const premiumUntil = botGuildsMap[guildIdStr];
+        const botData = botGuildsMap[guildIdStr];
+        const hasBot = botData ? botData.isActive : false;
+        const premiumUntil = botData ? botData.premiumUntil : null;
         const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
         const isMaster = masterGuilds.hasOwnProperty(guildIdStr);
+
 
         return {
           id: guildIdStr,
