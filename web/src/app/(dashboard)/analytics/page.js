@@ -46,7 +46,7 @@ function AnalyticsContent() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [range, setRange] = useState("7"); 
+  const [range, setRange] = useState('3'); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSetDefaultRange, setHasSetDefaultRange] = useState(false);
 
@@ -84,11 +84,16 @@ function AnalyticsContent() {
       return;
     }
 
+    setHasSetDefaultRange(false);
+
+
     async function fetchStats() {
       setLoading(true);
       try {
         const res = await fetch(`/api/stats?guild=${guildId}&days=${range}`);
-        if (!res.ok) throw new Error("Failed to fetch analytics");
+        if (res.status === 403) throw new Error("Access Denied: You do not have permission to view this server's analytics.");
+        if (!res.ok) throw new Error("Failed to fetch analytics data.");
+
         const json = await res.json();
         
         if (json && json.platforms) {
