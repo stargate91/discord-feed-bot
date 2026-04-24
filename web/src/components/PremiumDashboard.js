@@ -28,8 +28,13 @@ export default function PremiumDashboard({ guildId, session }) {
       .catch(err => console.error("Failed to fetch billing config:", err));
   }, [guildId]);
 
+  const [checkoutLoading, setCheckoutLoading] = useState(null); // stores the tier being loaded
+
   const handlePurchaseClick = async (tier) => {
-    if (!stripeConfig?.products) return;
+    if (!stripeConfig?.products) {
+      alert("Billing configuration not loaded. Please refresh the page.");
+      return;
+    }
 
     // Find the priceId that matches this tier and interval
     const priceId = Object.keys(stripeConfig.products).find(pid => {
@@ -38,10 +43,11 @@ export default function PremiumDashboard({ guildId, session }) {
     });
 
     if (!priceId) {
-      console.error(`No Price ID found for Tier ${tier} (${billingInterval})`);
+      alert(`No Price ID found for this plan. Please contact support.`);
       return;
     }
 
+    setCheckoutLoading(tier);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -52,10 +58,14 @@ export default function PremiumDashboard({ guildId, session }) {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to create checkout session");
       }
     } catch (err) {
       console.error("Checkout error:", err);
+      alert("An error occurred. Please try again.");
     }
+    setCheckoutLoading(null);
   };
 
   return (
@@ -88,6 +98,7 @@ export default function PremiumDashboard({ guildId, session }) {
             isPopular={t.isPopular}
             features={t.features}
             onPurchaseClick={() => handlePurchaseClick(t.tier)}
+            isLoading={checkoutLoading === t.tier}
           />
         ))}
       </div>

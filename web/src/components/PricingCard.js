@@ -10,7 +10,8 @@ export default function PricingCard({
   currentTier = 0,
   isMaster = false,
   description = "",
-  onPurchaseClick = () => { }
+  onPurchaseClick = () => { },
+  isLoading = false
 }) {
   const isCurrentPlan = tier === currentTier && !isMaster;
   const isFree = tier === 0;
@@ -99,13 +100,14 @@ export default function PricingCard({
           cursor: (isFree || isCurrentPlan || isMaster) ? 'default' : 'pointer'
         }}>
           <span>
-            {isMaster ? 'Master Access' :
+            {isLoading ? 'Processing...' :
+              isMaster ? 'Master Access' :
               isCurrentPlan ? 'Current Plan' :
                 isUpgrade ? 'Upgrade Now' :
                   isDowngrade ? 'Switch Plan' :
                     isFree ? 'Current Plan' : 'Get Started'}
           </span>
-          {(!isFree && !isCurrentPlan && !isMaster) && <ChevronRight size={18} />}
+          {(!isFree && !isCurrentPlan && !isMaster && !isLoading) && <ChevronRight size={18} />}
         </button>
       </div>
 
