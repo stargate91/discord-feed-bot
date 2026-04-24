@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
+import { canManageGuild } from "@/lib/permissions";
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
@@ -14,7 +15,14 @@ export async function POST(request) {
       return NextResponse.json({ error: "Missing code or guildId" }, { status: 400 });
     }
 
+    // 0. Permission Check
+    const allowed = await canManageGuild(session, guildId);
+    if (!allowed) {
+      return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
+    }
+
     const client = await pool.connect();
+
     try {
       await client.query('BEGIN');
 
@@ -70,12 +78,14 @@ export async function POST(request) {
 
       // 5. Update guild_settings
       await client.query(`
-        INSERT INTO guild_settings (guild_id, premium_until, tier)
-        VALUES ($1::bigint, $2, $3)
+        INSERT INTO guild_settings (guild_id, premium_until, tier, is_premium)
+        VALUES ($1::bigint, $2, $3, true)
         ON CONFLICT (guild_id) DO UPDATE SET
           premium_until = EXCLUDED.premium_until,
-          tier = EXCLUDED.tier
+          tier = EXCLUDED.tier,
+          is_premium = true
       `, [guildId, new_until, tier]);
+
 
       // 6. Log redemption
       await client.query(
