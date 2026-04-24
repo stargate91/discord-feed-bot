@@ -48,6 +48,7 @@ function AnalyticsContent() {
   const [error, setError] = useState(null);
   const [range, setRange] = useState("7"); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasSetDefaultRange, setHasSetDefaultRange] = useState(false);
 
   const rangeLabels = {
     "3": "Last 3 Days",
@@ -64,6 +65,7 @@ function AnalyticsContent() {
   };
 
   const isRangeLocked = (val) => {
+    if (session?.user?.role === "master") return false;
     if (!data) return true;
     const limit = getTierLimit(data.tier || 0);
     return parseInt(val) > limit;
@@ -91,6 +93,12 @@ function AnalyticsContent() {
         }
         
         setData(json);
+
+        if (!hasSetDefaultRange && json) {
+          const limit = session?.user?.role === 'master' ? 999 : getTierLimit(json.tier || 0);
+          setRange(String(limit));
+          setHasSetDefaultRange(true);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
