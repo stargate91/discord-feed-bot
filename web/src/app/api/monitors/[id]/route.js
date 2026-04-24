@@ -59,8 +59,31 @@ export async function PATCH(request, { params }) {
     }
 
     // Merge extra settings with tier checks
-    if (target_channels !== undefined) extraSettings.target_channels = target_channels;
-    if (target_roles !== undefined) extraSettings.target_roles = target_roles;
+    let maxChannelsRoles = 1;
+    if (isMaster) {
+      maxChannelsRoles = 20;
+    } else {
+      switch (tier) {
+        case 1: maxChannelsRoles = 5; break;
+        case 2: maxChannelsRoles = 10; break;
+        case 3: maxChannelsRoles = 20; break;
+        default: maxChannelsRoles = 1;
+      }
+    }
+
+    if (target_channels !== undefined) {
+      if (Array.isArray(target_channels) && target_channels.length > maxChannelsRoles) {
+        return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} target channels per monitor.` }, { status: 402 });
+      }
+      extraSettings.target_channels = target_channels;
+    }
+    
+    if (target_roles !== undefined) {
+      if (Array.isArray(target_roles) && target_roles.length > maxChannelsRoles) {
+        return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} ping roles per monitor.` }, { status: 402 });
+      }
+      extraSettings.target_roles = target_roles;
+    }
 
     // Custom Embed Color — Tier 1+ (Starter)
     if (embed_color !== undefined) {

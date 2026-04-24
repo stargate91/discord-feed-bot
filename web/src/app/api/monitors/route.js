@@ -73,13 +73,16 @@ export async function POST(request) {
     const currentCount = parseInt(countRes.rows[0].count);
 
     let maxAllowed = 3;
-    if (session.user.role === "master") maxAllowed = 1000;
-    else {
+    let maxChannelsRoles = 1;
+    if (session.user.role === "master") {
+      maxAllowed = 1000;
+      maxChannelsRoles = 20;
+    } else {
       switch (tier) {
-        case 1: maxAllowed = 10; break;
-        case 2: maxAllowed = 30; break;
-        case 3: maxAllowed = 100; break;
-        default: maxAllowed = 3;
+        case 1: maxAllowed = 10; maxChannelsRoles = 5; break;
+        case 2: maxAllowed = 30; maxChannelsRoles = 10; break;
+        case 3: maxAllowed = 100; maxChannelsRoles = 20; break;
+        default: maxAllowed = 3; maxChannelsRoles = 1;
       }
     }
 
@@ -92,13 +95,34 @@ export async function POST(request) {
       return NextResponse.json({ error: "Missing required fields (type, name, guildId)" }, { status: 400 });
     }
 
+    const tChannels = Array.isArray(target_channels) ? target_channels : [];
+    const tRoles = Array.isArray(target_roles) ? target_roles : [];
+
+    if (tChannels.length > maxChannelsRoles) {
+      return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} target channels per monitor.` }, { status: 402 });
+    }
+    if (tRoles.length > maxChannelsRoles) {
+      return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} ping roles per monitor.` }, { status: 402 });
+    }
+
     // Build extra_settings from remaining fields
     const extra_settings = {
-      target_channels: target_channels || [],
-      target_roles: target_roles || [],
-      embed_color: embed_color || "#7b2cbf",
+      target_channels: tChannels,
+      target_roles: tRoles,
       ...rest
     };
+
+    // Premium field filtering on creation
+    if (session.user.role !== "master") {
+      if (embed_color && tier >= 1) extra_settings.embed_color = embed_color;
+      else if (!embed_color) extra_settings.embed_color = "#7b2cbf"; // default
+
+      if (rest.custom_alert && tier < 2) delete extra_settings.custom_alert;
+      if (rest.target_genres && tier < 1) delete extra_settings.target_genres;
+      if (rest.target_languages && tier < 1) delete extra_settings.target_languages;
+    } else {
+      extra_settings.embed_color = embed_color || "#7b2cbf";
+    }
 
     const query = `
       INSERT INTO monitors (guild_id, type, name, discord_channel_id, ping_role_id, enabled, extra_settings)
