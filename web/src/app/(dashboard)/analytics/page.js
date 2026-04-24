@@ -185,7 +185,7 @@ function AnalyticsContent() {
               <h3>Message Activity Trend</h3>
               <p>Daily breakdown of posts sent to your Discord server.</p>
            </div>
-           <div className="chart-content-inner">
+           <div className="chart-content-inner" style={{ flex: 1 }}>
               <ResponsiveContainer width="100%" height={350}>
                 <AreaChart data={chartData}>
                   <defs>
@@ -230,7 +230,7 @@ function AnalyticsContent() {
               <h3>Platform Distribution</h3>
               <p>Message volume per source.</p>
            </div>
-           <div className="chart-content-inner">
+           <div className="chart-content-inner" style={{ flex: 1 }}>
               <div className="pie-container-vertical">
                  <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
@@ -270,7 +270,7 @@ function AnalyticsContent() {
               <h3>Global Heatmap</h3>
               <p>Peak activity hours and days for your feed monitors.</p>
            </div>
-           <div className="chart-content-inner">
+           <div className="chart-content-inner" style={{ flex: 1 }}>
               <HeatmapChart data={data.heatmap || []} />
            </div>
         </div>
