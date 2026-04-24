@@ -42,7 +42,6 @@ class YouTubeMonitor(BaseMonitor):
         """Scrapes the YouTube channel page to find the underlying UCID."""
         if not input_str: return None
         
-        # If it's already a UC id, just return it
         input_str = input_str.strip()
         if input_str.startswith("UC") and len(input_str) == 24:
             return input_str
@@ -54,58 +53,53 @@ class YouTubeMonitor(BaseMonitor):
             else:
                 url = f"https://www.youtube.com/@{input_str}"
         
-        try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+417" # Try to bypass EU consent
-            }
-            async with aiohttp.ClientSession(headers=headers) as session:
-                async with session.get(url, timeout=15, allow_redirects=True) as response:
-                    log.info(f"YouTube resolution response status: {response.status} for {url}")
-                    if response.status != 200:
-                        return None
+        # We'll try with and without the consent cookie
+        attempts = [
+            {"CONSENT": "YES+cb.20210328-17-p0.en+FX+417"},
+            {} # No cookie fallback
+        ]
+        
+        for cookies in attempts:
+            try:
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+                    "Accept-Language": "en-US,en;q=0.9",
+                }
+                if cookies: headers["Cookie"] = cookies["CONSENT"]
+                
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get(url, timeout=15, allow_redirects=True) as response:
+                        if response.status != 200: continue
+                            
+                        html = await response.text()
+                        if not html: continue
                         
-                    html = await response.text()
-                    log.info(f"YouTube resolution HTML length: {len(html)}")
-                    
-                    if len(html) < 1000:
-                        log.warning(f"YouTube resolution HTML is suspiciously short: {html[:200]}")
+                        # Pattern 1: RSS/Canonical/Meta (Common ones)
+                        # We use a very permissive regex to find any UCID-like string after a relevant prefix
+                        patterns = [
+                            r'channel_id=(UC[a-zA-Z0-9_-]{22})',
+                            r'itemprop="channelId" content="(UC[a-zA-Z0-9_-]{22})"',
+                            r'youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})',
+                            r'"browseId":"(UC[a-zA-Z0-9_-]{22})"',
+                            r'"externalId":"(UC[a-zA-Z0-9_-]{22})"',
+                            r'content="https://www\.youtube\.com/@.*?/channel/(UC[a-zA-Z0-9_-]{22})"'
+                        ]
+                        
+                        for p in patterns:
+                            match = re.search(p, html)
+                            if match: return match.group(1)
+                        
+                        # Pattern 2: Broad search for ANY UCID-like string (UC + 22 chars)
+                        uc_matches = re.findall(r'UC[a-zA-Z0-9_-]{22}', html)
+                        if uc_matches:
+                            from collections import Counter
+                            # Filter out common false positives if any, though UC... is very specific to YouTube IDs
+                            most_common = Counter(uc_matches).most_common(1)
+                            if most_common: return most_common[0][0]
 
-                    
-                    # Pattern 1: RSS Feed Link (Extremely reliable if present)
-                    match = re.search(r'feeds/videos\.xml\?channel_id=(UC[a-zA-Z0-9_-]{22})', html)
-                    if match: return match.group(1)
-                    
-                    # Pattern 2: Meta channelId
-                    match = re.search(r'itemprop="channelId" content="(UC[a-zA-Z0-9_-]{22})"', html)
-                    if match: return match.group(1)
-                    
-                    # Pattern 3: Canonical/OG/Twitter channel URL
-                    match = re.search(r'youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})', html)
-                    if match: return match.group(1)
-                    
-                    # Pattern 4: Browse ID in JSON
-                    match = re.search(r'"browseId":"(UC[a-zA-Z0-9_-]{22})"', html)
-                    if match: return match.group(1)
-                    
-                    # Pattern 5: External ID in JSON
-                    match = re.search(r'"externalId":"(UC[a-zA-Z0-9_-]{22})"', html)
-                    if match: return match.group(1)
-
-                    # Pattern 6: Broad search for any UC... ID in the HTML as a last resort
-                    # (YouTube IDs are always UC followed by 22 chars)
-                    uc_matches = re.findall(r'UC[a-zA-Z0-9_-]{22}', html)
-                    if uc_matches:
-                        # Return the most frequent one to avoid false positives from related channels
-                        from collections import Counter
-                        most_common = Counter(uc_matches).most_common(1)
-                        if most_common:
-                            return most_common[0][0]
-
-        except Exception as e:
-            log.error(f"Error resolving YouTube channel ID for {input_str}: {e}")
-            
+            except Exception as e:
+                log.error(f"Error resolving YouTube channel ID attempt: {e}")
+                
         return None
 
     def get_shared_key(self):
