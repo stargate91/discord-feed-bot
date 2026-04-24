@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 
+import { canManageGuild } from "@/lib/permissions";
+
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   const { searchParams } = new URL(req.url);
@@ -16,8 +18,15 @@ export async function GET(req) {
   try {
     // Case 1: Guild-specific stats
     if (guildId) {
-      // 0. Enforce Tier Limits for requested days
+      // 0. Permission check
+      const allowed = await canManageGuild(session, guildId);
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      // 1. Enforce Tier Limits for requested days
       const guildRes = await pool.query('SELECT tier, is_master, is_premium, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+
       let tier = guildRes.rows[0]?.tier || 0;
       const isMaster = guildRes.rows[0]?.is_master || false;
       const premiumUntil = guildRes.rows[0]?.premium_until;
