@@ -19,7 +19,7 @@ export default function LoginButton({ session }) {
         ) : (
           <span className="status-indicator"></span>
         )}
-        <span>{session.user.name} ({session.user.role === 'master' ? 'Dev' : 'Admin'})</span>
+        <span>{session.user.name}</span>
       </div>
     );
   }
