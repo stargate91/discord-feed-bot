@@ -16,7 +16,21 @@ export async function GET(req) {
   try {
     // Case 1: Guild-specific stats
     if (guildId) {
-      console.log(`[API Stats] Fetching stats for guild: ${guildId}, days: ${days}`);
+      // 0. Enforce Tier Limits for requested days
+      const guildRes = await pool.query('SELECT tier, is_master, is_premium, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+      let tier = guildRes.rows[0]?.tier || 0;
+      const isMaster = guildRes.rows[0]?.is_master || false;
+      const premiumUntil = guildRes.rows[0]?.premium_until;
+      if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) tier = 3;
+
+      let maxAllowedDays = 3; // Free Tier: 3 days
+      if (isMaster || tier >= 3) maxAllowedDays = 99999; // Unlimited/All-time
+      else if (tier >= 2) maxAllowedDays = 30; // Professional: 30 days
+      else if (tier >= 1) maxAllowedDays = 7;  // Starter: 7 days
+
+      const effectiveDays = Math.min(days, maxAllowedDays);
+      console.log(`[API Stats] Fetching stats for guild: ${guildId}, requested: ${days}, allowed: ${effectiveDays}`);
+
       
       // 1. Message History (Dynamic Interval)
       const historyRes = await pool.query(`
@@ -25,7 +39,7 @@ export async function GET(req) {
         WHERE guild_id = $1::bigint AND date::date >= CURRENT_DATE - ($2 || ' days')::interval
         GROUP BY date 
         ORDER BY date ASC
-      `, [guildId, days]);
+      `, [guildId, effectiveDays]);
 
       // 2. Platform Breakdown
       const platformRes = await pool.query(`
@@ -34,21 +48,17 @@ export async function GET(req) {
         WHERE guild_id = $1::bigint AND date::date >= CURRENT_DATE - ($2 || ' days')::interval
         GROUP BY platform
         ORDER BY count DESC
-      `, [guildId, days]);
+      `, [guildId, effectiveDays]);
 
       // 3. Totals for this guild
       const totalsRes = await pool.query(`
         SELECT SUM(post_count) as total_posts, COUNT(DISTINCT platform) as platform_count
         FROM monitor_stats_daily
         WHERE guild_id = $1::bigint AND date::date >= CURRENT_DATE - ($2 || ' days')::interval
-      `, [guildId, days]);
+      `, [guildId, effectiveDays]);
 
       const monitorsRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1::bigint AND enabled = true', [guildId]);
 
-      const guildRes = await pool.query('SELECT tier, is_master, is_premium FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
-      const tier = guildRes.rows[0]?.tier || 0;
-
-      // 4. Heatmap Data (Day/Hour distribution)
       const heatmapRes = await pool.query(`
         SELECT 
           EXTRACT(DOW FROM published_at)::int as day,
@@ -58,7 +68,7 @@ export async function GET(req) {
         WHERE guild_id = $1::bigint AND published_at >= CURRENT_DATE - ($2 || ' days')::interval
         GROUP BY day, hour
         ORDER BY day, hour
-      `, [guildId, days]);
+      `, [guildId, effectiveDays]);
 
       const result = {
         history: historyRes.rows,
