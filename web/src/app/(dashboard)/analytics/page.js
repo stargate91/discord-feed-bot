@@ -45,13 +45,14 @@ function AnalyticsContent() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [range, setRange] = useState("14"); 
+  const [range, setRange] = useState("7"); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const rangeLabels = {
+    "3": "Last 3 Days",
     "7": "Last 7 Days",
-    "14": "Last 14 Days",
-    "30": "Last 1 Month"
+    "30": "Last 30 Days",
+    "999": "∞ All Time"
   };
 
   useEffect(() => {

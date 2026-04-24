@@ -31,17 +31,17 @@ export async function GET(req) {
       const platformRes = await pool.query(`
         SELECT platform, SUM(post_count) as count 
         FROM monitor_stats_daily 
-        WHERE guild_id = $1::bigint
+        WHERE guild_id = $1::bigint AND date::date >= CURRENT_DATE - ($2 || ' days')::interval
         GROUP BY platform
         ORDER BY count DESC
-      `, [guildId]);
+      `, [guildId, days]);
 
       // 3. Totals for this guild
       const totalsRes = await pool.query(`
         SELECT SUM(post_count) as total_posts, COUNT(DISTINCT platform) as platform_count
         FROM monitor_stats_daily
-        WHERE guild_id = $1::bigint
-      `, [guildId]);
+        WHERE guild_id = $1::bigint AND date::date >= CURRENT_DATE - ($2 || ' days')::interval
+      `, [guildId, days]);
 
       const monitorsRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1::bigint AND enabled = true', [guildId]);
 
@@ -52,10 +52,10 @@ export async function GET(req) {
           EXTRACT(HOUR FROM published_at)::int as hour,
           COUNT(*)::int as count
         FROM published_entries_v2
-        WHERE guild_id = $1::bigint
+        WHERE guild_id = $1::bigint AND published_at >= CURRENT_DATE - ($2 || ' days')::interval
         GROUP BY day, hour
         ORDER BY day, hour
-      `, [guildId]);
+      `, [guildId, days]);
 
       const result = {
         history: historyRes.rows,
