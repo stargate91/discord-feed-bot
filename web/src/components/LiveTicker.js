@@ -84,7 +84,7 @@ export default function LiveTicker() {
           overflow: hidden;
           border-radius: 10px;
           position: relative;
-          width: 800px;
+          width: 100%;
         }
 
         .ticker-header {

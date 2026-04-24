@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, RefreshCcw, Send, Trash, Wrench, Check, AlertCircle, Shield } from 'lucide-react';
+import Link from 'next/link';
 
 const platformNames = {
   youtube: "YouTube",
@@ -19,9 +20,13 @@ const platformNames = {
   github: "GitHub"
 };
 
-export default function MonitorCard({ monitor, onToggle, onDelete, onEdit }) {
+export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showTools, setShowTools] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null); // 'check', 'repost', 'purge', 'reset'
+  const [actionStatus, setActionStatus] = useState({ type: null, message: null });
+  const [repostCount, setRepostCount] = useState(1);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Never';
@@ -70,8 +75,37 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit }) {
     }
   };
 
+  const runAction = async (action) => {
+    setActionLoading(action);
+    setActionStatus({ type: null, message: null });
+    
+    try {
+      const res = await fetch(`/api/monitors/${monitor.id}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action, 
+          count: action === 'repost' ? repostCount : 1,
+          amount: action === 'purge' ? 100 : 0 
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setActionStatus({ type: 'success', message: 'Success!' });
+      } else {
+        setActionStatus({ type: 'error', message: data.error || 'Failed' });
+      }
+    } catch (err) {
+      setActionStatus({ type: 'error', message: 'Connection error' });
+    }
+    
+    setActionLoading(null);
+    setTimeout(() => setActionStatus({ type: null, message: null }), 3000);
+  };
+
   return (
-    <div className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''}`}>
+    <div className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''} ${showTools ? 'show-tools' : ''}`}>
       <div className="card-glow"></div>
       
       <div className="card-header">
@@ -87,9 +121,18 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit }) {
             {platformNames[monitor.type] || monitor.type.toUpperCase()}
           </span>
         </div>
-        <div className={`status-badge ${monitor.enabled ? 'online' : 'offline'}`}>
-          <span className="status-dot"></span>
-          {monitor.enabled ? 'Active' : 'Paused'}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            className={`tools-toggle ${showTools ? 'active' : ''}`} 
+            onClick={() => setShowTools(!showTools)}
+            title="Diagnostic Tools"
+          >
+            <Wrench size={14} />
+          </button>
+          <div className={`status-badge ${monitor.enabled ? 'online' : 'offline'}`}>
+            <span className="status-dot"></span>
+            {monitor.enabled ? 'Active' : 'Paused'}
+          </div>
         </div>
       </div>
 
@@ -108,6 +151,50 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit }) {
             <code className="meta-code">{monitor.id}</code>
           </div>
         </div>
+      </div>
+
+      {/* Diagnostics Panel */}
+      <div className={`diagnostics-panel ${showTools ? 'expanded' : ''}`}>
+         <div className="tools-grid">
+            <button className="tool-btn" onClick={() => runAction('check')} disabled={actionLoading}>
+              <RefreshCcw size={16} className={actionLoading === 'check' ? 'spin' : ''} />
+              <span>Check</span>
+            </button>
+            
+            <div className={`tool-group ${!isPremium ? 'locked' : ''}`} title={!isPremium ? "Premium feature" : ""}>
+              <button 
+                className={`tool-btn wide ${!isPremium ? 'is-locked' : ''}`} 
+                onClick={() => isPremium && runAction('repost')} 
+                disabled={actionLoading || !isPremium}
+              >
+                {!isPremium ? <Shield size={14} style={{ color: '#ffd700' }} /> : <Send size={16} className={actionLoading === 'repost' ? 'pulse' : ''} />}
+                <span>{!isPremium ? "Repost (Locked)" : `Repost (${repostCount})`}</span>
+              </button>
+              <input 
+                type="range" min="1" max="10" 
+                value={repostCount} 
+                onChange={(e) => isPremium && setRepostCount(parseInt(e.target.value))}
+                className="repost-slider"
+                disabled={!isPremium}
+              />
+            </div>
+
+            <button className="tool-btn purge" onClick={() => runAction('purge')} disabled={actionLoading} title="Clear Discord Channel">
+              <Trash size={16} className={actionLoading === 'purge' ? 'shake' : ''} />
+              <span>Purge</span>
+            </button>
+         </div>
+         {actionStatus.message && (
+           <div className={`action-feedback ${actionStatus.type}`}>
+             {actionStatus.type === 'success' ? <Check size={12} /> : <AlertCircle size={12} />}
+             {actionStatus.message}
+           </div>
+         )}
+         {!isPremium && showTools && (
+           <div className="premium-lock-message">
+             Upgrade to <Link href={`/premium?guild=${monitor.guild_id}`} style={{ color: '#ffd700', textDecoration: 'underline' }}>Premium</Link> to use Repost tools.
+           </div>
+         )}
       </div>
 
       <div className="card-actions">
@@ -145,7 +232,160 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit }) {
           border: 1px solid rgba(255, 255, 255, 0.08);
           position: relative;
           overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .show-tools {
+          border-color: rgba(123, 44, 191, 0.3);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tools-toggle {
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.4);
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .tools-toggle:hover, .tools-toggle.active {
+          background: var(--accent-color);
+          color: white;
+          border-color: transparent;
+          box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .diagnostics-panel {
+          max-height: 0;
+          overflow: hidden;
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          background: rgba(0,0,0,0.2);
+          margin: 0 -1.5rem;
+          padding: 0 1.5rem;
+          opacity: 0;
+        }
+
+        .diagnostics-panel.expanded {
+          max-height: 120px;
+          padding: 1rem 1.5rem;
+          opacity: 1;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .tools-grid {
+          display: grid;
+          grid-template-columns: 0.8fr 1.5fr 0.8fr;
+          gap: 10px;
+          align-items: end;
+        }
+
+        .tool-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .repost-slider {
+          -webkit-appearance: none;
+          width: 100%;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(255, 255, 255, 0.1);
+          outline: none;
+          cursor: pointer;
+        }
+
+        .repost-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: var(--accent-color);
+          box-shadow: 0 0 5px var(--accent-glow);
+          cursor: pointer;
+        }
+
+        .tool-btn {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          color: var(--text-secondary);
+          padding: 8px;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.65rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          min-height: 52px;
+          justify-content: center;
+        }
+
+        .tool-btn.wide {
+          width: 100%;
+          min-height: 40px;
+          flex-direction: row;
+        }
+
+        .tool-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.08);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        .tool-btn.purge:hover:not(:disabled) {
+          color: #ef4444;
+          border-color: rgba(239,68,68,0.2);
+        }
+
+        .tool-group.locked {
+          position: relative;
+          cursor: not-allowed;
+        }
+
+        .tool-btn.is-locked {
+          opacity: 0.6;
+          border-color: rgba(255, 215, 0, 0.2);
+          cursor: not-allowed;
+        }
+
+        .premium-lock-message {
+          margin-top: 12px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 215, 0, 0.1);
+          font-size: 0.7rem;
+          color: rgba(255, 255, 255, 0.5);
+          text-align: center;
+        }
+
+        .action-feedback {
+          margin-top: 8px;
+          font-size: 0.65rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          justify-content: center;
+          text-transform: uppercase;
+        }
+
+        .action-feedback.success { color: #10b981; }
+        .action-feedback.error { color: #ef4444; }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .pulse { animation: pulse 0.8s ease-in-out infinite; }
 
         .card-disabled {
           opacity: 0.6;

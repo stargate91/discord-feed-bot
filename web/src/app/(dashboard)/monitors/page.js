@@ -274,6 +274,7 @@ export default function MonitorsPage() {
             <MonitorCard 
               key={m.id} 
               monitor={m} 
+              isPremium={isPremium}
               onToggle={handleToggle} 
               onDelete={handleDelete} 
               onEdit={openEditModal}

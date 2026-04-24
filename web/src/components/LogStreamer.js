@@ -8,17 +8,26 @@ export default function LogStreamer() {
   const [isLive, setIsLive] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const scrollRef = useRef(null);
 
   const fetchLogs = async () => {
     try {
       const res = await fetch("/api/logs?lines=100");
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized - Master access required");
+        throw new Error(`Server error: ${res.status}`);
+      }
       const data = await res.json();
       if (data.logs) {
         setLogs(data.logs);
+        setError(null);
+      } else if (data.error) {
+        setError(data.error);
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -34,20 +43,23 @@ export default function LogStreamer() {
   }, [isLive]);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !error) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [logs]);
+  }, [logs, error]);
 
-  const clearLogs = () => setLogs([]);
+  const clearLogs = () => {
+    setLogs([]);
+    setError(null);
+  };
 
   const formatLog = (line) => {
-    if (!line.trim()) return null;
+    if (!line || !line.trim()) return null;
     
     let color = "rgba(255,255,255,0.7)";
     if (line.includes("[ERROR]")) color = "#ff5555";
-    if (line.includes("[WARNING]")) color = "#ffb86c";
-    if (line.includes("[INFO]")) color = "#50fa7b";
+    else if (line.includes("[WARNING]")) color = "#ffb86c";
+    else if (line.includes("[INFO]")) color = "#50fa7b";
     
     return (
       <div className="log-line" style={{ color }}>
@@ -62,14 +74,17 @@ export default function LogStreamer() {
         <div className="header-left">
           <Terminal size={14} className="terminal-icon" />
           <span className="console-title">System Log Streamer</span>
-          {isLive && <div className="live-indicator">
+          {isLive && !error && <div className="live-indicator">
             <div className="dot"></div>
             LIVE
+          </div>}
+          {error && <div className="error-indicator">
+            OFFLINE
           </div>}
         </div>
         <div className="header-actions">
           <button onClick={() => setIsLive(!isLive)} className={`action-btn ${isLive ? 'active' : ''}`} title="Toggle Live Sync">
-            <RefreshCw size={14} className={isLive ? 'spin' : ''} />
+            <RefreshCw size={14} className={isLive && !error ? 'spin' : ''} />
           </button>
           <button onClick={clearLogs} className="action-btn" title="Clear Console">
             <Trash2 size={14} />
@@ -82,7 +97,12 @@ export default function LogStreamer() {
 
       <div className="console-body" ref={scrollRef}>
         {loading ? (
-          <div className="loading-state">Initialing secure stream...</div>
+          <div className="loading-state">Initializing secure stream...</div>
+        ) : error ? (
+          <div className="error-state">
+            <div className="error-msg">CONNECTION ERROR: {error}</div>
+            <button className="retry-btn" onClick={fetchLogs}>Try Reconnect</button>
+          </div>
         ) : (
           logs.map((line, i) => <div key={i}>{formatLog(line)}</div>)
         )}
@@ -188,8 +208,55 @@ export default function LogStreamer() {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: rgba(255,255,255,0.3);
+          color: rgba(255, 255, 255, 0.3);
           font-style: italic;
+        }
+
+        .error-indicator {
+          font-size: 0.65rem;
+          font-weight: 900;
+          color: #ff5555;
+          background: rgba(255, 85, 85, 0.1);
+          padding: 2px 8px;
+          border-radius: 10px;
+          letter-spacing: 0.5px;
+        }
+
+        .error-state {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          color: #ff5555;
+          text-align: center;
+          padding: 20px;
+        }
+
+        .error-msg {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.8rem;
+          background: rgba(255, 85, 85, 0.05);
+          padding: 10px 15px;
+          border-radius: 8px;
+          border: 1px dashed rgba(255, 85, 85, 0.2);
+        }
+
+        .retry-btn {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
+          padding: 6px 15px;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .retry-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
         }
       `}</style>
     </div>

@@ -546,9 +546,53 @@ function SettingsContent() {
         .upgrade-btn-small { background: var(--accent-color); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
         
         .template-editor-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
-        .platform-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-        .platform-tab { white-space: nowrap; padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
-        .platform-tab.active { background: var(--accent-color); color: white; border-color: transparent; }
+        .platform-tabs-container { 
+          width: 100%; 
+          padding: 10px 0;
+        }
+        .platform-tabs { 
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 10px; 
+          padding: 5px;
+          width: 100%;
+        }
+        .platform-tab { 
+          width: 100%;
+          justify-content: center;
+          white-space: nowrap; 
+          padding: 8px 16px; 
+          border-radius: 10px; 
+          background: rgba(255,255,255,0.03); 
+          border: 1px solid rgba(255,255,255,0.08); 
+          color: var(--text-secondary); 
+          cursor: pointer; 
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+          font-size: 0.85rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .tab-icon-img {
+          width: 18px;
+          height: 18px;
+          object-fit: contain;
+        }
+        .platform-tab:hover { 
+          background: rgba(255,255,255,0.08); 
+          color: white; 
+          border-color: rgba(255,255,255,0.2); 
+          transform: translateY(-3px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .platform-tab.active { 
+          background: var(--accent-color); 
+          color: white; 
+          border-color: transparent; 
+          box-shadow: 0 8px 20px var(--accent-glow); 
+          transform: translateY(-2px);
+        }
         .editor-container { display: flex; flex-direction: column; gap: 12px; }
         .tags-hint { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.85rem; }
         .tags-list { display: flex; gap: 6px; flex-wrap: wrap; }

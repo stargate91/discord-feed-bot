@@ -175,6 +175,39 @@ async def sync_monitors():
     else:
         raise HTTPException(status_code=500, detail="Failed to synchronize monitors")
 
+@app.post("/monitors/{monitor_id}/check")
+async def manual_check(monitor_id: int):
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.manual_check(monitor_id)
+    if success:
+        return {"status": "success", "message": f"Manual check triggered for monitor {monitor_id}"}
+    else:
+        raise HTTPException(status_code=400, detail="Monitor not found or check failed")
+
+@app.post("/monitors/{monitor_id}/repost")
+async def repost_recent(monitor_id: int, count: int = 1):
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.repost_recent(monitor_id, count)
+    if success:
+        return {"status": "success", "message": f"Reposted {count} items for monitor {monitor_id}"}
+    else:
+        raise HTTPException(status_code=400, detail="No history found or repost failed")
+
+@app.post("/monitors/{monitor_id}/purge")
+async def purge_channel(monitor_id: int, amount: int = 50):
+    if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
+        raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
+    
+    success = await app.state.bot.monitor_manager.purge_channel(monitor_id, amount)
+    if success:
+        return {"status": "success", "message": f"Purged messages in channels for monitor {monitor_id}"}
+    else:
+        raise HTTPException(status_code=400, detail="Purge failed")
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

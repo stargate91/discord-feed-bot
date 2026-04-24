@@ -103,36 +103,33 @@ function AnalyticsContent() {
   return (
     <div className="analytics-wrapper" onClick={() => setIsDropdownOpen(false)}>
       <header className="analytics-header">
-        <div className="header-left-group">
-          <h2>Analytics Dashboard</h2>
+        <h2 className="page-title">Analytics Dashboard</h2>
+        <div className="ticker-expand">
           <LiveTicker />
         </div>
-        
-        <div className="header-actions-group">
-          <div className="range-dropdown-container">
-            <button 
-              className="dropdown-trigger"
-              onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
-            >
-              <Calendar size={18} />
-              <span>{rangeLabels[range]}</span>
-              <ChevronDown size={16} className={isDropdownOpen ? 'rotate' : ''} />
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="range-dropdown">
-                {Object.entries(rangeLabels).map(([val, label]) => (
-                  <button 
-                    key={val} 
-                    className={range === val ? 'active' : ''} 
-                    onClick={() => { setRange(val); setIsDropdownOpen(false); }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="range-dropdown-container">
+          <button 
+            className="dropdown-trigger"
+            onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
+          >
+            <Calendar size={18} />
+            <span>{rangeLabels[range]}</span>
+            <ChevronDown size={16} className={isDropdownOpen ? 'rotate' : ''} />
+          </button>
+          
+          {isDropdownOpen && (
+            <div className="range-dropdown">
+              {Object.entries(rangeLabels).map(([val, label]) => (
+                <button 
+                  key={val} 
+                  className={range === val ? 'active' : ''} 
+                  onClick={() => { setRange(val); setIsDropdownOpen(false); }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -312,30 +309,26 @@ function AnalyticsContent() {
 
         .analytics-header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 2rem;
           margin-bottom: 2rem;
           padding-bottom: 1.5rem;
           border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .header-left-group {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-        }
-
-        .header-left-group h2 {
+        .page-title {
           font-size: 2.2rem;
           font-weight: 900;
           margin: 0;
           background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
+          white-space: nowrap;
         }
 
-        .live-ticker-inline {
-          max-width: 600px;
+        .ticker-expand {
+          flex: 1;
+          min-width: 0;
         }
 
         .dropdown-trigger {

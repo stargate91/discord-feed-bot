@@ -196,3 +196,87 @@ class MonitorManager:
         """Stop the background monitoring loop."""
         self.is_running = False
         log.info("Monitor loop stopping...")
+
+    async def manual_check(self, monitor_id):
+        """Force an immediate update check for a specific monitor."""
+        monitor = next((m for m in self.monitors if m.id == monitor_id), None)
+        if not monitor:
+            log.warning(f"Manual check failed: Monitor {monitor_id} not found.")
+            return False
+            
+        try:
+            log.info(f"Manual check triggered for monitor: {monitor.name}")
+            if hasattr(monitor, 'fetch_new_items'):
+                new_items = await monitor.fetch_new_items()
+                if new_items:
+                    for item in new_items:
+                        await monitor.process_item(item)
+                    await monitor.mark_items_published(new_items)
+            else:
+                await monitor.check_for_updates()
+            return True
+        except Exception as e:
+            log.error(f"Error during manual check for {monitor.name}: {e}")
+            return False
+
+    async def repost_recent(self, monitor_id, count=1):
+        """Find the last X processed items and send them again."""
+        monitor = next((m for m in self.monitors if m.id == monitor_id), None)
+        if not monitor: return False
+        
+        # Limit count between 1 and 10
+        count = max(1, min(10, int(count)))
+        
+        import database
+        try:
+            # Find the X most recent published entries for this monitor
+            q = "SELECT entry_id, feed_url, title, thumbnail_url, author_name FROM published_entries_v2 WHERE platform = $1 AND guild_id = $2 ORDER BY published_at DESC LIMIT $3"
+            rows = await database._fetch(q, monitor.type, monitor.guild_id, count)
+            
+            if not rows:
+                log.warning(f"Repost failed: No history found for monitor {monitor.name}")
+                return False
+                
+            log.info(f"Reposting last {len(rows)} items for monitor: {monitor.name}")
+            
+            # Repost in chronological order (oldest of the selection first)
+            for row in reversed(rows):
+                item = {
+                    'id': row['entry_id'],
+                    'link': row['feed_url'],
+                    'title': row['title'],
+                    'thumbnail': row['thumbnail_url'],
+                    'author': row['author_name'],
+                    'is_repost': True
+                }
+                await monitor.process_item(item)
+                await asyncio.sleep(1) # Small delay to avoid rate limits
+                
+            return True
+        except Exception as e:
+            log.error(f"Error during repost for {monitor.name}: {e}")
+            return False
+
+    async def purge_channel(self, monitor_id, amount=50):
+        """Delete recent messages in the target Discord channels of this monitor."""
+        monitor = next((m for m in self.monitors if m.id == monitor_id), None)
+        if not monitor: return False
+        
+        success = True
+        log.info(f"Purging channels for monitor: {monitor.name} (Amount: {amount})")
+        
+        for channel_id in monitor.target_channels:
+            try:
+                channel = self.bot.get_channel(int(channel_id))
+                if not channel:
+                    channel = await self.bot.fetch_channel(int(channel_id))
+                
+                if channel:
+                    # Use bulk delete for messages younger than 14 days
+                    deleted = await channel.purge(limit=amount)
+                    log.info(f"Purged {len(deleted)} messages in channel {channel_id}")
+            except Exception as e:
+                log.error(f"Failed to purge channel {channel_id}: {e}")
+                success = False
+        
+        return success
