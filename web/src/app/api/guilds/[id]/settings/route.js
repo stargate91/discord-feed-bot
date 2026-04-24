@@ -157,6 +157,14 @@ export async function PATCH(req, { params }) {
     }, { status: 400 });
   }
 
+  // Validate Alert Templates based on Tier (Requires Tier 2 / Professional)
+  const hasTemplates = alert_templates && Object.values(alert_templates).some(t => t && t.trim().length > 0);
+  if (hasTemplates && !isMaster && guildTier < 2) {
+    return NextResponse.json({ 
+      error: "Access Denied: Custom Alert Templates are only available for Tier 2 (Professional) servers and above." 
+    }, { status: 400 });
+  }
+
   try {
     const q = `
       INSERT INTO guild_settings (guild_id, language, admin_role_id, refresh_interval, alert_templates)

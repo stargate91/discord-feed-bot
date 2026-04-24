@@ -384,12 +384,12 @@ function SettingsContent() {
             </div>
           </SettingCard>
 
-          {/* 4. Alert Templates (Premium) */}
+          {/* 4. Alert Templates (Professional Tier+) */}
           <SettingCard title="Alert Templates" description="Customize how bot messages look per platform" icon={MessageSquare}>
-            {!isPremiumActive ? (
+            {(settings.tier < 2 && !settings.isMaster) ? (
               <div className="premium-lock-overlay">
                 <Lock size={32} />
-                <p>This is a Premium Feature</p>
+                <p>Available for Professional Tier & above</p>
                 <Link href={`/premium?guild=${guildId}`}>
                   <button className="upgrade-btn-small">Upgrade Now</button>
                 </Link>
