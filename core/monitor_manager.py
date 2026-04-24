@@ -220,41 +220,43 @@ class MonitorManager:
             return False
 
     async def repost_recent(self, monitor_id, count=1):
-        """Find the last X processed items and send them again."""
+        """Fetch latest items directly from source and post them (useful for new monitors or recovery)."""
         monitor = next((m for m in self.monitors if m.id == monitor_id), None)
         if not monitor: return False
         
         # Limit count between 1 and 10
         count = max(1, min(10, int(count)))
         
-        import database
         try:
-            # Find the X most recent published entries for this monitor
-            q = "SELECT entry_id, feed_url, title, thumbnail_url, author_name FROM published_entries_v2 WHERE platform = $1 AND guild_id = $2 ORDER BY published_at DESC LIMIT $3"
-            rows = await database._fetch(q, monitor.type, monitor.guild_id, count)
+            log.info(f"Live Repost triggered for {monitor.name} (Source: {monitor.type}). Fetching {count} items...")
             
-            if not rows:
-                log.warning(f"Repost failed: No history found for monitor {monitor.name}")
+            # 1. Fetch fresh items directly from the platform source
+            if not hasattr(monitor, 'fetch_new_items'):
+                log.warning(f"Monitor {monitor.name} does not support live fetching.")
                 return False
                 
-            log.info(f"Reposting last {len(rows)} items for monitor: {monitor.name}")
-            
-            # Repost in chronological order (oldest of the selection first)
-            for row in reversed(rows):
-                item = {
-                    'id': row['entry_id'],
-                    'link': row['feed_url'],
-                    'title': row['title'],
-                    'thumbnail': row['thumbnail_url'],
-                    'author': row['author_name'],
-                    'is_repost': True
-                }
-                await monitor.process_item(item)
-                await asyncio.sleep(1) # Small delay to avoid rate limits
+            items = await monitor.fetch_new_items()
+            if not items:
+                log.warning(f"No items found at source for {monitor.name}")
+                return False
                 
+            # 2. Take only the requested number of items (latest first)
+            to_post = items[:count]
+            
+            log.info(f"Posting {len(to_post)} items from source for {monitor.name}")
+            
+            # 3. Process each item (post to Discord)
+            for item in reversed(to_post): # Oldest of the selection first for better flow
+                item['is_repost'] = True
+                await monitor.process_item(item)
+                await asyncio.sleep(1) # Safety delay
+            
+            # 4. CRITICAL: Mark these as published in DB so they aren't double-posted by the auto-poller
+            await monitor.mark_items_published(to_post)
+            
             return True
         except Exception as e:
-            log.error(f"Error during repost for {monitor.name}: {e}")
+            log.error(f"Error during live repost for {monitor.name}: {e}", exc_info=True)
             return False
 
     async def reset_history(self, monitor_id):
