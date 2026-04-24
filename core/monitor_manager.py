@@ -32,7 +32,7 @@ class MonitorManager:
         self.monitors.append(monitor_instance)
         log.info(f"Added monitor: {monitor_instance.name} ({monitor_instance.platform}) | Enabled: {monitor_instance.enabled}")
 
-    async def sync_with_db(self):
+    async def sync_with_db(self, is_startup=False):
         """Reload all monitors from database and sync with local memory."""
         log.info("Synchronizing monitors with database...")
         import database
@@ -53,8 +53,8 @@ class MonitorManager:
                 if monitor:
                     new_monitors.append(monitor)
             
-            # If we had monitors before, check for new channel assignments
-            if old_assignments:
+            # If this is not a bot startup, we can safely announce new monitors/assignments
+            if not is_startup:
                 for m in new_monitors:
                     if not m.enabled: continue
                     
