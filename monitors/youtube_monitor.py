@@ -49,7 +49,8 @@ class YouTubeMonitor(BaseMonitor):
             if not await database.is_published(video_id, "youtube"):
                 if self.is_first_run:
                     log.debug(f"Seeding database with existing video: {video_id}")
-                    await database.mark_as_published(video_id, "youtube", self.feed_url)
+                    # Seed with minimal info or try to extract it
+                    await database.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
                 else:
                     new_entries.append(entry)
                     log.info(f"New YouTube video detected: {entry.get('title', 'Unknown')} ({video_id})")
@@ -82,7 +83,16 @@ class YouTubeMonitor(BaseMonitor):
         for entry in items:
             video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
             if video_id:
-                await database.mark_as_published(video_id, "youtube", self.feed_url)
+                thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
+                title = entry.get("title", "Unknown Video")
+                author = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+                await database.mark_as_published(
+                    video_id, "youtube", self.feed_url, 
+                    guild_id=self.guild_id,
+                    title=title,
+                    thumbnail_url=thumbnail,
+                    author_name=author
+                )
 
     async def get_latest_item(self):
         """Fetch the most recent YouTube video from the feed."""

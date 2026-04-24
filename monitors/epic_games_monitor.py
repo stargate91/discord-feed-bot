@@ -92,7 +92,7 @@ class EpicGamesMonitor(BaseMonitor):
             if not await database.is_published(db_id, "epic_games"):
                 if self.is_first_run:
                     log.debug(f"Seeding database with Epic Game: {title} ({status_type})")
-                    await database.mark_as_published(db_id, "epic_games", self.api_url)
+                    await database.mark_as_published(db_id, "epic_games", self.api_url, title=title)
                 else:
                     new_entries.append({
                         "game": game,
@@ -162,7 +162,15 @@ class EpicGamesMonitor(BaseMonitor):
 
     async def mark_items_published(self, items):
         for item in items:
-            await database.mark_as_published(item["db_id"], "epic_games", self.api_url)
+            game = item["game"]
+            title = game.get("title", "Unknown Game")
+            image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
+            await database.mark_as_published(
+                item["db_id"], "epic_games", self.api_url,
+                title=title,
+                thumbnail_url=image_url,
+                author_name="Epic Games"
+            )
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

@@ -1,4 +1,5 @@
 import StatCard from "@/components/StatCard";
+import NotificationTimeline from "@/components/NotificationTimeline";
 import LoginButton from "@/components/LoginButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -94,6 +95,26 @@ async function getGuildStats(guildId, session) {
   }
 }
 
+async function getRecentNotifications(guildId = null) {
+  try {
+    let q = 'SELECT platform, entry_id, feed_url, published_at FROM published_entries_v2';
+    let params = [];
+    
+    if (guildId) {
+      const cleanId = String(guildId).replace('-', '');
+      q += ' WHERE guild_id = $1';
+      params.push(cleanId);
+    }
+    
+    q += ' ORDER BY published_at DESC LIMIT 5';
+    const res = await pool.query(q, params);
+    return res.rows;
+  } catch (error) {
+    console.error("[Dashboard] Notification Fetch Error:", error);
+    return [];
+  }
+}
+
 export default async function Dashboard({ searchParams }) {
   const session = await getServerSession(authOptions);
   const params = await searchParams;
@@ -106,6 +127,8 @@ export default async function Dashboard({ searchParams }) {
   const stats = guildId
     ? await getGuildStats(guildId, session)
     : await getGlobalStats();
+
+  const notifications = await getRecentNotifications(guildId);
 
   if (stats?.error) {
     return (
@@ -222,7 +245,10 @@ export default async function Dashboard({ searchParams }) {
 
         </div>
 
-      <QuickActions guildId={guildId} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <NotificationTimeline notifications={notifications} />
+          <QuickActions guildId={guildId} />
+        </div>
       </div>
     </div>
   );

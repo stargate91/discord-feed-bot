@@ -188,7 +188,14 @@ class CryptoMonitor(BaseMonitor):
         for event in items:
             pub_id = event.get("pub_id")
             if pub_id:
-                await database.mark_as_published(pub_id)
+                title = f"{event['sym']} {event['direction'].upper()} {event['percent_str']}"
+                await database.mark_as_published(
+                    pub_id, "crypto", 
+                    feed_url=f"https://www.coingecko.com/en/coins/{event['cid']}",
+                    guild_id=self.guild_id,
+                    title=title,
+                    author_name="Crypto Tracker"
+                )
 
     async def _send_alert(self, symbol, cid, current_price, threshold, direction, percent_str):
         # Placeholders for alert message

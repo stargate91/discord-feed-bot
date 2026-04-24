@@ -68,7 +68,7 @@ class GitHubMonitor(BaseMonitor):
             if not await database.is_published(release_id, "github"):
                 if self.is_first_run:
                     log.debug(f"Seeding database with existing GitHub release: {release_id}")
-                    await database.mark_as_published(release_id, "github", self.api_url)
+                    await database.mark_as_published(release_id, "github", self.api_url, title=release.get("name") or release.get("tag_name"))
                 else:
                     new_releases.append(release)
 
@@ -89,7 +89,13 @@ class GitHubMonitor(BaseMonitor):
         for release in items:
             release_id = str(release.get("id"))
             if release_id != "None":
-                await database.mark_as_published(release_id, "github", self.api_url)
+                title = release.get("name") or release.get("tag_name") or "New Release"
+                author = release.get("author", {}).get("login", "Unknown")
+                await database.mark_as_published(
+                    release_id, "github", self.api_url,
+                    title=f"{self.repo_path}: {title}",
+                    author_name=author
+                )
 
     async def get_latest_item(self):
         items = await self.get_latest_items(1)

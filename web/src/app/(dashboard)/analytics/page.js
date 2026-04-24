@@ -16,6 +16,8 @@ import {
   ArrowUpRight,
   Monitor
 } from 'lucide-react';
+import LiveTicker from "@/components/LiveTicker";
+import HeatmapChart from "@/components/HeatmapChart";
 
 // Custom Chart Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
@@ -95,6 +97,7 @@ function AnalyticsContent() {
 
   return (
     <div className="analytics-wrapper" onClick={() => setIsDropdownOpen(false)}>
+      <LiveTicker />
       <header className="page-header">
         <div className="header-text">
           <div className="badge">INSIGHTS</div>
@@ -223,11 +226,24 @@ function AnalyticsContent() {
            </div>
         </div>
 
-        <div className="side-charts-col">
-           <div className="chart-small-card">
+        <div className="chart-large-card">
+           <div className="chart-header-inner">
+              <h3>Global Heatmap</h3>
+              <p>Peak activity hours and days for your feed monitors.</p>
+           </div>
+           <div className="chart-content-inner">
+              <HeatmapChart data={data.heatmap || []} />
+           </div>
+        </div>
+
+        <div className="chart-small-card">
+           <div className="chart-header-inner">
               <h3>Platform Distribution</h3>
-              <div className="pie-container">
-                 <ResponsiveContainer width="100%" height={200}>
+              <p>Message volume per source.</p>
+           </div>
+           <div className="chart-content-inner">
+              <div className="pie-container-vertical">
+                 <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
                         data={data.platforms}
@@ -235,8 +251,8 @@ function AnalyticsContent() {
                         nameKey="displayName"
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={70}
+                        innerRadius={45}
+                        outerRadius={65}
                         paddingAngle={8}
                         stroke="none"
                       >
@@ -247,7 +263,7 @@ function AnalyticsContent() {
                       <Tooltip />
                     </PieChart>
                  </ResponsiveContainer>
-                 <div className="pie-legend">
+                 <div className="pie-legend-grid">
                     {data.platforms.map((p, i) => (
                        <div key={p.platform} className="legend-item">
                           <div className="dot" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}></div>
@@ -258,22 +274,26 @@ function AnalyticsContent() {
                  </div>
               </div>
            </div>
-
-           <div className="chart-small-card">
-              <h3>Source Efficiency</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                 <BarChart data={data.platforms}>
-                    <XAxis dataKey="displayName" hide />
-                    <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                       {data.platforms.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                       ))}
-                    </Bar>
-                 </BarChart>
-              </ResponsiveContainer>
-           </div>
         </div>
+
+        <div className="chart-small-card">
+           <div className="chart-header-inner">
+              <h3>Source Efficiency</h3>
+              <p>Performance ranking.</p>
+           </div>
+           <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.platforms}>
+                 <XAxis dataKey="displayName" hide />
+                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {data.platforms.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                 </Bar>
+              </BarChart>
+           </ResponsiveContainer>
+        </div>
+
       </div>
 
       <style jsx>{`
@@ -282,7 +302,7 @@ function AnalyticsContent() {
           margin: 0 auto;
           display: flex;
           flex-direction: column;
-          gap: 2rem;
+          gap: 1rem;
           padding-bottom: 3rem;
           animation: fadeIn 0.6s ease-out;
         }
@@ -398,7 +418,13 @@ function AnalyticsContent() {
         .chart-header-inner h3 { font-size: 1.3rem; font-weight: 700; margin: 0; }
         .chart-header-inner p { color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-top: 4px; }
 
-        .side-charts-col { display: flex; flex-direction: column; gap: 1.5rem; }
+        .side-charts-row { 
+          display: grid; 
+          grid-template-columns: 2fr 1fr; 
+          gap: 1.5rem; 
+          grid-column: span 2;
+        }
+        @media (max-width: 1100px) { .side-charts-row { grid-template-columns: 1fr; } }
 
         .chart-small-card {
           background: rgba(255, 255, 255, 0.02);
@@ -408,12 +434,19 @@ function AnalyticsContent() {
         }
         .chart-small-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem; color: rgba(255,255,255,0.6); }
 
-        .pie-container { display: flex; align-items: center; gap: 1rem; }
-        .pie-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+        .pie-container-vertical { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .pie-legend-grid { 
+          display: grid; 
+          grid-template-columns: 1fr 1fr; 
+          gap: 10px; 
+          width: 100%; 
+          margin-top: 0.5rem;
+          padding: 0 10px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
         .legend-item .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .legend-item .name { flex: 1; color: rgba(255,255,255,0.5); }
-        .legend-item .val { font-weight: 700; }
+        .legend-item .name { color: rgba(255,255,255,0.5); }
+        .legend-item .val { font-weight: 700; margin-left: 6px; }
 
         .custom-tooltip {
           background: rgba(26, 26, 32, 0.9);

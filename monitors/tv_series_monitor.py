@@ -71,7 +71,7 @@ class TVSeriesMonitor(BaseMonitor):
 
             if not await database.is_published(series_id, "tmdb_tv"):
                 if self.is_first_run:
-                    await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}")
+                    await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", title=series.get("name") or series.get("original_name"))
                 else:
                     new_entries.append(series)
                     log.info(f"New TV Series detected: {series.get('name')} ({series_id})")
@@ -172,7 +172,15 @@ class TVSeriesMonitor(BaseMonitor):
             series_id = str(series.get("id"))
             if series_id:
                 tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
-                await database.mark_as_published(series_id, "tmdb_tv", tmdb_url)
+                title = series.get("name") or series.get("original_name")
+                poster_path = series.get("poster_path")
+                thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
+                await database.mark_as_published(
+                    series_id, "tmdb_tv", tmdb_url,
+                    title=title,
+                    thumbnail_url=thumbnail,
+                    author_name="TMDB TV"
+                )
 
     async def _get_en_fallback(self, media_type, item_id, original=False):
         """Fetch English (or original language) details as fallback."""

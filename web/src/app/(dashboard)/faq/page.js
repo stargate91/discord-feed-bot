@@ -103,6 +103,8 @@ function FAQItem({ q, a }) {
 }
 
 export default function FAQPage() {
+  const [activeCategory, setActiveCategory] = useState(FAQ_DATA[0].category);
+
   return (
     <div className="faq-page">
       {/* Decorative Glows */}
@@ -129,9 +131,24 @@ export default function FAQPage() {
         </div>
       </header>
 
+      {/* Category Tabs */}
+      <div className="category-tabs">
+        {FAQ_DATA.map((section) => (
+          <button 
+            key={section.category}
+            className={`category-tab ${activeCategory === section.category ? 'active' : ''}`}
+            onClick={() => setActiveCategory(section.category)}
+          >
+            {section.icon}
+            <span>{section.category}</span>
+            {activeCategory === section.category && <div className="tab-indicator"></div>}
+          </button>
+        ))}
+      </div>
+
       <div className="faq-content">
-        {FAQ_DATA.map((section, idx) => (
-          <div key={idx} className="faq-section" style={{"--delay": `${idx * 0.1}s`}}>
+        {FAQ_DATA.filter(s => s.category === activeCategory).map((section) => (
+          <div key={section.category} className="faq-section-wrapper">
             <div className="section-header">
               <div className="section-icon-wrapper">
                 <span className="section-icon">{section.icon}</span>
@@ -144,7 +161,9 @@ export default function FAQPage() {
             </div>
             <div className="questions-grid">
               {section.questions.map((item, i) => (
-                <FAQItem key={i} q={item.q} a={item.a} />
+                <div key={i} className="animated-item" style={{"--delay": `${i * 0.1}s`}}>
+                  <FAQItem q={item.q} a={item.a} />
+                </div>
               ))}
             </div>
           </div>
@@ -268,21 +287,78 @@ export default function FAQPage() {
           to { transform: rotate(360deg); }
         }
 
+        .category-tabs {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 3rem;
+          padding: 0.5rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+          width: fit-content;
+        }
+
+        .category-tab {
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.4);
+          padding: 0.8rem 1.5rem;
+          border-radius: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+
+        .category-tab:hover {
+          color: white;
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .category-tab.active {
+          color: white;
+          background: rgba(123, 44, 191, 0.1);
+        }
+
+        .tab-indicator {
+          position: absolute;
+          bottom: 0;
+          left: 20%;
+          right: 20%;
+          height: 2px;
+          background: var(--accent-gradient);
+          border-radius: 2px;
+          box-shadow: 0 0 10px var(--accent-color);
+        }
+
         .faq-content {
           display: flex;
           flex-direction: column;
-          gap: 6rem;
-          margin-top: 4rem;
+          gap: 2rem;
+          margin-top: 1rem;
         }
 
-        .faq-section {
-          animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        .animated-item {
+          animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
           animation-delay: var(--delay);
         }
 
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        .faq-section-wrapper {
+          animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         .section-header {

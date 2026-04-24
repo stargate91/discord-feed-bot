@@ -70,9 +70,11 @@ async def init_db():
                 # Migration for Monitors table
                 await conn.execute("ALTER TABLE monitors ADD COLUMN IF NOT EXISTS last_post_at TIMESTAMP WITH TIME ZONE")
 
-                # Drop deprecated master_role_id and admin_channel_id
-                await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS master_role_id")
-                await conn.execute("ALTER TABLE guild_settings DROP COLUMN IF EXISTS admin_channel_id")
+                # Migration for published_entries_v2 table
+                await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS title TEXT")
+                await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS thumbnail_url TEXT")
+                await conn.execute("ALTER TABLE published_entries_v2 ADD COLUMN IF NOT EXISTS author_name TEXT")
+
                 log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
                 log.warning(f"DB Migration Issue: {e}")
@@ -190,15 +192,19 @@ async def is_published(entry_id, platform, guild_id=0):
     row = await pool.fetchrow(q, entry_id, platform, guild_id)
     return row is not None
 
-async def mark_as_published(entry_id, platform, feed_url, guild_id=0, published_at=None):
+async def mark_as_published(entry_id, platform, feed_url, guild_id=0, published_at=None, title=None, thumbnail_url=None, author_name=None):
     if published_at is None: published_at = datetime.now()
     
-    q = '''INSERT INTO published_entries_v2 (entry_id, platform, guild_id, feed_url, published_at) 
-           VALUES ($1, $2, $3, $4, $5) 
-           ON CONFLICT DO NOTHING'''
+    q = '''INSERT INTO published_entries_v2 (entry_id, platform, guild_id, feed_url, published_at, title, thumbnail_url, author_name) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+           ON CONFLICT (entry_id, platform, guild_id) DO UPDATE SET
+               title = EXCLUDED.title,
+               thumbnail_url = EXCLUDED.thumbnail_url,
+               author_name = EXCLUDED.author_name
+           '''
            
     pool = await get_pool()
-    await pool.execute(q, entry_id, platform, guild_id, feed_url, published_at)
+    await pool.execute(q, entry_id, platform, guild_id, feed_url, published_at, title, thumbnail_url, author_name)
 
 async def get_guild_settings(guild_id):
     q = "SELECT language, admin_role_id, alert_templates, premium_until, refresh_interval, tier, stripe_subscription_id FROM guild_settings WHERE guild_id = $1"

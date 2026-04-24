@@ -149,7 +149,7 @@ class MovieMonitor(BaseMonitor):
 
             if not await database.is_published(movie_id, entry_type):
                 if self.is_first_run:
-                    await database.mark_as_published(movie_id, entry_type, self.api_url)
+                    await database.mark_as_published(movie_id, entry_type, self.api_url, title=movie.get("title") or movie.get("original_title"))
                 else:
                     new_entries.append(movie)
                     log.info(f"New Movie detected ({self.tmdb_lang}): {movie.get('title')} ({movie_id})")
@@ -251,7 +251,15 @@ class MovieMonitor(BaseMonitor):
         for movie in items:
             movie_id = str(movie.get("id"))
             if movie_id:
-                await database.mark_as_published(movie_id, entry_type, self.api_url)
+                title = movie.get("title") or movie.get("original_title")
+                poster_path = movie.get("poster_path")
+                thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
+                await database.mark_as_published(
+                    movie_id, entry_type, self.api_url,
+                    title=title,
+                    thumbnail_url=thumbnail,
+                    author_name="TMDB Movies"
+                )
 
     async def get_latest_item(self):
         """Fetch the most recent film for manual check."""

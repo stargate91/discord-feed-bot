@@ -1,0 +1,31 @@
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export async function GET(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Fetch last 15 global notifications with titles and platforms
+    const result = await query(`
+      SELECT 
+        platform, 
+        title, 
+        published_at,
+        author_name
+      FROM published_entries_v2 
+      WHERE title IS NOT NULL
+      ORDER BY published_at DESC 
+      LIMIT 15
+    `);
+
+    return NextResponse.json(result.rows);
+  } catch (error) {
+    console.error("Global stats error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

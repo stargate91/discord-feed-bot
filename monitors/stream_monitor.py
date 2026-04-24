@@ -114,6 +114,20 @@ class BaseStreamMonitor(BaseMonitor):
 
         await self.send_update(content=f"{alert_text}\n{stream_url}", embed=embed, view=view)
 
+        # Log to DB for dashboard timeline
+        try:
+            await database.mark_as_published(
+                entry_id=f"{self.platform}:{self.stream_username}:{int(time.time())}", 
+                platform=self.platform,
+                feed_url=stream_url,
+                guild_id=self.guild_id,
+                title=title,
+                thumbnail_url=thumbnail,
+                author_name=display_name
+            )
+        except Exception as e:
+            log.error(f"Failed to log stream notification: {e}")
+
     async def get_latest_item(self):
         """Fetch current stream status for manual check."""
         stream_data = await self._fetch_platform_data()

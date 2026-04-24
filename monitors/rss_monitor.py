@@ -48,10 +48,10 @@ class RSSMonitor(BaseMonitor):
             if not entry_id:
                 continue
 
-            if not await database.is_published(entry_id, "rss"):
+            if not await database.is_published(entry_id, "rss", self.guild_id):
                 if self.is_first_run:
                     log.debug(f"Seeding database with existing RSS entry: {entry_id}")
-                    await database.mark_as_published(entry_id, "rss", self.feed_url)
+                    await database.mark_as_published(entry_id, "rss", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
                 else:
                     new_entries.append(entry)
                     log.info(f"New RSS entry detected: {entry.get('title', 'Unknown')} ({entry_id})")
@@ -114,7 +114,14 @@ class RSSMonitor(BaseMonitor):
         for entry in items:
             entry_id = entry.get("id") or entry.get("link")
             if entry_id:
-                await database.mark_as_published(entry_id, "rss", self.feed_url)
+                title = entry.get("title", "New RSS Update")
+                author = entry.get("author") or entry.get("author_detail", {}).get("name")
+                await database.mark_as_published(
+                    entry_id, "rss", self.feed_url, 
+                    guild_id=self.guild_id,
+                    title=title,
+                    author_name=author
+                )
 
     async def get_latest_item(self):
         """Fetch the most recent RSS entry from the feed."""
