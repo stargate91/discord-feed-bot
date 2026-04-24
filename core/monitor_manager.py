@@ -151,8 +151,12 @@ class MonitorManager:
                                     except Exception as e:
                                         log.error(f"Error processing item centrally for {mon.name}: {e}")
                             
-                            # Once all are processed, mark them globally published!
-                            await primary.mark_items_published(new_items)
+                            # Once all are processed, mark them published for EVERY monitor in this group
+                            for mon in monitors_in_group:
+                                try:
+                                    await mon.mark_items_published(new_items)
+                                except Exception as e:
+                                    log.error(f"Failed to mark items as published for {mon.name}: {e}")
                     else:
                         # Legacy fallback
                         log.debug(f"[Legacy Centralized] Processing {len(monitors_in_group)} monitors tracking '{key}'")
