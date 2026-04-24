@@ -286,18 +286,29 @@ class FeedBot(commands.Bot):
         return (30, 1440, 30, 3, 1, 1) # Free Tier
 
     def has_feature(self, guild_id, feature_name):
-        """Check if a guild has access to a specific premium feature."""
+        """Check if a guild has access to a specific premium feature based on tier."""
         # Masters have everything
         if self.is_master(guild_id):
             return True
             
-        premium = self.is_premium(guild_id)
+        settings = self.guild_settings_cache.get(guild_id, {})
+        tier = settings.get("tier", 0)
         
-        # Premium-only features
-        premium_only = ["crypto", "repost", "custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter"]
-        if feature_name in premium_only:
-            return premium
+        # Legacy: if tier is 0 but premium_until is valid, treat as tier 3
+        if tier == 0 and self.is_premium(guild_id):
+            tier = 3
+        
+        # Tier 2+ features (Professional)
+        tier2_features = ["repost", "custom_template"]
+        if feature_name in tier2_features:
+            return tier >= 2
+        
+        # Tier 1+ features (Starter)
+        tier1_features = ["custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter", "remove_branding"]
+        if feature_name in tier1_features:
+            return tier >= 1
             
+        # Crypto is available to all (no longer premium-gated)
         return True
 
     def get_guild_refresh_interval(self, guild_id):
