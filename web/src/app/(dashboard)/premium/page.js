@@ -26,14 +26,51 @@ function PremiumRouter() {
     return <div className="loading-container"><div className="loader"></div></div>;
   }
 
+  const HeaderSection = ({ title, subtitle, badge }) => (
+    <div style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '4rem' }}>
+      <span style={{ 
+        background: 'rgba(123, 44, 191, 0.1)', 
+        color: '#9d4edd', 
+        padding: '5px 15px', 
+        borderRadius: '20px', 
+        fontSize: '0.7rem', 
+        fontWeight: '900', 
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        border: '1px solid rgba(123, 44, 191, 0.2)',
+        marginBottom: '1rem',
+        display: 'inline-block'
+      }}>
+        {badge}
+      </span>
+      <h2 style={{ 
+        fontSize: '3rem', 
+        fontWeight: '900', 
+        color: 'white', 
+        margin: '0.5rem 0',
+        background: 'linear-gradient(to bottom, #fff 0%, #a0a0b0 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        letterSpacing: '-1px'
+      }}>
+        {title}
+      </h2>
+      <p style={{ color: '#a0a0b0', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
+        {subtitle}
+      </p>
+    </div>
+  );
+
   if (guildId) {
     return (
       <div style={{ width: '100%' }}>
         <PremiumDashboard guildId={guildId} session={session} />
         <div style={{ maxWidth: '1450px', margin: '0 auto', padding: '0 1rem 10rem' }}>
-          <h3 style={{ fontSize: '1.8rem', fontWeight: '900', textAlign: 'center', marginBottom: '3rem', color: 'white', textTransform: 'uppercase', letterSpacing: '2px' }}>
-            Full Feature Breakdown
-          </h3>
+          <HeaderSection 
+            badge="Advanced Intel"
+            title="Surgical Precision"
+            subtitle="Compare technical limits and find the perfect configuration for your server's needs."
+          />
           <PremiumComparisonTable />
         </div>
       </div>
@@ -44,9 +81,11 @@ function PremiumRouter() {
     <div style={{ width: '100%' }}>
       <PremiumLanding session={session} />
       <div style={{ maxWidth: '1450px', margin: '0 auto', padding: '0 1rem 10rem' }}>
-        <h3 style={{ fontSize: '2.5rem', fontWeight: '900', textAlign: 'center', marginBottom: '4rem', color: 'white', textTransform: 'uppercase', letterSpacing: '3px' }}>
-          Compare Tiers
-        </h3>
+        <HeaderSection 
+          badge="Master the Feeds"
+          title="Choose Your Power"
+          subtitle="From casual tracking to professional intelligence – discover the tier that drives your community forward."
+        />
         <PremiumComparisonTable />
       </div>
     </div>
