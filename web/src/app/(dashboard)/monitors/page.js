@@ -6,7 +6,7 @@ import MonitorCard from '@/components/MonitorCard';
 import Link from 'next/link';
 import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
-import { Plus, Play, Pause, Trash2, Globe } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Globe, AlertTriangle } from 'lucide-react';
 
 const platformNames = {
   all: "All Feeds",
@@ -257,7 +257,7 @@ export default function MonitorsPage() {
             onClick={() => handleBulkAction('delete')}
             disabled={bulkActionLoading || filteredMonitors.length === 0}
           >
-            {bulkDeleteConfirm ? '⚠️ Confirm Delete ALL?' : <><Trash2 size={14} /> Delete All</>}
+            {bulkDeleteConfirm ? <><AlertTriangle size={14} /> Confirm Delete ALL?</> : <><Trash2 size={14} /> Delete All</>}
           </button>
         </div>
         

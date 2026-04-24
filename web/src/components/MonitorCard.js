@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Settings, RefreshCcw, Send, Trash, Wrench, Check, AlertCircle, Shield, Zap } from 'lucide-react';
+import { Settings, RefreshCcw, Send, Trash, Wrench, Check, AlertCircle, Shield, Zap, Radio, Moon, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const platformNames = {
@@ -133,23 +133,6 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           <span className="platform-name">
             {platformNames[monitor.type] || monitor.type.toUpperCase()}
           </span>
-          <div className="speed-badge" style={{
-            background: `${currentTier.speedColor}15`,
-            border: `1px solid ${currentTier.speedColor}30`,
-            color: currentTier.speedColor,
-            padding: '2px 8px',
-            borderRadius: '6px',
-            fontSize: '0.65rem',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            marginLeft: '8px'
-          }}>
-            <Zap size={10} fill={currentTier.speedColor} />
-            {currentTier.speedLabel} ({currentTier.speed})
-          </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
@@ -224,7 +207,12 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
         </div>
         {actionStatus.message && (
           <div className={`action-feedback ${actionStatus.type}`}>
-            {actionStatus.type === 'success' ? <Check size={12} /> : <AlertCircle size={12} />}
+            {actionStatus.type === 'success' && actionStatus.message.includes('LIVE NOW') ? <Radio size={14} className="pulse" /> : 
+             actionStatus.type === 'success' && actionStatus.message.includes('OFFLINE') ? <Moon size={14} /> :
+             actionStatus.type === 'success' && actionStatus.message.includes('Price Alert') ? <TrendingUp size={14} /> :
+             actionStatus.type === 'success' && actionStatus.message.includes('Found') ? <Sparkles size={14} /> :
+             actionStatus.type === 'success' ? <Check size={14} /> : 
+             <AlertCircle size={14} />}
             {actionStatus.message}
           </div>
         )}
