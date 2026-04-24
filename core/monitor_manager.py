@@ -224,10 +224,10 @@ class MonitorManager:
                 if stream_data and stream_data.get('is_live'):
                     viewers = stream_data.get('viewers', 0)
                     title = stream_data.get('title', 'No Title')
-                    msg = f"🔴 LIVE NOW! {viewers:,} viewers. Title: {title}"
+                    msg = f"LIVE NOW! {viewers:,} viewers. Title: {title}"
                     return True, msg
                 else:
-                    return True, "⚫ Currently OFFLINE."
+                    return True, "Currently OFFLINE."
 
             if hasattr(monitor, 'fetch_new_items'):
                 new_items = await monitor.fetch_new_items()
@@ -241,17 +241,17 @@ class MonitorManager:
                     title = first.get('title') or first.get('name') or first.get('symbol')
                     
                     if monitor.type == 'crypto' and first.get('price'):
-                        msg = f"📈 Price Alert! {title} is at ${first.get('price')}!"
+                        msg = f"Price Alert! {title} is at ${first.get('price')}!"
                     elif title:
-                        msg = f"✨ Found {count} new update(s)! Latest: {title}"
+                        msg = f"Found {count} new update(s)! Latest: {title}"
                     else:
-                        msg = f"✨ Found {count} new update(s)!"
+                        msg = f"Found {count} new update(s)!"
                     return True, msg
                 else:
-                    return True, "✅ Checked successfully. No new updates found."
+                    return True, "Checked successfully. No new updates found."
             else:
                 await monitor.check_for_updates()
-                return True, "✅ Manual check complete."
+                return True, "Manual check complete."
         except Exception as e:
             log.error(f"Error during manual check for {monitor.name}: {e}")
             return False, f"Check error: {str(e)}"
