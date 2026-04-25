@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { notifyBotOfChange } from "@/lib/bot-sync";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { query } from "@/lib/db";
@@ -126,12 +127,7 @@ export async function POST(req) {
     }
 
     // Notify bot to sync new monitors
-    try {
-      const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8080";
-      await fetch(`${BOT_WEBHOOK_URL}/monitors/sync`, { method: "POST" });
-    } catch (e) {
-      console.error("[BulkAdd] Failed to notify bot for sync:", e.message);
-    }
+    await notifyBotOfChange();
 
     return NextResponse.json({
       success: true,
