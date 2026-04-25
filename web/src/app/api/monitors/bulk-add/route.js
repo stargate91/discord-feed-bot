@@ -79,10 +79,23 @@ export async function POST(req) {
            apiUrl = `https://github.com/${name}`;
         }
 
-        // Check for duplicates in this guild
+        // Construct extra_settings JSON
+        const extraSettings = {
+          api_url: apiUrl,
+          target_channels: channelIds,
+          target_roles: roleIds,
+          embed_color: embedColor || (type === 'youtube' ? null : '#7b2cbf')
+        };
+
+        // For YouTube, also provide channel_id which the monitor specifically looks for
+        if (type === 'youtube') {
+           extraSettings.channel_id = name; // 'name' here is the handle/id extracted
+        }
+
+        // Check for duplicates in this guild by searching in extra_settings text
         const dupCheck = await query(
-          "SELECT id FROM monitors WHERE guild_id = $1 AND type = $2 AND api_url = $3",
-          [guildId, type, apiUrl]
+          "SELECT id FROM monitors WHERE guild_id = $1 AND type = $2 AND extra_settings LIKE $3",
+          [guildId, type, `%${apiUrl}%`]
         );
 
         if (dupCheck.rows.length > 0) {
@@ -93,16 +106,13 @@ export async function POST(req) {
 
         // Insert into database
         await query(
-          `INSERT INTO monitors (guild_id, type, name, api_url, target_channels, target_roles, embed_color, enabled)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          `INSERT INTO monitors (guild_id, type, name, enabled, extra_settings)
+           VALUES ($1, $2, $3, true, $4)`,
           [
             guildId, 
             type, 
-            name, 
-            apiUrl, 
-            JSON.stringify(channelIds), 
-            JSON.stringify(roleIds), 
-            embedColor || '#7b2cbf'
+            name,
+            JSON.stringify(extraSettings)
           ]
         );
         successCount++;
