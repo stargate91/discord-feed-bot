@@ -59,23 +59,29 @@ class GitHubMonitor(BaseMonitor):
             return []
 
         # Process in reverse chronological order (oldest first)
-        new_releases = []
-        for release in reversed(releases):
+        all_candidates = []
+        for release in releases:
             release_id = str(release.get("id"))
-            if not release_id:
-                continue
+            if not release_id: continue
 
-            if not await database.is_published(release_id, "github", self.guild_id):
-                if self.is_first_run:
-                    log.debug(f"Seeding database with existing GitHub release: {release_id}")
-                    await database.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=release.get("name") or release.get("tag_name"))
-                else:
-                    new_releases.append(release)
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=release.get("name") or release.get("tag_name"))
+            else:
+                all_candidates.append(release)
 
         if self.is_first_run:
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new GitHub monitor: {self.repo_path}")
+            else:
+                log.debug(f"GitHub Monitor instance restarted/synced: {self.repo_path}")
             self.is_first_run = False
-            
-        return new_releases
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, release):
         formatted = self._format_release(release)

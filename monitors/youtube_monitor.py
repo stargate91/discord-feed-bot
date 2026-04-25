@@ -106,50 +106,45 @@ class YouTubeMonitor(BaseMonitor):
         return f"youtube:{self.channel_id}"
 
     async def fetch_new_items(self):
-        """Fetch YouTube RSS feed and look for new videos."""
+        """Fetch YouTube RSS feed and return items. Filtering is handled by the manager."""
         if not await self._ensure_channel_id():
-            log.warning(f"No valid channel ID for YouTube monitor: {self.name} (Input: {self.config.get('channel_id')})")
+            log.warning(f"No valid channel ID for YouTube monitor: {self.name}")
             return []
 
-        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
-        if shared_data:
-            feed = shared_data
-        else:
+        shared_key = self.get_shared_key()
+        feed = self.bot.monitor_manager.get_shared_data(shared_key)
+        
+        if not feed:
             import asyncio
             loop = asyncio.get_event_loop()
             try:
                 feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
-                if hasattr(feed, 'entries'):
-                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+                if hasattr(feed, 'entries') and feed.entries:
+                    self.bot.monitor_manager.set_shared_data(shared_key, feed)
             except Exception as e:
                 log.error(f"Failed to fetch YouTube feed for {self.name}: {e}")
                 return []
         
-        if not feed or not hasattr(feed, 'entries'):
-            return []
+        # Determine if we should seed (silent save) or post
+        # We only seed if it's a brand new monitor (no last_post_at) AND it's the first run of this instance
+        is_brand_new = self.config.get("last_post_at") is None
+        should_seed = self.is_first_run and is_brand_new
 
-        new_entries = []
-        for entry in reversed(feed.entries):
-            video_id = entry.get("yt_videoid")
-            if not video_id:
-                video_id = entry.get("id", "").split(":")[-1]
-            if not video_id:
-                continue
-
-            if not await database.is_published(video_id, "youtube", self.guild_id):
-                if self.is_first_run:
-                    log.debug(f"Seeding database with existing video: {video_id}")
-                    # Seed with minimal info or try to extract it
+        if should_seed:
+            for entry in feed.entries:
+                video_id = self.get_item_id(entry)
+                if video_id:
                     await database.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
-                else:
-                    new_entries.append(entry)
-                    log.info(f"New YouTube video detected: {entry.get('title', 'Unknown')} ({video_id})")
+            log.info(f"Initial seed (silent) completed for new YouTube monitor: {self.name}")
+            self.is_first_run = False
+            return [] 
 
         if self.is_first_run:
-            log.info(f"Initial seed completed for {self.name}. Monitoring active for next updates.")
+            log.debug(f"Monitor instance restarted/synced for {self.name}. Monitoring for new items since last post.")
             self.is_first_run = False
-            
-        return new_entries
+
+        # Return all entries. MonitorManager will filter via is_published per-guild.
+        return list(reversed(feed.entries))
 
     async def process_item(self, entry):
         video_id = self.get_item_id(entry)

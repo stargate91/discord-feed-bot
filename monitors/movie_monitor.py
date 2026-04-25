@@ -142,22 +142,29 @@ class MovieMonitor(BaseMonitor):
             return []
 
         entry_type = f"movie:{self.tmdb_lang}"
-        new_entries = []
-        for movie in reversed(feed):
+        all_candidates = []
+        for movie in feed:
             movie_id = str(movie.get("id"))
             if not movie_id: continue
 
-            if not await database.is_published(movie_id, entry_type, self.guild_id):
-                if self.is_first_run:
-                    await database.mark_as_published(movie_id, entry_type, self.api_url, guild_id=self.guild_id, title=movie.get("title") or movie.get("original_title"))
-                else:
-                    new_entries.append(movie)
-                    log.info(f"New Movie detected ({self.tmdb_lang}): {movie.get('title')} ({movie_id})")
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(movie_id, entry_type, self.api_url, guild_id=self.guild_id, title=movie.get("title") or movie.get("original_title"))
+            else:
+                all_candidates.append(movie)
 
         if self.is_first_run:
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new Movie monitor: {self.name} ({self.tmdb_lang})")
+            else:
+                log.debug(f"Movie Monitor instance restarted/synced: {self.name} ({self.tmdb_lang})")
             self.is_first_run = False
-            
-        return new_entries
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, movie):
         target_genres = self.config.get("target_genres", [])

@@ -189,9 +189,19 @@ class MonitorManager:
                     if hasattr(monitor, 'fetch_new_items'):
                         new_items = await monitor.fetch_new_items()
                         if new_items:
+                            import database
+                            to_process = []
                             for item in new_items:
-                                await monitor.process_item(item)
-                            await monitor.mark_items_published(new_items)
+                                item_id = monitor.get_item_id(item)
+                                if item_id:
+                                    is_pub = await database.is_published(item_id, monitor.platform, monitor.guild_id)
+                                    if not is_pub:
+                                        to_process.append(item)
+                            
+                            if to_process:
+                                for item in to_process:
+                                    await monitor.process_item(item)
+                                await monitor.mark_items_published(to_process)
                     else:
                         await monitor.check_for_updates()
                 except Exception as e:
@@ -230,7 +240,17 @@ class MonitorManager:
                     return True, "Currently OFFLINE."
 
             if hasattr(monitor, 'fetch_new_items'):
-                new_items = await monitor.fetch_new_items()
+                all_items = await monitor.fetch_new_items()
+                import database
+                new_items = []
+                if all_items:
+                    for item in all_items:
+                        item_id = monitor.get_item_id(item)
+                        if item_id:
+                            is_pub = await database.is_published(item_id, monitor.platform, monitor.guild_id)
+                            if not is_pub:
+                                new_items.append(item)
+                
                 if new_items:
                     for item in new_items:
                         await monitor.process_item(item)

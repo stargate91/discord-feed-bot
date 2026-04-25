@@ -21,20 +21,20 @@ class RSSMonitor(BaseMonitor):
         return f"rss:{self.feed_url}"
 
     async def fetch_new_items(self):
-        """Fetch a generic RSS feed and look for new entries."""
+        """Fetch RSS entries. Filtering is handled by the manager."""
         if not self.feed_url:
             log.warning(f"No RSS URL for monitor: {self.name}")
             return []
 
-        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
-        if shared_data:
-            feed = shared_data
-        else:
+        shared_key = self.get_shared_key()
+        feed = self.bot.monitor_manager.get_shared_data(shared_key)
+        
+        if not feed:
             try:
                 loop = asyncio.get_event_loop()
                 feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url, agent=USER_AGENT))
-                if hasattr(feed, 'entries'):
-                    self.bot.monitor_manager.set_shared_data(self.get_shared_key(), feed)
+                if hasattr(feed, 'entries') and feed.entries:
+                    self.bot.monitor_manager.set_shared_data(shared_key, feed)
             except Exception as e:
                 log.error(f"Failed to fetch RSS feed for {self.name}: {e}")
                 return []
@@ -42,25 +42,24 @@ class RSSMonitor(BaseMonitor):
         if not feed or not hasattr(feed, 'entries'):
             return []
 
-        new_entries = []
-        for entry in reversed(feed.entries):
-            entry_id = entry.get("id") or entry.get("link")
-            if not entry_id:
-                continue
+        # Determine if we should seed (silent save) or post
+        is_brand_new = self.config.get("last_post_at") is None
+        should_seed = self.is_first_run and is_brand_new
 
-            if not await database.is_published(entry_id, "rss", self.guild_id):
-                if self.is_first_run:
-                    log.debug(f"Seeding database with existing RSS entry: {entry_id}")
+        if should_seed:
+            for entry in feed.entries:
+                entry_id = self.get_item_id(entry)
+                if entry_id:
                     await database.mark_as_published(entry_id, "rss", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
-                else:
-                    new_entries.append(entry)
-                    log.info(f"New RSS entry detected: {entry.get('title', 'Unknown')} ({entry_id})")
+            log.info(f"Initial seed (silent) completed for new RSS monitor: {self.name}")
+            self.is_first_run = False
+            return []
 
         if self.is_first_run:
-            log.info(f"Initial seed completed for RSS {self.name}. Monitoring active.")
+            log.debug(f"RSS Monitor instance restarted/synced for {self.name}.")
             self.is_first_run = False
-            
-        return new_entries
+
+        return list(reversed(feed.entries))
 
     async def process_item(self, entry):
         entry_link = entry.get("link")

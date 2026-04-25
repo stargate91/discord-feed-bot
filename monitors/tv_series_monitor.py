@@ -64,23 +64,29 @@ class TVSeriesMonitor(BaseMonitor):
         if not trending:
             return []
 
-        new_entries = []
-        for series in reversed(trending):
+        all_candidates = []
+        for series in trending:
             series_id = str(series.get("id"))
             if not series_id: continue
 
-            if not await database.is_published(series_id, "tmdb_tv", self.guild_id):
-                if self.is_first_run:
-                    await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", guild_id=self.guild_id, title=series.get("name") or series.get("original_name"))
-                else:
-                    new_entries.append(series)
-                    log.info(f"New TV Series detected: {series.get('name')} ({series_id})")
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", guild_id=self.guild_id, title=series.get("name") or series.get("original_name"))
+            else:
+                all_candidates.append(series)
 
         if self.is_first_run:
-            log.info("Initial TV Series seed completed.")
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new TV Series monitor: {self.name}")
+            else:
+                log.debug(f"TV Series Monitor instance restarted/synced: {self.name}")
             self.is_first_run = False
-            
-        return new_entries
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, series):
         target_genres = self.config.get("target_genres", [])

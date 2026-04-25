@@ -45,23 +45,29 @@ class SteamNewsMonitor(BaseMonitor):
         if not feed:
             return []
 
-        new_entries = []
-        for item in reversed(feed):
+        all_candidates = []
+        for item in feed:
             gid = item.get("gid")
             if not gid: continue
 
-            if not await database.is_published(gid, "steam_news", self.guild_id):
-                if self.is_first_run:
-                    await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
-                else:
-                    new_entries.append(item)
-                    log.info(f"New Steam News detected: {item.get('title')} ({gid})")
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
+            else:
+                all_candidates.append(item)
 
         if self.is_first_run:
-            log.info(f"Initial seed completed for Steam News {self.name}.")
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new Steam News monitor: {self.name}")
+            else:
+                log.debug(f"Steam News Monitor instance restarted/synced: {self.name}")
             self.is_first_run = False
-            
-        return new_entries
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, item):
         title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))

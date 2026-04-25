@@ -159,17 +159,15 @@ class CryptoMonitor(BaseMonitor):
                     direction = "up" if crossed_up else "down"
                     monitor_id = self.config.get("id", "0")
                     pub_id = f"crypto_{monitor_id}_{sym}_{threshold}_{direction}_{hour_bucket}"
-                    
-                    if not await database.is_published(pub_id, "crypto", self.guild_id):
-                        events.append({
-                            "sym": sym,
-                            "cid": cid,
-                            "current_price": current_price,
-                            "threshold": threshold,
-                            "direction": direction,
-                            "percent_str": percent_str,
-                            "pub_id": pub_id
-                        })
+                    events.append({
+                        "sym": sym,
+                        "cid": cid,
+                        "current_price": current_price,
+                        "threshold": threshold,
+                        "direction": direction,
+                        "percent_str": percent_str,
+                        "pub_id": pub_id
+                    })
             
             self.last_prices[sym] = current_price
         return events

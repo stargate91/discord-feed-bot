@@ -22,12 +22,11 @@ class EpicGamesMonitor(BaseMonitor):
         return "epic_games_free"
 
     async def fetch_new_items(self):
-        """Fetch Epic Games free promotions JSON and look for new items."""
+        """Fetch Epic Games entries. Filtering is handled by the manager."""
+        shared_key = self.get_shared_key()
+        data = self.bot.monitor_manager.get_shared_data(shared_key)
         
-        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
-        if shared_data:
-            data = shared_data
-        else:
+        if not data:
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
@@ -36,7 +35,7 @@ class EpicGamesMonitor(BaseMonitor):
                             return []
                         data = await response.json()
                         if data:
-                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
+                            self.bot.monitor_manager.set_shared_data(shared_key, data)
             except Exception as e:
                 log.error(f"Error fetching Epic Games data: {e}")
                 return []
@@ -47,64 +46,65 @@ class EpicGamesMonitor(BaseMonitor):
             log.error(f"Unexpected Epic Games API structure: {e}")
             return []
 
-        new_entries = []
-        for game in reversed(elements):
+        all_candidates = []
+        for game in elements:
             game_id = game.get("id")
-            title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+            title = game.get("title", "Unknown")
             
             promotions = game.get("promotions")
-            if not promotions:
-                continue
+            if not promotions: continue
 
             active_offers = promotions.get("promotionalOffers", [])
             upcoming_offers = promotions.get("upcomingPromotionalOffers", [])
 
             is_active = False
-            is_upcoming = False
-
             for offer_wrap in active_offers:
                 for offer in offer_wrap.get("promotionalOffers", []):
                     if offer.get("discountSetting", {}).get("discountPercentage") == 0:
-                        is_active = True
-                        break
+                        is_active = True; break
+                if is_active: break
 
+            is_upcoming = False
             if self.include_upcoming:
                 for offer_wrap in upcoming_offers:
                     for offer in offer_wrap.get("promotionalOffers", []):
                         if offer.get("discountSetting", {}).get("discountPercentage") == 0:
-                            is_upcoming = True
-                            break
+                            is_upcoming = True; break
+                    if is_upcoming: break
 
-            if not is_active and not is_upcoming:
-                continue
+            if not is_active and not is_upcoming: continue
 
             if is_active:
                 price = game.get("price", {}).get("totalPrice", {})
-                if price.get("discountPrice") != 0:
-                    is_active = False
+                if price.get("discountPrice") != 0: is_active = False
 
-            if not is_active and not is_upcoming:
-                continue
+            if not is_active and not is_upcoming: continue
 
             status_type = "active" if is_active else "upcoming"
             db_id = f"{game_id}_{status_type}"
 
-            if not await database.is_published(db_id, "epic_games", self.guild_id):
-                if self.is_first_run:
-                    log.debug(f"Seeding database with Epic Game: {title} ({status_type})")
-                    await database.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
-                else:
-                    new_entries.append({
-                        "game": game,
-                        "is_active": is_active,
-                        "db_id": db_id
-                    })
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
+            else:
+                all_candidates.append({
+                    "game": game,
+                    "is_active": is_active,
+                    "db_id": db_id
+                })
 
         if self.is_first_run:
-            log.info(f"Initial seed completed for Epic Games Store. Monitoring active.")
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new Epic Games monitor.")
+            else:
+                log.debug(f"Epic Games Monitor instance restarted/synced.")
             self.is_first_run = False
-            
-        return new_entries
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, item):
         game = item["game"]

@@ -21,12 +21,11 @@ class SteamFreeMonitor(BaseMonitor):
         return "steam_free_giveaways"
 
     async def fetch_new_items(self):
-        """Fetch GamerPower API and look for new Steam giveaways."""
+        """Fetch Steam giveaways. Filtering is handled by the manager."""
+        shared_key = self.get_shared_key()
+        data = self.bot.monitor_manager.get_shared_data(shared_key)
         
-        shared_data = self.bot.monitor_manager.get_shared_data(self.get_shared_key())
-        if shared_data:
-            data = shared_data
-        else:
+        if not data:
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
@@ -35,7 +34,7 @@ class SteamFreeMonitor(BaseMonitor):
                             return []
                         data = await response.json()
                         if data:
-                            self.bot.monitor_manager.set_shared_data(self.get_shared_key(), data)
+                            self.bot.monitor_manager.set_shared_data(shared_key, data)
             except Exception as e:
                 log.error(f"Error fetching Steam free games data: {e}")
                 return []
@@ -43,26 +42,32 @@ class SteamFreeMonitor(BaseMonitor):
         if not isinstance(data, list):
             return []
 
-        new_entries = []
-        for game in reversed(data):
+        all_candidates = []
+        for game in data:
             giveaway_id = str(game.get("id"))
             giveaway_type = game.get("type", "").lower()
 
             if not self.include_dlc and giveaway_type == "dlc":
                 continue
 
-            if not await database.is_published(giveaway_id, "steam_free", self.guild_id):
-                if self.is_first_run:
-                    log.debug(f"Seeding database with Steam giveaway: {game.get('title')}")
-                    await database.mark_as_published(giveaway_id, "steam_free", self.api_url, guild_id=self.guild_id)
-                else:
-                    new_entries.append(game)
-                    log.info(f"New Steam giveaway detected: {game.get('title')}")
+            # Determine if we should seed (silent save) or post
+            is_brand_new = self.config.get("last_post_at") is None
+            should_seed = self.is_first_run and is_brand_new
+
+            if should_seed:
+                await database.mark_as_published(giveaway_id, "steam_free", self.api_url, guild_id=self.guild_id)
+            else:
+                all_candidates.append(game)
 
         if self.is_first_run:
+            if is_brand_new:
+                log.info(f"Initial seed (silent) completed for new Steam giveaways monitor.")
+            else:
+                log.debug(f"Steam giveaways Monitor instance restarted/synced.")
             self.is_first_run = False
-            
-        return new_entries
+            return [] if is_brand_new else list(reversed(all_candidates))
+
+        return list(reversed(all_candidates))
 
     async def process_item(self, game):
         giveaway_id = str(game.get("id"))
