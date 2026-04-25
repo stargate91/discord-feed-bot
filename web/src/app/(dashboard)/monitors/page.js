@@ -402,8 +402,35 @@ export default function MonitorsPage() {
 
           
           {filteredMonitors.length === 0 && (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-              No monitors found matching your criteria.
+            <div className="empty-state-container">
+              <div className="empty-state-icon">
+                <div className="radar-ring ring-1"></div>
+                <div className="radar-ring ring-2"></div>
+                <div className="radar-ring ring-3"></div>
+                <Activity size={32} color="var(--accent-color)" />
+              </div>
+
+              {monitors.length === 0 ? (
+                <>
+                  <h3 className="empty-state-title">No Monitors Yet</h3>
+                  <p className="empty-state-desc">
+                    Set up your first feed monitor and start receiving automated updates directly in your Discord channels.
+                  </p>
+                  <button className="empty-state-btn" onClick={() => setIsCreateModalOpen(true)}>
+                    <Plus size={18} /> Create Your First Monitor
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="empty-state-title">No Results Found</h3>
+                  <p className="empty-state-desc">
+                    No monitors match your current search or filter. Try adjusting your criteria.
+                  </p>
+                  <button className="empty-state-btn-ghost" onClick={() => { setSearch(''); setFilter('all'); }}>
+                    Clear Filters
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -558,6 +585,95 @@ export default function MonitorsPage() {
           padding: 2px 8px;
           border-radius: 4px;
           letter-spacing: 1px;
+        }
+
+        .empty-state-container {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 5rem 2rem;
+        }
+
+        .empty-state-icon {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 2rem;
+        }
+
+        .radar-ring {
+          position: absolute;
+          border-radius: 50%;
+          border: 1px solid rgba(123, 44, 191, 0.15);
+          animation: radar-pulse 3s ease-out infinite;
+        }
+
+        .ring-1 { width: 60px; height: 60px; animation-delay: 0s; }
+        .ring-2 { width: 90px; height: 90px; animation-delay: 0.5s; }
+        .ring-3 { width: 120px; height: 120px; animation-delay: 1s; }
+
+        @keyframes radar-pulse {
+          0% { transform: scale(0.8); opacity: 0.6; border-color: rgba(123, 44, 191, 0.3); }
+          50% { opacity: 0.2; }
+          100% { transform: scale(1.3); opacity: 0; border-color: rgba(123, 44, 191, 0); }
+        }
+
+        .empty-state-title {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: white;
+          margin-bottom: 0.75rem;
+        }
+
+        .empty-state-desc {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.95rem;
+          max-width: 400px;
+          line-height: 1.6;
+          margin-bottom: 2rem;
+        }
+
+        .empty-state-btn {
+          background: var(--accent-color);
+          border: none;
+          color: white;
+          padding: 0.9rem 2rem;
+          border-radius: 16px;
+          font-weight: 700;
+          font-size: 0.95rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          transition: all 0.3s;
+          box-shadow: 0 10px 30px rgba(123, 44, 191, 0.3);
+        }
+
+        .empty-state-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 15px 40px rgba(123, 44, 191, 0.4);
+          filter: brightness(1.1);
+        }
+
+        .empty-state-btn-ghost {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
+          padding: 0.75rem 1.5rem;
+          border-radius: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .empty-state-btn-ghost:hover {
+          background: rgba(255, 255, 255, 0.1);
         }
       `}</style>
     </div>
