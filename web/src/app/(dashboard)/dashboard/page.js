@@ -246,8 +246,8 @@ export default async function Dashboard({ searchParams }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <NotificationTimeline notifications={notifications} />
           <QuickActions guildId={guildId} />
+          <NotificationTimeline notifications={notifications} />
         </div>
       </div>
     </div>
