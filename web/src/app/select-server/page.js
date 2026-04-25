@@ -188,7 +188,8 @@ export default function SelectServer() {
                   </div>
 
                   <a
-                    href={`https://discord.com/api/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}&response_type=code&redirect_uri=${encodeURIComponent(`${window.location.origin}/invite-callback`)}`}
+                    href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="invite-btn"
                     onClick={(e) => e.stopPropagation()}

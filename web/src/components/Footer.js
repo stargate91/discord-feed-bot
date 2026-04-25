@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="lp-footer-col">
           <h4>Resources</h4>
           <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">Support Server</a>
-          <a href={`https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&permissions=277025770560&scope=bot%20applications.commands`} target="_blank" rel="noopener noreferrer">Invite Bot</a>
+          <a href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=8&scope=bot%20applications.commands`} target="_blank" rel="noopener noreferrer">Invite Bot</a>
         </div>
         <div className="lp-footer-col">
           <h4>Legal</h4>
