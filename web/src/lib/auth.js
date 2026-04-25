@@ -12,7 +12,8 @@ export const authOptions = {
     }),
   ],
   pages: {
-    error: '/auth/error',
+    error: '/',
+    signIn: '/',
   },
   callbacks: {
 
