@@ -89,7 +89,7 @@ export async function POST(request) {
 
   try {
     const data = await request.json();
-    const { type, name, guildId, target_channels, target_roles, embed_color, ...rest } = data;
+    const { type, name, guildId, target_channels, target_roles, embed_color, send_initial_alert, ...rest } = data;
 
     if (!guildId) {
       return NextResponse.json({ error: "Missing guildId" }, { status: 400 });
@@ -149,6 +149,7 @@ export async function POST(request) {
     const extra_settings = {
       target_channels: (tChannels || []).map(id => String(id)),
       target_roles: (tRoles || []).map(id => String(id)),
+      send_initial_alert: send_initial_alert ?? true,
       ...rest
     };
 

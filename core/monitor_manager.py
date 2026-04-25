@@ -44,12 +44,43 @@ class MonitorManager:
                 for m in self.monitors:
                     old_assignments[m.id] = set(m.target_channels)
 
-            db_monitors = await db.get_all_monitors()
+            # Capture states of existing monitors to preserve them across sync
+            old_states = {}
+            for m in self.monitors:
+                state = {}
+                if hasattr(m, 'is_live'): state['is_live'] = m.is_live
+                if hasattr(m, 'is_first_run'): state['is_first_run'] = m.is_first_run
+                if state: old_states[m.id] = state
+
+            db_monitors = await database.get_all_monitors()
             new_monitors = []
-            
             for m_config in db_monitors:
-                monitor = create_monitor_instance(self.bot, m_config)
+                # Flatten extra_settings into the main config dict
+                extra = m_config.get("extra_settings", {})
+                if isinstance(extra, str):
+                    try:
+                        import json
+                        extra = json.loads(extra)
+                    except:
+                        extra = {}
+                
+                # Merge extra settings into the main config for easier access in BaseMonitor
+                full_config = {**m_config, **extra}
+                
+                monitor = create_monitor_instance(self.bot, full_config)
                 if monitor:
+                    # Determine if this is a silent start
+                    # Silent on bot boot OR if user explicitly opted out for this monitor
+                    monitor.is_silent_start = is_startup or not monitor.send_initial_alert
+                    
+                    # Restore state if this monitor existed before
+                    if monitor.id in old_states:
+                        state = old_states[monitor.id]
+                        if 'is_live' in state: monitor.is_live = state['is_live']
+                        if 'is_first_run' in state: monitor.is_first_run = state['is_first_run']
+                        # If it existed, it's not a brand new addition, so keep it silent during sync
+                        monitor.is_silent_start = True
+                    
                     new_monitors.append(monitor)
             
             # If this is not a bot startup, we can safely announce new monitors/assignments

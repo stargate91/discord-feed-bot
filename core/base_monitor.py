@@ -16,6 +16,7 @@ class BaseMonitor(ABC):
         self.target_channels = config.get("target_channels", [])
         self.target_roles = config.get("target_roles", [])
         self.guild_id = config.get("guild_id", 0)
+        self.send_initial_alert = config.get("send_initial_alert", True)
 
     @property
     def ping_role(self):

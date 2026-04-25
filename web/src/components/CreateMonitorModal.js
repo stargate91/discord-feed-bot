@@ -98,6 +98,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     include_upcoming: false,
     target_genres: [],
     target_languages: [],
+    send_initial_alert: true,
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -494,6 +495,32 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
                </div>
 
+                <div className="form-group" style={{ 
+                  marginTop: '1.5rem', 
+                  background: 'rgba(255,255,255,0.02)', 
+                  padding: '1.25rem', 
+                  borderRadius: '20px', 
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Send initial alert</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '80%' }}>
+                      Post an update immediately if the source is already live or has new items.
+                    </p>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.send_initial_alert} 
+                      onChange={(e) => setFormData({...formData, send_initial_alert: e.target.checked})}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+
                {selectedPlatform?.id !== 'youtube' && (
                  <div className="form-group" style={{ marginTop: '1rem' }}>
                     <label>Embed Color</label>
@@ -548,6 +575,45 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
         }
         @keyframes modalAppear { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         
+        /* Switch Toggle Styles */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 46px;
+          height: 24px;
+          flex-shrink: 0;
+        }
+
+        .switch input { 
+          opacity: 0; width: 0; height: 0;
+        }
+
+        .slider {
+          position: absolute; cursor: pointer;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background-color: rgba(255,255,255,0.1);
+          transition: .4s; border-radius: 34px;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .slider:before {
+          position: absolute; content: "";
+          height: 18px; width: 18px;
+          left: 2px; bottom: 2px;
+          background-color: white;
+          transition: .4s; border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        input:checked + .slider {
+          background-color: #3b82f6;
+          border-color: #60a5fa;
+        }
+
+        input:checked + .slider:before {
+          transform: translateX(22px);
+        }
+
         .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
         .modal-header h3 { margin: 0; font-size: 1.6rem; letter-spacing: -0.5px; }
         .subtitle { margin: 6px 0 0; color: var(--accent-hover); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
