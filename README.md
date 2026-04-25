@@ -1,79 +1,60 @@
-# Discord Feed Monitor Bot
+# Discord Feed Bot
 
-A comprehensive Discord bot designed to monitor various content sources and deliver high-quality notifications to your server. This bot supports a wide range of platforms including social media, gaming stores, streaming services, and developer tools.
+This is a Discord bot I am working on that helps servers get notifications from different websites and platforms. It is written in Python and has a web dashboard made with Next.js. I used a PostgreSQL database to store everything because it is reliable for this kind of data.
 
-## Supported Platforms
+## Project Overview
 
-- YouTube: Track new video uploads from any channel.
-- RSS Feeds: Monitor any standard RSS or Atom feed.
-- Gaming Giveaways: Automatic alerts for free games on Epic Games Store, Steam, and GOG.com.
-- Live Streams: Notifications for Twitch (via official Helix API) and Kick.
-- Steam News: Monitoring of game-specific updates and patch notes.
-- Media (TMDB): Track new movie and TV series releases with metadata and trailers.
-- Cryptocurrency: Price threshold monitoring and alerts for various tokens.
-- GitHub: Release and version tracking for repositories.
+The project has two main parts:
+1. The Python Bot: This runs in the background and checks the platforms for new content.
+2. The Web Dashboard: A website where users can log in with Discord and manage their monitors easily without using commands.
 
-## Key Features
+## Features
 
-- Interactive Setup: A user-friendly configuration experience using Discord slash commands, buttons, and modals.
-- Persistent Storage: Utilizes a PostgreSQL database to manage guild configurations and prevent duplicate notifications.
-- Localized Timestamps: Notifications include Discord native timestamps that adjust to each user's local timezone.
-- Custom Alerts: Ability to set custom ping roles and personalized alert messages per feed or platform.
-- Multi-language Support: Fully localized for English and Hungarian, with support for more languages via JSON locale files.
-- Master Administration: Centralized global controls for bot owners to manage refresh intervals, status rotation, and global logging.
+- Multiple Platforms: You can follow YouTube channels, Twitch and Kick streams, RSS feeds, GitHub repos, and Steam news.
+- Game Giveaways: It automatically finds free games on Epic Games, Steam, and GOG.
+- Movies and TV: Uses TMDB to show new trending media. I added advanced filters so you can filter by genre or language.
+- Crypto Alerts: You can set price thresholds for different coins.
+- Web Dashboard: Made with Next.js. It has a live activity ticker and a timeline of recent notifications.
+- Premium System: There are different tiers (Starter, Professional, Ultimate) that unlock more monitors and faster refresh rates.
+- Custom Messages: You can use variables like {title} or {name} to customize how the bot posts.
 
-## Requirements
+## Tech Stack
 
-- Python 3.10 or higher
-- PostgreSQL Database
-- Discord Bot Token
+- Backend: Python 3.10+ with discord.py and aiosqlite/psycopg2.
+- Frontend: Next.js 14, React, and Vanilla CSS for the styling.
+- Database: PostgreSQL for persistent storage.
+- Authentication: NextAuth.js with the Discord provider.
 
-## Installation
+## How to Setup
 
-1. Clone the repository:
-   ```bash
-   git clone <repository_url>
-   cd discord-feed-bot
-   ```
+### 1. Requirements
+You need to have Python and Node.js installed on your system. You also need a PostgreSQL database running.
 
-2. Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2. Python Bot Setup
+1. Go to the root folder.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. Create a .env file with your tokens:
+   - BOT_TOKEN
+   - DATABASE_URL
+   - TMDB_API_KEY
+   - GITHUB_TOKEN
+   - TWITCH_CLIENT_ID / SECRET
+4. Run the bot: `python main.py`.
 
-3. Create and configure the `.env` file in the root directory:
-   ```env
-   BOT_TOKEN=your_discord_bot_token
-   DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-   TMDB_API_KEY=your_tmdb_api_key
-   TWITCH_CLIENT_ID=your_twitch_client_id
-   TWITCH_CLIENT_SECRET=your_twitch_client_secret
-   GITHUB_TOKEN=your_github_token
-   ```
+### 3. Web Dashboard Setup
+1. Go to the `web` directory.
+2. Install dependencies: `npm install`.
+3. Create a .env.local file:
+   - DATABASE_URL (same as the bot)
+   - NEXTAUTH_SECRET
+   - DISCORD_CLIENT_ID / SECRET
+   - NEXTAUTH_URL
+4. Start the dev server: `npm run dev`.
 
-4. Run the application:
-   ```bash
-   python main.py
-   ```
+## Current Status
 
-## Configuration
-
-The bot is primarily configured from within Discord using slash commands:
-
-- /setup: Launches the interactive wizard to set your server's language, default channel, and admin roles.
-- /monitor add: Opens a modal to add a new monitoring source.
-- /monitor list: Displays all currently configured monitors on the server.
-- /monitor edit: Modify existing monitors (change channels, ping roles, or colors).
-- /master: (Owner only) Manage global bot settings and rich presence.
-
-## Database Core
-
-The system uses a PostgreSQL backend to ensure high performance and reliability. It tracks every published item to ensure that notifications are sent exactly once. The configuration is cached in memory for minimal latency during operation.
-
-## Localization
-
-Localization files are located in the `locales/` directory. The bot detects the server's preferred language and serves appropriate feedback and embed formats accordingly.
+I am still fixing some bugs and adding new things. I recently fixed the JSON parsing in the API routes and updated the logos in the dashboard. The TMDB filters are now working in the creation modal too.
 
 ## License
 
-Standard open-source license. Refer to the project license file for full details.
+This is an open source project. You can use it as you like.
