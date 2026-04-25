@@ -12,8 +12,9 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { action, guildId, monitorIds } = await request.json();
-  const cleanId = String(guildId).replace('-', '');
+  const body = await request.json();
+  const { action, guildId, monitorIds, target_channels, target_roles, embed_color } = body;
+  const cleanId = guildId ? String(guildId).replace('-', '') : null;
 
   // 1. Authorization: Master users can do anything. 
   // Non-masters must have a paid tier on the specific guild.
@@ -56,7 +57,6 @@ export async function POST(request) {
     if (action === "delete") {
       if (monitorIds && monitorIds.length > 0) {
         await pool.query("DELETE FROM monitors WHERE id = ANY($1::int[])", [monitorIds]);
-        // Also wipe stats for these specific monitors
         await pool.query("DELETE FROM monitor_stats_daily WHERE monitor_id = ANY($1::int[])", [monitorIds]);
       } else if (guildId) {
         await pool.query("DELETE FROM monitors WHERE guild_id = $1::bigint", [guildId]);
@@ -90,7 +90,6 @@ export async function POST(request) {
         query = "UPDATE monitors SET enabled = true";
       }
     } else if (action === "update") {
-      // 1. Extra security check for Bulk Edit (Tier 2+)
       if (!isMaster) {
         const guildCheck = await pool.query(
           'SELECT tier FROM guild_settings WHERE guild_id = $1',
@@ -100,8 +99,6 @@ export async function POST(request) {
           return NextResponse.json({ error: "Bulk editing requires Professional Tier (Tier 2) or higher" }, { status: 403 });
         }
       }
-
-      const { target_channels, target_roles, embed_color } = await request.json();
       
       let monitorsToUpdate = [];
       if (monitorIds && monitorIds.length > 0) {
@@ -115,7 +112,6 @@ export async function POST(request) {
         return NextResponse.json({ error: "No monitors found to update" }, { status: 400 });
       }
 
-      // Update monitors
       for (const id of monitorsToUpdate) {
         const currentRes = await pool.query("SELECT extra_settings FROM monitors WHERE id = $1", [id]);
         let extra = {};
@@ -134,7 +130,7 @@ export async function POST(request) {
       }
       
       await notifyBotOfChange();
-      return NextResponse.json({ success: true, message: `Successfully updated ${monitorIds.length} monitors` });
+      return NextResponse.json({ success: true, message: `Successfully updated ${monitorsToUpdate.length} monitors` });
     } else {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

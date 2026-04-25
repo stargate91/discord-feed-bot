@@ -8,7 +8,7 @@ import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
 import BulkEditModal from '@/components/BulkEditModal';
 import BulkAddModal from '@/components/BulkAddModal';
-import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity, Zap } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity, Zap, X } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 const platformNames = {
@@ -217,11 +217,12 @@ function MonitorsContent() {
 
   const handleBulkToggle = async (enabled) => {
     const idsToToggle = selectedIds.length > 0 ? selectedIds : monitors.map(m => m.id);
+    const action = enabled ? 'resume' : 'pause';
     try {
       const res = await fetch('/api/monitors/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update', ids: idsToToggle, data: { enabled }, guildId })
+        body: JSON.stringify({ action, monitorIds: idsToToggle, guildId })
       });
       if (res.ok) {
         addToast(`${enabled ? 'Resumed' : 'Paused'} ${idsToToggle.length} monitors`, 'success');
@@ -290,19 +291,39 @@ function MonitorsContent() {
 
       {/* Bulk Actions - separate row */}
       <div className="bulk-actions-toolbar">
+          {selectedIds.length > 0 && (
+            <button 
+              className="bulk-btn deselect" 
+              onClick={() => setSelectedIds([])}
+            >
+              <X size={14} /> Deselect ({selectedIds.length})
+            </button>
+          )}
           <button 
-            className="bulk-btn resume" 
-            onClick={() => handleBulkToggle(true)}
+            className={`bulk-btn toggle-btn ${(() => {
+              const target = selectedIds.length > 0 
+                ? monitors.filter(m => selectedIds.includes(m.id)) 
+                : monitors;
+              return target.every(m => m.enabled) ? 'is-active' : 'is-paused';
+            })()}`}
+            onClick={() => {
+              const target = selectedIds.length > 0 
+                ? monitors.filter(m => selectedIds.includes(m.id)) 
+                : monitors;
+              const allEnabled = target.every(m => m.enabled);
+              handleBulkToggle(!allEnabled);
+            }}
             disabled={monitors.length === 0 || undefined}
           >
-            <Play size={14} /> {selectedIds.length > 0 ? 'Resume Selected' : 'Resume All'}
-          </button>
-          <button 
-            className="bulk-btn pause-btn" 
-            onClick={() => handleBulkToggle(false)}
-            disabled={monitors.length === 0 || undefined}
-          >
-            <Pause size={14} /> {selectedIds.length > 0 ? 'Pause Selected' : 'Pause All'}
+            {(() => {
+              const target = selectedIds.length > 0 
+                ? monitors.filter(m => selectedIds.includes(m.id)) 
+                : monitors;
+              const allEnabled = target.every(m => m.enabled);
+              return allEnabled 
+                ? <><Pause size={14} /> {selectedIds.length > 0 ? 'Pause Selected' : 'Pause All'}</>
+                : <><Play size={14} /> {selectedIds.length > 0 ? 'Resume Selected' : 'Resume All'}</>;
+            })()}
           </button>
           <button 
             className="bulk-btn edit" 
@@ -571,16 +592,26 @@ function MonitorsContent() {
           border-color: rgba(239, 68, 68, 0.2);
         }
 
-        .bulk-btn.resume:hover:not(:disabled) {
+        .bulk-btn.toggle-btn.is-active:hover:not(:disabled) {
+          background: rgba(251, 191, 36, 0.1);
+          color: #fbbf24;
+          border-color: rgba(251, 191, 36, 0.2);
+        }
+
+        .bulk-btn.toggle-btn.is-paused:hover:not(:disabled) {
           background: rgba(16, 185, 129, 0.1);
           color: #10b981;
           border-color: rgba(16, 185, 129, 0.2);
         }
 
-        .bulk-btn.pause-btn:hover:not(:disabled) {
-          background: rgba(251, 191, 36, 0.1);
-          color: #fbbf24;
-          border-color: rgba(251, 191, 36, 0.2);
+        .bulk-btn.deselect {
+          background: rgba(123, 44, 191, 0.1);
+          border-color: rgba(123, 44, 191, 0.3);
+          color: var(--accent-hover);
+        }
+        .bulk-btn.deselect:hover {
+          background: rgba(123, 44, 191, 0.2);
+          color: white;
         }
 
         .bulk-btn.delete.confirm {
