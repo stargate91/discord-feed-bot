@@ -1,5 +1,5 @@
 import StatCard from "@/components/StatCard";
-import NotificationTimeline from "@/components/NotificationTimeline";
+
 import LoginButton from "@/components/LoginButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -95,25 +95,7 @@ async function getGuildStats(guildId, session) {
   }
 }
 
-async function getRecentNotifications(guildId = null) {
-  try {
-    let q = 'SELECT platform, entry_id, feed_url, published_at, title, author_name FROM published_entries_v2';
-    let params = [];
 
-    if (guildId) {
-      const cleanId = String(guildId).replace('-', '');
-      q += ' WHERE guild_id = $1';
-      params.push(cleanId);
-    }
-
-    q += ' ORDER BY published_at DESC LIMIT 10';
-    const res = await pool.query(q, params);
-    return res.rows;
-  } catch (error) {
-    console.error("[Dashboard] Notification Fetch Error:", error);
-    return [];
-  }
-}
 
 export default async function Dashboard({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -128,7 +110,7 @@ export default async function Dashboard({ searchParams }) {
     ? await getGuildStats(guildId, session)
     : await getGlobalStats();
 
-  const notifications = await getRecentNotifications(guildId);
+
 
   if (stats?.error) {
     return (
@@ -160,10 +142,7 @@ export default async function Dashboard({ searchParams }) {
           </p>
         </div>
 
-        {/* Integrated Live Ticker */}
-        <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
-          <NotificationTimeline notifications={notifications} minimal={true} />
-        </div>
+        <div style={{ flex: 1 }} />
 
         <div style={{ flexShrink: 0 }}>
           <LoginButton session={session} />
