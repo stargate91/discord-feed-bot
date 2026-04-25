@@ -147,21 +147,21 @@ export async function POST(request) {
 
     // Build extra_settings from remaining fields
     const extra_settings = {
-      target_channels: tChannels,
-      target_roles: tRoles,
+      target_channels: (tChannels || []).map(id => String(id)),
+      target_roles: (tRoles || []).map(id => String(id)),
       ...rest
     };
 
     // Premium field filtering on creation
     if (session.user.role !== "master") {
       if (embed_color && tier >= 1) extra_settings.embed_color = embed_color;
-      else if (!embed_color) extra_settings.embed_color = "#7b2cbf"; // default
+      else if (!embed_color) extra_settings.embed_color = "#3d3f45"; // default
 
       if (rest.custom_alert && tier < 2) delete extra_settings.custom_alert;
       if (rest.target_genres && tier < 1) delete extra_settings.target_genres;
       if (rest.target_languages && tier < 1) delete extra_settings.target_languages;
     } else {
-      extra_settings.embed_color = embed_color || "#7b2cbf";
+      extra_settings.embed_color = embed_color || "#3d3f45";
     }
 
     const query = `
@@ -171,11 +171,11 @@ export async function POST(request) {
     `;
 
     const values = [
-      guildId,
+      String(guildId),
       type,
       name,
-      0, // legacy discord_channel_id
-      0, // legacy ping_role_id
+      extra_settings.target_channels[0] || "0",
+      extra_settings.target_roles[0] || "0",
       true, // enabled by default
       JSON.stringify(extra_settings)
     ];

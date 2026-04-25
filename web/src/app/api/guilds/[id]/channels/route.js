@@ -40,7 +40,7 @@ export async function GET(req, { params }) {
       .filter(c => c.type === 0 || c.type === 5)
       .sort((a, b) => a.position - b.position)
       .map(c => ({
-        id: c.id,
+        id: String(c.id),
         name: c.name,
         type: c.type
       }));
