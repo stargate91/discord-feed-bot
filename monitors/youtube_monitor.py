@@ -2,6 +2,7 @@ import feedparser
 import discord
 import aiohttp
 import re
+import os
 from core.base_monitor import BaseMonitor
 from logger import log
 
