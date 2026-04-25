@@ -39,7 +39,42 @@ export async function GET(request) {
     query += ' ORDER BY id DESC';
 
     const res = await pool.query(query, values);
-    return NextResponse.json(res.rows);
+    
+    // Parse and flatten extra_settings for each monitor
+    const monitors = res.rows.map(row => {
+      let extra = {};
+      if (row.extra_settings) {
+        try {
+          extra = typeof row.extra_settings === 'string' 
+            ? JSON.parse(row.extra_settings) 
+            : row.extra_settings;
+          
+          // Data healing: If it's double nested, flatten it
+          if (extra.extra_settings && typeof extra.extra_settings === 'object') {
+            const nested = extra.extra_settings;
+            delete extra.extra_settings;
+            extra = { ...extra, ...nested };
+          }
+        } catch (e) {
+          console.error(`Failed to parse extra_settings for monitor ${row.id}:`, e);
+        }
+      }
+
+      // Merge extra into core object
+      const m = { ...row, ...extra };
+
+      // Ensure target_channels/roles exist
+      if (!m.target_channels) {
+        m.target_channels = row.discord_channel_id && String(row.discord_channel_id) !== '0' ? [String(row.discord_channel_id)] : [];
+      }
+      if (!m.target_roles) {
+        m.target_roles = row.ping_role_id && String(row.ping_role_id) !== '0' ? [String(row.ping_role_id)] : [];
+      }
+
+      return m;
+    });
+
+    return NextResponse.json(monitors);
   } catch (error) {
     console.error("Database Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -6,24 +6,28 @@ import { X, Plus, Trash2, Info } from 'lucide-react';
 
 // --- STATIC OPTIONS ---
 const MOVIE_GENRES = [
-  { id: 'Action', name: 'Action' },
-  { id: 'Adventure', name: 'Adventure' },
-  { id: 'Animation', name: 'Animation' },
-  { id: 'Comedy', name: 'Comedy' },
-  { id: 'Crime', name: 'Crime' },
-  { id: 'Documentary', name: 'Documentary' },
-  { id: 'Drama', name: 'Drama' },
-  { id: 'Family', name: 'Family' },
-  { id: 'Fantasy', name: 'Fantasy' },
-  { id: 'History', name: 'History' },
-  { id: 'Horror', name: 'Horror' },
-  { id: 'Music', name: 'Music' },
-  { id: 'Mystery', name: 'Mystery' },
-  { id: 'Romance', name: 'Romance' },
-  { id: 'Science Fiction', name: 'Science Fiction' },
-  { id: 'Thriller', name: 'Thriller' },
-  { id: 'War', name: 'War' },
-  { id: 'Western', name: 'Western' }
+  { id: '28', name: 'Action' },
+  { id: '12', name: 'Adventure' },
+  { id: '16', name: 'Animation' },
+  { id: '9999', name: 'Anime' },
+  { id: '35', name: 'Comedy' },
+  { id: '80', name: 'Crime' },
+  { id: '99', name: 'Documentary' },
+  { id: '18', name: 'Drama' },
+  { id: '10751', name: 'Family' },
+  { id: '14', name: 'Fantasy' },
+  { id: '36', name: 'History' },
+  { id: '27', name: 'Horror' },
+  { id: '10402', name: 'Music' },
+  { id: '9648', name: 'Mystery' },
+  { id: '10749', name: 'Romance' },
+  { id: '878', name: 'Science Fiction' },
+  { id: '53', name: 'Thriller' },
+  { id: '10752', name: 'War' },
+  { id: '37', name: 'Western' },
+  { id: '10759', name: 'Action & Adventure (TV)' },
+  { id: '10762', name: 'Kids (TV)' },
+  { id: '10765', name: 'Sci-Fi & Fantasy (TV)' }
 ];
 
 const LANGUAGES = [

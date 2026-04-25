@@ -21,6 +21,49 @@ const PLATFORMS = [
   { id: 'tv_series', name: 'TV Series', logo: '/emojis/tmdb.png', color: '#3273dc', description: 'Daily trending and new TV shows.', isGlobal: true }
 ];
 
+const MOVIE_GENRES = [
+  { id: '28', name: 'Action' },
+  { id: '12', name: 'Adventure' },
+  { id: '16', name: 'Animation' },
+  { id: '9999', name: 'Anime' },
+  { id: '35', name: 'Comedy' },
+  { id: '80', name: 'Crime' },
+  { id: '99', name: 'Documentary' },
+  { id: '18', name: 'Drama' },
+  { id: '10751', name: 'Family' },
+  { id: '14', name: 'Fantasy' },
+  { id: '36', name: 'History' },
+  { id: '27', name: 'Horror' },
+  { id: '10402', name: 'Music' },
+  { id: '9648', name: 'Mystery' },
+  { id: '10749', name: 'Romance' },
+  { id: '878', name: 'Science Fiction' },
+  { id: '53', name: 'Thriller' },
+  { id: '10752', name: 'War' },
+  { id: '37', name: 'Western' },
+  { id: '10759', name: 'Action & Adventure (TV)' },
+  { id: '10762', name: 'Kids (TV)' },
+  { id: '10765', name: 'Sci-Fi & Fantasy (TV)' }
+];
+
+const LANGUAGES = [
+  { id: 'en', name: 'English' },
+  { id: 'hu', name: 'Hungarian' },
+  { id: 'de', name: 'German' },
+  { id: 'fr', name: 'French' },
+  { id: 'es', name: 'Spanish' },
+  { id: 'it', name: 'Italian' },
+  { id: 'pt', name: 'Portuguese' },
+  { id: 'ja', name: 'Japanese' },
+  { id: 'ko', name: 'Korean' },
+  { id: 'zh', name: 'Chinese' },
+  { id: 'ru', name: 'Russian' },
+  { id: 'tr', name: 'Turkish' },
+  { id: 'pl', name: 'Polish' },
+  { id: 'nl', name: 'Dutch' },
+  { id: 'ar', name: 'Arabic' }
+];
+
 const getAvailableVars = (platformId) => {
   if (platformId === 'youtube') return ['name', 'title'];
   if (platformId === 'crypto') return ['name', 'price', 'percent', 'direction'];
@@ -53,6 +96,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     platform_input: '',
     custom_alert: '',
     include_upcoming: false,
+    target_genres: [],
+    target_languages: [],
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -98,7 +143,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     if (!isOpen) {
       setStep(1);
       setSelectedPlatform(null);
-      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false });
+      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [] });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
@@ -151,6 +196,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       embed_color: formData.embed_color,
       custom_alert: formData.custom_alert,
       include_upcoming: formData.include_upcoming,
+      target_genres: formData.target_genres,
+      target_languages: formData.target_languages,
     };
 
     if (!selectedPlatform.isGlobal) {
@@ -335,6 +382,39 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                  </div>
                )}
             </div>
+
+            {(selectedPlatform?.id === 'movie' || selectedPlatform?.id === 'tv_series') && (
+              <div className="form-section">
+                <h4 className="section-title">Advanced Filters</h4>
+                <div className="grid-responsive" style={{ position: 'relative' }}>
+                  <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+                    <label>Target Genres</label>
+                    <MultiSelect 
+                      options={MOVIE_GENRES}
+                      value={formData.target_genres}
+                      onChange={(val) => setFormData({...formData, target_genres: val})}
+                      placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select genres"}
+                      disabled={isLocked(1)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+                    <label>Languages</label>
+                    <MultiSelect 
+                      options={LANGUAGES}
+                      value={formData.target_languages}
+                      onChange={(val) => setFormData({...formData, target_languages: val})}
+                      placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select languages"}
+                      disabled={isLocked(1)}
+                    />
+                  </div>
+                  {isLocked(1) && (
+                    <div className="premium-field-overlay">
+                      <span className="lock-tag">Starter Tier+</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="form-section">
                <h4 className="section-title">Notification Settings</h4>

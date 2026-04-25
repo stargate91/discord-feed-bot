@@ -51,7 +51,16 @@ export async function PATCH(request, { params }) {
     
     // Fetch current extra_settings to merge
     const currentRes = await pool.query('SELECT extra_settings FROM monitors WHERE id = $1', [id]);
-    let extraSettings = currentRes.rows[0]?.extra_settings || {};
+    let extraSettings = {};
+    if (currentRes.rows[0]?.extra_settings) {
+      try {
+        extraSettings = typeof currentRes.rows[0].extra_settings === 'string' 
+          ? JSON.parse(currentRes.rows[0].extra_settings) 
+          : currentRes.rows[0].extra_settings;
+      } catch (e) {
+        console.error("Failed to parse extra_settings:", e);
+      }
+    }
     
     // Update core fields
     if (name) {
