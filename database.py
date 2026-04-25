@@ -262,6 +262,12 @@ async def update_last_post_at(monitor_id):
     await pool.execute(q, datetime.now(), monitor_id)
 
 
+async def update_monitor_name(monitor_id, new_name):
+    q = "UPDATE monitors SET name = $1 WHERE id = $2"
+    pool = await get_pool()
+    await pool.execute(q, new_name, int(monitor_id))
+
+
 async def add_premium_days(guild_id, days):
     """Adds premium days to a guild. If already has premium, it stacks."""
     pool = await get_pool()

@@ -24,11 +24,22 @@ class YouTubeMonitor(BaseMonitor):
         self.is_resolving = True
         
         log.info(f"Attempting to resolve YouTube Channel ID for: {self.channel_id}")
-        resolved = await self.resolve_channel_id(self.channel_id)
+        resolved_data = await self.resolve_channel_id(self.channel_id)
         
-        if resolved:
-            log.info(f"Successfully resolved '{self.channel_id}' to '{resolved}'")
-            self.channel_id = resolved
+        if resolved_data:
+            ucid, title = resolved_data
+            log.info(f"Successfully resolved '{self.channel_id}' to '{ucid}' (Title: {title})")
+            
+            # Update the monitor name in DB if it was just a handle/nametag
+            if self.name.startswith("@") or self.name == self.channel_id:
+                try:
+                    await db.update_monitor_name(self.id, title)
+                    self.name = title
+                    log.info(f"Updated monitor name to: {title}")
+                except Exception as e:
+                    log.error(f"Failed to update monitor name in DB: {e}")
+
+            self.channel_id = ucid
             self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
             self.is_resolving = False
             return True
@@ -39,12 +50,12 @@ class YouTubeMonitor(BaseMonitor):
 
     @staticmethod
     async def resolve_channel_id(input_str):
-        """Resolves YouTube channel ID using API (preferred) or scraping (fallback)."""
+        """Resolves YouTube channel ID using API (preferred) or scraping (fallback). Returns (ucid, title) or None."""
         if not input_str: return None
         
         input_str = input_str.strip()
         if input_str.startswith("UC") and len(input_str) == 24:
-            return input_str
+            return (input_str, input_str)
             
         api_key = os.getenv("YOUTUBE_API_KEY")
         
@@ -70,8 +81,9 @@ class YouTubeMonitor(BaseMonitor):
                             data = await response.json()
                             if data.get("items"):
                                 ucid = data["items"][0]["id"]["channelId"]
-                                log.info(f"[YouTubeAPI] Successfully resolved '{input_str}' to '{ucid}'")
-                                return ucid
+                                title = data["items"][0]["snippet"]["title"]
+                                log.info(f"[YouTubeAPI] Successfully resolved '{input_str}' to '{ucid}' ({title})")
+                                return (ucid, title)
                         else:
                             log.warning(f"[YouTubeAPI] API returned status {response.status}")
             except Exception as e:
@@ -122,8 +134,9 @@ class YouTubeMonitor(BaseMonitor):
                         for p in patterns:
                             match = re.search(p, html)
                             if match: 
-                                log.info(f"Resolved YouTube ID {match.group(1)} via pattern match.")
-                                return match.group(1)
+                                ucid = match.group(1)
+                                log.info(f"Resolved YouTube ID {ucid} via pattern match.")
+                                return (ucid, ucid)
                         
                         # Pattern 2: Broad search for ANY UCID-like string (UC + 22 chars)
                         uc_matches = re.findall(r'UC[a-zA-Z0-9_-]{22}', html)
@@ -131,8 +144,9 @@ class YouTubeMonitor(BaseMonitor):
                             from collections import Counter
                             most_common = Counter(uc_matches).most_common(1)
                             if most_common: 
-                                log.info(f"Resolved YouTube ID {most_common[0][0]} via broad frequency search.")
-                                return most_common[0][0]
+                                ucid = most_common[0][0]
+                                log.info(f"Resolved YouTube ID {ucid} via broad frequency search.")
+                                return (ucid, ucid)
 
             except Exception as e:
                 log.error(f"Error resolving YouTube channel ID attempt: {e}")
