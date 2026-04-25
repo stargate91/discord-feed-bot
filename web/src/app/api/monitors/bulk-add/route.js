@@ -125,6 +125,14 @@ export async function POST(req) {
       }
     }
 
+    // Notify bot to sync new monitors
+    try {
+      const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8080";
+      await fetch(`${BOT_WEBHOOK_URL}/monitors/sync`, { method: "POST" });
+    } catch (e) {
+      console.error("[BulkAdd] Failed to notify bot for sync:", e.message);
+    }
+
     return NextResponse.json({
       success: true,
       successCount,
