@@ -14,7 +14,6 @@ class GOGFreeMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
         self.api_url = "https://www.gamerpower.com/api/giveaways?platform=gog&sort-by=date"
-        self.is_first_run = True
 
     def get_shared_key(self):
         return "gog_free_giveaways"
@@ -51,16 +50,8 @@ class GOGFreeMonitor(BaseMonitor):
             title = game.get("title", "Unknown")
             
             if not await db.is_published(giveaway_id, "gog_free", self.guild_id):
-                if self.is_first_run:
-                    await db.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id, title=title)
-                else:
-                    new_entries.append(game)
-                    log.info(f"New GOG giveaway detected: {game.get('title')}")
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for GOG Free monitor.")
-            self.is_first_run = False
-            return []
+                new_entries.append(game)
+                log.info(f"New GOG giveaway detected: {game.get('title')}")
             
         return new_entries
 

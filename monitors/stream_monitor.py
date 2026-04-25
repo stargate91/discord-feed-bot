@@ -15,7 +15,6 @@ class BaseStreamMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.stream_username = config.get("username", self.name)
         self.is_live = False
-        self.is_first_run = True
 
     def get_shared_key(self):
         return f"{self.platform}:{self.stream_username}"
@@ -43,15 +42,10 @@ class BaseStreamMonitor(BaseMonitor):
         current_live = stream_data.get("is_live", False) if stream_data else False
 
         if current_live and not self.is_live:
-            if not self.is_first_run:
-                items.append(stream_data)
+            await self.process_item(stream_data)
             self.is_live = True
         elif not current_live and self.is_live:
             self.is_live = False
-
-        if self.is_first_run:
-            self.is_first_run = False
-            log.info(f"Initial check completed for {self.platform}:{self.stream_username}")
             
         return items
 

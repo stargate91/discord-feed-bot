@@ -12,7 +12,6 @@ class YouTubeMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.channel_id = config.get("channel_id")
         self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
-        self.is_first_run = True
         self.is_resolving = False
 
     async def _ensure_channel_id(self):
@@ -125,16 +124,6 @@ class YouTubeMonitor(BaseMonitor):
                 log.error(f"Failed to fetch YouTube feed for {self.name}: {e}")
                 return []
         
-        # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
-        # This prevents "spam walls" of old items being detected as new.
-        if self.is_first_run:
-            for entry in feed.entries:
-                video_id = self.get_item_id(entry)
-                if video_id:
-                    await db.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
-            log.info(f"Initial silent seed (first run) completed for YouTube monitor: {self.name}")
-            self.is_first_run = False
-            return []
 
         # Return all entries. MonitorManager will filter via is_published per-guild.
         return list(reversed(feed.entries))

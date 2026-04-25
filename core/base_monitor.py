@@ -12,6 +12,7 @@ class BaseMonitor(ABC):
         self.embed_color = config.get("embed_color", "3d3f45")
         self.platform = config.get("type", "unknown")
         self.enabled = config.get("enabled", True)
+        self.is_first_run = True # Used for centralized silent seeding in MonitorManager
         self.target_channels = config.get("target_channels", [])
         self.target_roles = config.get("target_roles", [])
         self.guild_id = config.get("guild_id", 0)

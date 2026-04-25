@@ -14,7 +14,6 @@ class SteamNewsMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.appid = config.get("appid") or config.get("app_id")
         self.api_url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=5"
-        self.is_first_run = True
 
     def get_shared_key(self):
         return f"steam_news:{self.appid}"
@@ -50,16 +49,7 @@ class SteamNewsMonitor(BaseMonitor):
             gid = item.get("gid")
             if not gid: continue
 
-            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
-            if self.is_first_run:
-                await db.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
-            else:
-                all_candidates.append(item)
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for Steam News monitor: {self.name}")
-            self.is_first_run = False
-            return []
+            all_candidates.append(item)
 
         return list(reversed(all_candidates))
 

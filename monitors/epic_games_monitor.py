@@ -16,7 +16,6 @@ class EpicGamesMonitor(BaseMonitor):
         self.country = "HU" if self.lang_code == "hu" else "US"
         self.include_upcoming = config.get("include_upcoming", False)
         self.api_url = f"https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale={self.locale}&country={self.country}&allowCountries={self.country}"
-        self.is_first_run = True
 
     def get_shared_key(self):
         return "epic_games_free"
@@ -83,20 +82,11 @@ class EpicGamesMonitor(BaseMonitor):
             status_type = "active" if is_active else "upcoming"
             db_id = f"{game_id}_{status_type}"
 
-            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
-            if self.is_first_run:
-                await db.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
-            else:
-                all_candidates.append({
-                    "game": game,
-                    "is_active": is_active,
-                    "db_id": db_id
-                })
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for Epic Games monitor.")
-            self.is_first_run = False
-            return []
+            all_candidates.append({
+                "game": game,
+                "is_active": is_active,
+                "db_id": db_id
+            })
 
         return list(reversed(all_candidates))
 

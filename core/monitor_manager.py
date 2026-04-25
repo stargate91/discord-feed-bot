@@ -151,6 +151,11 @@ class MonitorManager:
                                             is_pub = await db.is_published(item_id, mon.platform, mon.guild_id)
                                             if is_pub:
                                                 continue
+                                        
+                                        # Silent Seed Logic: On the very first poll after bot startup/sync, 
+                                        # we mark items as published without sending them to Discord.
+                                        if mon.is_first_run:
+                                            continue
                                                 
                                         await mon.process_item(item)
                                     except Exception as e:
@@ -160,6 +165,9 @@ class MonitorManager:
                             for mon in monitors_in_group:
                                 try:
                                     await mon.mark_items_published(new_items)
+                                    if mon.is_first_run:
+                                        log.info(f"Initial silent seed (first run) completed for {mon.name}")
+                                        mon.is_first_run = False
                                 except Exception as e:
                                     log.error(f"Failed to mark items as published for {mon.name}: {e}")
                     else:
@@ -193,12 +201,21 @@ class MonitorManager:
                                 if item_id:
                                     is_pub = await db.is_published(item_id, monitor.platform, monitor.guild_id)
                                     if not is_pub:
+                                        if monitor.is_first_run:
+                                            continue
                                         to_process.append(item)
                             
                             if to_process:
                                 for item in to_process:
                                     await monitor.process_item(item)
                                 await monitor.mark_items_published(to_process)
+                            else:
+                                # Even if nothing to process (all was silent-seeded), we still need to mark them
+                                await monitor.mark_items_published(new_items)
+                            
+                            if monitor.is_first_run:
+                                log.info(f"Initial silent seed (first run) completed for {monitor.name}")
+                                monitor.is_first_run = False
                     else:
                         await monitor.check_for_updates()
                 except Exception as e:

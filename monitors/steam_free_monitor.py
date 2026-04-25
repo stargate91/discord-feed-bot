@@ -15,7 +15,6 @@ class SteamFreeMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.include_dlc = config.get("include_dlc", False)
         self.api_url = "https://www.gamerpower.com/api/giveaways?platform=steam&sort-by=date"
-        self.is_first_run = True
 
     def get_shared_key(self):
         return "steam_free_giveaways"
@@ -51,16 +50,7 @@ class SteamFreeMonitor(BaseMonitor):
             if not self.include_dlc and giveaway_type == "dlc":
                 continue
 
-            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
-            if self.is_first_run:
-                await db.mark_as_published(game_id, "steam_free", self.api_url, guild_id=self.guild_id, title=title)
-            else:
-                all_candidates.append(game)
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for Steam Free monitor.")
-            self.is_first_run = False
-            return []
+            all_candidates.append(game)
 
         return list(reversed(all_candidates))
 

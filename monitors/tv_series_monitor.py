@@ -17,7 +17,6 @@ class TVSeriesMonitor(BaseMonitor):
         # Get server language for TMDB API
         self.tmdb_lang = bot.get_feedback("tmdb_lang_code", guild_id=self.guild_id)
         
-        self.is_first_run = True
 
     def get_headers(self):
         if self.bearer_token:
@@ -70,23 +69,7 @@ class TVSeriesMonitor(BaseMonitor):
             if not series_id: continue
 
             # Determine if we should seed (silent save) or post
-            # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
-            # This prevents "spam walls" of old items being detected as new.
-            if self.is_first_run:
-                await db.mark_as_published(
-                    series_id, 
-                    "tmdb_tv", 
-                    f"https://www.themoviedb.org/tv/{series_id}", 
-                    guild_id=self.guild_id, 
-                    title=series.get("name") or series.get("original_name")
-                )
-            else:
-                all_candidates.append(series)
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for TV Series monitor: {self.name}")
-            self.is_first_run = False
-            return []
+            all_candidates.append(series)
 
         return list(reversed(all_candidates))
 

@@ -19,7 +19,6 @@ class MovieMonitor(BaseMonitor):
         
         # Base URL without api_key
         self.api_url = f"https://api.themoviedb.org/3/movie/now_playing?language={self.tmdb_lang}"
-        self.is_first_run = True
 
     def get_headers(self):
         if self.bearer_token:
@@ -147,24 +146,7 @@ class MovieMonitor(BaseMonitor):
             movie_id = str(movie.get("id"))
             if not movie_id: continue
 
-            # Determine if we should seed (silent save) or post
-            # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
-            # This prevents "spam walls" of old items being detected as new.
-            if self.is_first_run:
-                await db.mark_as_published(
-                    movie_id, 
-                    entry_type, 
-                    self.api_url, 
-                    guild_id=self.guild_id, 
-                    title=movie.get("title") or movie.get("original_title")
-                )
-            else:
-                all_candidates.append(movie)
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for Movie monitor: {self.name} ({self.tmdb_lang})")
-            self.is_first_run = False
-            return []
+            all_candidates.append(movie)
 
         return list(reversed(all_candidates))
 

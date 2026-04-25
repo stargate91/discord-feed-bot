@@ -11,7 +11,6 @@ class GitHubMonitor(BaseMonitor):
         super().__init__(bot, config)
         self.repo_path = config.get("repo_path") or config.get("repo")  # owner/repo
         self.api_url = f"https://api.github.com/repos/{self.repo_path}/releases"
-        self.is_first_run = True
 
     def get_shared_key(self):
         return f"github:{self.repo_path}"
@@ -63,18 +62,8 @@ class GitHubMonitor(BaseMonitor):
         for release in releases:
             release_id = str(release.get("id"))
             if not release_id: continue
-            title = release.get("name") or release.get("tag_name")
-
-            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
-            if self.is_first_run:
-                await db.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=title)
-            else:
-                all_candidates.append(release)
-
-        if self.is_first_run:
-            log.info(f"Initial silent seed (first run) completed for GitHub monitor: {self.name}")
-            self.is_first_run = False
-            return []
+            
+            all_candidates.append(release)
 
         return list(reversed(all_candidates))
 
