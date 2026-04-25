@@ -30,8 +30,14 @@ class YouTubeMonitor(BaseMonitor):
             ucid, title = resolved_data
             log.info(f"Successfully resolved '{self.channel_id}' to '{ucid}' (Title: {title})")
             
-            # Update the monitor name in DB if it was just a handle/nametag
-            if self.name.startswith("@") or self.name == self.channel_id:
+            # If resolution returned the ID itself as the title (e.g. UCID fallback or scrape failure)
+            # we use a numbered fallback: YouTube #1, YouTube #2, etc.
+            if title == ucid or not title:
+                count = sum(1 for m in self.bot.monitor_manager.monitors if m.guild_id == self.guild_id and m.platform == "youtube")
+                title = f"YouTube #{count + 1}"
+
+            # Update the monitor name in DB if it was just a handle/nametag or a generic ID
+            if self.name.startswith("@") or self.name.startswith("UC") or self.name == self.channel_id:
                 try:
                     await db.update_monitor_name(self.id, title)
                     self.name = title
@@ -59,98 +65,53 @@ class YouTubeMonitor(BaseMonitor):
             
         api_key = os.getenv("YOUTUBE_API_KEY")
         
-        # --- Attempt 1: Official YouTube API (Highly Reliable) ---
+        # --- Official YouTube API (Highly Reliable) ---
         if api_key:
             try:
-                log.info(f"[YouTubeAPI] Resolving '{input_str}' via official API...")
                 handle = input_str if input_str.startswith("@") else f"@{input_str}"
-                
-                # We use search endpoint to find the channel by handle/name
-                api_url = "https://www.googleapis.com/youtube/v3/search"
-                params = {
-                    "part": "snippet",
-                    "q": handle,
-                    "type": "channel",
-                    "maxResults": 1,
-                    "key": api_key
-                }
+                log.info(f"[YouTubeAPI] Resolving '{handle}' via official API...")
                 
                 async with aiohttp.ClientSession() as session:
+                    # A: Try forHandle first (most accurate for @handles)
+                    handle_clean = handle.replace("@", "")
+                    api_url = "https://www.googleapis.com/youtube/v3/channels"
+                    params = {
+                        "part": "snippet",
+                        "forHandle": handle_clean,
+                        "key": api_key
+                    }
                     async with session.get(api_url, params=params, timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("items"):
+                                ucid = data["items"][0]["id"]
+                                title = data["items"][0]["snippet"]["title"]
+                                log.info(f"[YouTubeAPI] Resolved via forHandle: '{handle}' -> '{ucid}' ({title})")
+                                return (ucid, title)
+
+                    # B: Fallback to Search API (if forHandle fails or not a direct handle)
+                    log.info(f"[YouTubeAPI] forHandle failed, falling back to Search API for '{handle}'...")
+                    search_url = "https://www.googleapis.com/youtube/v3/search"
+                    params = {
+                        "part": "snippet",
+                        "q": handle,
+                        "type": "channel",
+                        "maxResults": 1,
+                        "key": api_key
+                    }
+                    async with session.get(search_url, params=params, timeout=10) as response:
                         if response.status == 200:
                             data = await response.json()
                             if data.get("items"):
                                 ucid = data["items"][0]["id"]["channelId"]
                                 title = data["items"][0]["snippet"]["title"]
-                                log.info(f"[YouTubeAPI] Successfully resolved '{input_str}' to '{ucid}' ({title})")
+                                log.info(f"[YouTubeAPI] Resolved via Search: '{handle}' -> '{ucid}' ({title})")
                                 return (ucid, title)
                         else:
                             log.warning(f"[YouTubeAPI] API returned status {response.status}")
             except Exception as e:
                 log.error(f"[YouTubeAPI] Error during resolution: {e}")
 
-        # --- Attempt 2: Scraping (Fallback) ---
-        url = input_str
-        if not url.startswith("http"):
-            if input_str.startswith("@"):
-                url = f"https://www.youtube.com/{input_str}"
-            else:
-                url = f"https://www.youtube.com/@{input_str}"
-        
-        log.info(f"[YouTubeScrape] Falling back to scraping for '{url}'...")
-        # We'll try with and without the consent cookie
-        attempts = [
-            {"CONSENT": "YES+cb.20210328-17-p0.en+FX+417"},
-            {} # No cookie fallback
-        ]
-        
-        for cookies in attempts:
-            try:
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-                    "Accept-Language": "en-US,en;q=0.9",
-                }
-                if cookies: headers["Cookie"] = cookies["CONSENT"]
-                
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get(url, timeout=15, allow_redirects=True) as response:
-                        if response.status != 200: continue
-                            
-                        html = await response.text()
-                        if not html: continue
-                        
-                        # Pattern 1: RSS/Canonical/Meta (Common ones)
-                        patterns = [
-                            r'channel_id=(UC[a-zA-Z0-9_-]{22})',
-                            r'itemprop="channelId" content="(UC[a-zA-Z0-9_-]{22})"',
-                            r'youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})',
-                            r'"browseId":"(UC[a-zA-Z0-9_-]{22})"',
-                            r'"externalId":"(UC[a-zA-Z0-9_-]{22})"',
-                            r'content="https://www\.youtube\.com/@.*?/channel/(UC[a-zA-Z0-9_-]{22})"',
-                            r'href="https://www\.youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})"',
-                            r'meta property="og:url" content="https://www\.youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})"'
-                        ]
-                        
-                        for p in patterns:
-                            match = re.search(p, html)
-                            if match: 
-                                ucid = match.group(1)
-                                log.info(f"Resolved YouTube ID {ucid} via pattern match.")
-                                return (ucid, ucid)
-                        
-                        # Pattern 2: Broad search for ANY UCID-like string (UC + 22 chars)
-                        uc_matches = re.findall(r'UC[a-zA-Z0-9_-]{22}', html)
-                        if uc_matches:
-                            from collections import Counter
-                            most_common = Counter(uc_matches).most_common(1)
-                            if most_common: 
-                                ucid = most_common[0][0]
-                                log.info(f"Resolved YouTube ID {ucid} via broad frequency search.")
-                                return (ucid, ucid)
-
-            except Exception as e:
-                log.error(f"Error resolving YouTube channel ID attempt: {e}")
-                
         return None
 
     def get_shared_key(self):
