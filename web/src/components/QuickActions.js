@@ -105,6 +105,12 @@ export default function QuickActions({ guildId }) {
           label="Templates"
           description="Custom alert messages"
         />
+        <QuickActionItem
+          href={`/monitors?guild=${guildId}&bulk=true`}
+          icon={Zap}
+          label="Bulk Wizard"
+          description="Mass add feeds"
+        />
       </div>
     </div>
   );

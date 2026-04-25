@@ -23,6 +23,7 @@ export default function PremiumComparisonTable() {
         { name: "Manual Force Check", values: [true, true, true, true] },
         { name: "Bulk Basic Actions", values: [false, true, true, true] },
         { name: "Bulk Settings Edit", values: [false, false, true, true], highlight: [2, 3] },
+        { name: "Bulk Import Wizard", values: [false, false, true, true], highlight: [2, 3] },
       ]
     },
     {
