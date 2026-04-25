@@ -200,23 +200,25 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                         placeholder="No ping roles"
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Accent Color</label>
-                      <div className="color-input-wrapper">
-                        <input 
-                          type="color" 
-                          value={embedColor} 
-                          onChange={(e) => setEmbedColor(e.target.value)} 
-                          className="color-picker"
-                        />
-                        <input 
-                          type="text" 
-                          value={embedColor} 
-                          onChange={(e) => setEmbedColor(e.target.value)} 
-                          className="color-text"
-                        />
+                    {selectedPlatform?.id !== 'youtube' && (
+                      <div className="form-group">
+                        <label>Accent Color</label>
+                        <div className="color-input-wrapper">
+                          <input 
+                            type="color" 
+                            value={embedColor} 
+                            onChange={(e) => setEmbedColor(e.target.value)} 
+                            className="color-picker"
+                          />
+                          <input 
+                            type="text" 
+                            value={embedColor} 
+                            onChange={(e) => setEmbedColor(e.target.value)} 
+                            className="color-text"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
