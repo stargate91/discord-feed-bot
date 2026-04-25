@@ -21,7 +21,8 @@ export default function PremiumComparisonTable() {
         { name: "Live Repost Tool", values: [false, false, true, true], highlight: [2, 3] },
         { name: "Max Purge Limit", values: ["10", "25", "50", "100"] },
         { name: "Manual Force Check", values: [true, true, true, true] },
-        { name: "Bulk Management", values: [false, true, true, true] },
+        { name: "Bulk Basic Actions", values: [false, true, true, true] },
+        { name: "Bulk Settings Edit", values: [false, false, true, true], highlight: [2, 3] },
       ]
     },
     {
@@ -64,9 +65,8 @@ export default function PremiumComparisonTable() {
       <div className="table-header-row">
         <div className="feature-col-title">Features</div>
         {tiers.map((t, i) => (
-          <div key={i} className="tier-col-title">
-            {i === 3 && <Crown size={14} style={{ color: '#ffd700', marginBottom: '4px' }} />}
-            {t}
+          <div key={i} className={`tier-col-title ${i === 3 ? 'ultimate-col' : ''}`}>
+            <span className="tier-name">{t}</span>
           </div>
         ))}
       </div>
@@ -91,6 +91,28 @@ export default function PremiumComparisonTable() {
       ))}
 
       <style jsx>{`
+        .ultimate-col .tier-name {
+          color: #9d4edd;
+          text-shadow: 0 0 15px rgba(157, 78, 221, 0.6);
+          font-size: 1.2rem;
+        }
+
+        .ultimate-col {
+          background: rgba(123, 44, 191, 0.05);
+          position: relative;
+        }
+
+        .ultimate-col::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 10%;
+          right: 10%;
+          height: 2px;
+          background: var(--accent-color);
+          box-shadow: 0 0 10px var(--accent-color);
+        }
+
         .comparison-wrapper {
           width: 100%;
           background: rgba(255, 255, 255, 0.02);
