@@ -48,17 +48,19 @@ class GOGFreeMonitor(BaseMonitor):
         new_entries = []
         for game in reversed(data):
             giveaway_id = str(game.get("id"))
+            title = game.get("title", "Unknown")
             
             if not await database.is_published(giveaway_id, "gog_free", self.guild_id):
                 if self.is_first_run:
-                    log.debug(f"Seeding database with GOG giveaway: {game.get('title')}")
-                    await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id)
+                    await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id, title=title)
                 else:
                     new_entries.append(game)
                     log.info(f"New GOG giveaway detected: {game.get('title')}")
 
         if self.is_first_run:
+            log.info(f"Initial silent seed (first run) completed for GOG Free monitor.")
             self.is_first_run = False
+            return []
             
         return new_entries
 

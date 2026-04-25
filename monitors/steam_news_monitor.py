@@ -50,22 +50,16 @@ class SteamNewsMonitor(BaseMonitor):
             gid = item.get("gid")
             if not gid: continue
 
-            # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
+            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
+            if self.is_first_run:
                 await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
             else:
                 all_candidates.append(item)
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new Steam News monitor: {self.name}")
-            else:
-                log.debug(f"Steam News Monitor instance restarted/synced: {self.name}")
+            log.info(f"Initial silent seed (first run) completed for Steam News monitor: {self.name}")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 

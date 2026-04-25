@@ -70,21 +70,23 @@ class TVSeriesMonitor(BaseMonitor):
             if not series_id: continue
 
             # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
-                await database.mark_as_published(series_id, "tmdb_tv", f"https://www.themoviedb.org/tv/{series_id}", guild_id=self.guild_id, title=series.get("name") or series.get("original_name"))
+            # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
+            # This prevents "spam walls" of old items being detected as new.
+            if self.is_first_run:
+                await database.mark_as_published(
+                    series_id, 
+                    "tmdb_tv", 
+                    f"https://www.themoviedb.org/tv/{series_id}", 
+                    guild_id=self.guild_id, 
+                    title=series.get("name") or series.get("original_name")
+                )
             else:
                 all_candidates.append(series)
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new TV Series monitor: {self.name}")
-            else:
-                log.debug(f"TV Series Monitor instance restarted/synced: {self.name}")
+            log.info(f"Initial silent seed (first run) completed for TV Series monitor: {self.name}")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 

@@ -125,23 +125,16 @@ class YouTubeMonitor(BaseMonitor):
                 log.error(f"Failed to fetch YouTube feed for {self.name}: {e}")
                 return []
         
-        # Determine if we should seed (silent save) or post
-        # We only seed if it's a brand new monitor (no last_post_at) AND it's the first run of this instance
-        is_brand_new = self.config.get("last_post_at") is None
-        should_seed = self.is_first_run and is_brand_new
-
-        if should_seed:
+        # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
+        # This prevents "spam walls" of old items being detected as new.
+        if self.is_first_run:
             for entry in feed.entries:
                 video_id = self.get_item_id(entry)
                 if video_id:
                     await database.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
-            log.info(f"Initial seed (silent) completed for new YouTube monitor: {self.name}")
+            log.info(f"Initial silent seed (first run) completed for YouTube monitor: {self.name}")
             self.is_first_run = False
-            return [] 
-
-        if self.is_first_run:
-            log.debug(f"Monitor instance restarted/synced for {self.name}. Monitoring for new items since last post.")
-            self.is_first_run = False
+            return []
 
         # Return all entries. MonitorManager will filter via is_published per-guild.
         return list(reversed(feed.entries))

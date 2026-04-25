@@ -83,11 +83,8 @@ class EpicGamesMonitor(BaseMonitor):
             status_type = "active" if is_active else "upcoming"
             db_id = f"{game_id}_{status_type}"
 
-            # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
+            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
+            if self.is_first_run:
                 await database.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append({
@@ -97,12 +94,9 @@ class EpicGamesMonitor(BaseMonitor):
                 })
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new Epic Games monitor.")
-            else:
-                log.debug(f"Epic Games Monitor instance restarted/synced.")
+            log.info(f"Initial silent seed (first run) completed for Epic Games monitor.")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 

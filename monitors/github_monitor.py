@@ -63,23 +63,18 @@ class GitHubMonitor(BaseMonitor):
         for release in releases:
             release_id = str(release.get("id"))
             if not release_id: continue
+            title = release.get("name") or release.get("tag_name")
 
-            # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
-                await database.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=release.get("name") or release.get("tag_name"))
+            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
+            if self.is_first_run:
+                await database.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append(release)
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new GitHub monitor: {self.repo_path}")
-            else:
-                log.debug(f"GitHub Monitor instance restarted/synced: {self.repo_path}")
+            log.info(f"Initial silent seed (first run) completed for GitHub monitor: {self.name}")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 

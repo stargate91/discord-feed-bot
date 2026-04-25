@@ -42,22 +42,23 @@ class RSSMonitor(BaseMonitor):
         if not feed or not hasattr(feed, 'entries'):
             return []
 
-        # Determine if we should seed (silent save) or post
-        is_brand_new = self.config.get("last_post_at") is None
-        should_seed = self.is_first_run and is_brand_new
-
-        if should_seed:
+        # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
+        # This prevents "spam walls" of old items being detected as new.
+        if self.is_first_run:
             for entry in feed.entries:
                 entry_id = self.get_item_id(entry)
                 if entry_id:
-                    await database.mark_as_published(entry_id, "rss", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
-            log.info(f"Initial seed (silent) completed for new RSS monitor: {self.name}")
+                    await database.mark_as_published(
+                        entry_id, 
+                        "rss", 
+                        self.feed_url, 
+                        guild_id=self.guild_id, 
+                        title=entry.get("title"),
+                        author_name=entry.get("author") or entry.get("author_detail", {}).get("name")
+                    )
+            log.info(f"Initial silent seed (first run) completed for RSS monitor: {self.name}")
             self.is_first_run = False
             return []
-
-        if self.is_first_run:
-            log.debug(f"RSS Monitor instance restarted/synced for {self.name}.")
-            self.is_first_run = False
 
         return list(reversed(feed.entries))
 

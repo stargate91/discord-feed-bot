@@ -44,28 +44,23 @@ class SteamFreeMonitor(BaseMonitor):
 
         all_candidates = []
         for game in data:
-            giveaway_id = str(game.get("id"))
+            game_id = str(game.get("id"))
+            title = game.get("title", "Unknown")
             giveaway_type = game.get("type", "").lower()
 
             if not self.include_dlc and giveaway_type == "dlc":
                 continue
 
-            # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
-                await database.mark_as_published(giveaway_id, "steam_free", self.api_url, guild_id=self.guild_id)
+            # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
+            if self.is_first_run:
+                await database.mark_as_published(game_id, "steam_free", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append(game)
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new Steam giveaways monitor.")
-            else:
-                log.debug(f"Steam giveaways Monitor instance restarted/synced.")
+            log.info(f"Initial silent seed (first run) completed for Steam Free monitor.")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 

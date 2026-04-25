@@ -148,21 +148,23 @@ class MovieMonitor(BaseMonitor):
             if not movie_id: continue
 
             # Determine if we should seed (silent save) or post
-            is_brand_new = self.config.get("last_post_at") is None
-            should_seed = self.is_first_run and is_brand_new
-
-            if should_seed:
-                await database.mark_as_published(movie_id, entry_type, self.api_url, guild_id=self.guild_id, title=movie.get("title") or movie.get("original_title"))
+            # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
+            # This prevents "spam walls" of old items being detected as new.
+            if self.is_first_run:
+                await database.mark_as_published(
+                    movie_id, 
+                    entry_type, 
+                    self.api_url, 
+                    guild_id=self.guild_id, 
+                    title=movie.get("title") or movie.get("original_title")
+                )
             else:
                 all_candidates.append(movie)
 
         if self.is_first_run:
-            if is_brand_new:
-                log.info(f"Initial seed (silent) completed for new Movie monitor: {self.name} ({self.tmdb_lang})")
-            else:
-                log.debug(f"Movie Monitor instance restarted/synced: {self.name} ({self.tmdb_lang})")
+            log.info(f"Initial silent seed (first run) completed for Movie monitor: {self.name} ({self.tmdb_lang})")
             self.is_first_run = False
-            return [] if is_brand_new else list(reversed(all_candidates))
+            return []
 
         return list(reversed(all_candidates))
 
