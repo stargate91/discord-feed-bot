@@ -379,12 +379,59 @@ function SettingsContent() {
           </SettingCard>
 
           {/* 3. Refresh Interval */}
-          <SettingCard title="Refresh Frequency" description={`How often the bot checks for updates (Min. ${minInterval}m)`} icon={Clock}>
+          <SettingCard 
+            title="Refresh Frequency" 
+            description="Controls how often Nova checks your feeds for new content. Lower values mean faster notifications but require a higher tier." 
+            icon={Clock}
+          >
             <div className="interval-input-wrapper">
               <div className="number-input-container">
-                <input type="number" className="interval-number-input" min={minInterval} max={1440} value={settings.refresh_interval} onChange={(e) => setSettings({ ...settings, refresh_interval: parseInt(e.target.value) || minInterval })} />
+                <input 
+                  type="number" 
+                  className="interval-number-input" 
+                  min={minInterval} 
+                  max={1440} 
+                  value={settings.refresh_interval} 
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || minInterval;
+                    setSettings({ ...settings, refresh_interval: Math.max(val, minInterval) });
+                  }} 
+                />
                 <span className="unit-label">minutes</span>
               </div>
+
+              <div className="speed-tiers">
+                {[
+                  { label: '30m', tier: 'Free', min: 30 },
+                  { label: '10m', tier: 'Starter', min: 10 },
+                  { label: '5m', tier: 'Pro', min: 5 },
+                  { label: '2m', tier: 'Ultimate', min: 2 },
+                ].map(s => (
+                  <button 
+                    key={s.min}
+                    className={`speed-chip ${settings.refresh_interval === s.min ? 'active' : ''} ${s.min < minInterval ? 'locked' : ''}`}
+                    onClick={() => {
+                      if (s.min >= minInterval) {
+                        setSettings({ ...settings, refresh_interval: s.min });
+                      }
+                    }}
+                    title={s.min < minInterval ? `Requires ${s.tier} tier or higher` : `Set to ${s.label}`}
+                  >
+                    {s.min < minInterval && <Lock size={10} />}
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {settings.refresh_interval < minInterval && (
+                <div className="upgrade-nudge">
+                  <Zap size={14} />
+                  <span>Your <strong>{settings.tier >= 1 ? ['','Starter','Professional','Ultimate'][settings.tier] : 'Free'}</strong> plan allows a minimum of <strong>{minInterval}m</strong>.</span>
+                  <Link href={`/premium?guild=${guildId}`}>
+                    <button className="nudge-upgrade-btn">Go Faster</button>
+                  </Link>
+                </div>
+              )}
             </div>
           </SettingCard>
 
@@ -545,6 +592,28 @@ function SettingsContent() {
         .number-input-container { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 0.75rem 1rem; width: fit-content; }
         .interval-number-input { background: none; border: none; color: white; font-size: 1.1rem; font-weight: 600; width: 80px; outline: none; }
         .unit-label { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
+
+        .interval-input-wrapper { display: flex; flex-direction: column; gap: 1.25rem; }
+        .speed-tiers { display: flex; flex-wrap: wrap; gap: 8px; }
+        .speed-chip { 
+          display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; 
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+          color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-size: 0.8rem; font-weight: 700;
+        }
+        .speed-chip:hover:not(.locked) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        .speed-chip.active { background: var(--accent-color); border-color: transparent; color: white; box-shadow: 0 4px 12px var(--accent-glow); }
+        .speed-chip.locked { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+        .upgrade-nudge { 
+          display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; 
+          background: rgba(123, 44, 191, 0.1); border: 1px solid rgba(123, 44, 191, 0.2); 
+          font-size: 0.85rem; color: white; animation: fadeIn 0.3s ease-out;
+        }
+        .nudge-upgrade-btn { 
+          background: #ffb703; color: #3c096c; border: none; padding: 4px 12px; border-radius: 8px; 
+          font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s; margin-left: auto;
+        }
+        .nudge-upgrade-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         .premium-lock-overlay { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1); color: var(--text-secondary); }
         .upgrade-btn-small { background: var(--accent-color); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; }

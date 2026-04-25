@@ -8,6 +8,7 @@ import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
 import BulkEditModal from '@/components/BulkEditModal';
 import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 const platformNames = {
   all: "All Feeds",
@@ -25,6 +26,7 @@ const platformNames = {
 };
 
 export default function MonitorsPage() {
+  const { addToast } = useToast();
   const [monitors, setMonitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -159,6 +161,12 @@ export default function MonitorsPage() {
           setMonitors(monitors.map(m => idsToUpdate.includes(m.id) ? { ...m, enabled: isEnabled } : m));
         }
         setBulkDeleteConfirm(false);
+        addToast(`Bulk ${action} completed successfully.`, 'success', 'Done');
+      } else if (res.status === 403) {
+        const data = await res.json();
+        addToast(data.error || 'Bulk actions require a Starter plan or higher. Upgrade to unlock!', 'error', 'Premium Required');
+      } else {
+        addToast('Something went wrong. Please try again.', 'error', 'Error');
       }
     } catch (err) {
       console.error(err);
