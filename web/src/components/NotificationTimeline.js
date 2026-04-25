@@ -73,9 +73,12 @@ export default function NotificationTimeline({ notifications, minimal = false })
                   </div>
                 )}
                 <div className="ticker-content">
-                  <span className="ticker-title">{notif.title || notif.entry_id}</span>
+                  <span className="ticker-title">
+                    {notif.author_name ? `${notif.author_name}: ` : ''}
+                    {notif.title || notif.entry_id}
+                  </span>
                   <div className="ticker-meta">
-                    <span className="ticker-plat">{notif.platform.replace('_', ' ')}</span>
+                    <span className="ticker-plat">{notif.platform.replace('_', ' ').replace('tmdb', 'TMDB')}</span>
                     {notif.platform !== 'system' && (
                       <>
                         <span className="ticker-dot">•</span>
@@ -217,12 +220,11 @@ export default function NotificationTimeline({ notifications, minimal = false })
         .ticker-plat {
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          color: var(--accent-color);
-          opacity: 0.6;
+          color: rgba(255, 255, 255, 0.5); /* Lighter gray */
         }
 
         .ticker-dot {
-          opacity: 0.2;
+          opacity: 0.3;
         }
       `}</style>
     </div>

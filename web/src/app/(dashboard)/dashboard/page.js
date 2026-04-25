@@ -97,7 +97,7 @@ async function getGuildStats(guildId, session) {
 
 async function getRecentNotifications(guildId = null) {
   try {
-    let q = 'SELECT platform, entry_id, feed_url, published_at FROM published_entries_v2';
+    let q = 'SELECT platform, entry_id, feed_url, published_at, title, author_name FROM published_entries_v2';
     let params = [];
 
     if (guildId) {
@@ -106,7 +106,7 @@ async function getRecentNotifications(guildId = null) {
       params.push(cleanId);
     }
 
-    q += ' ORDER BY published_at DESC LIMIT 5';
+    q += ' ORDER BY published_at DESC LIMIT 10';
     const res = await pool.query(q, params);
     return res.rows;
   } catch (error) {
