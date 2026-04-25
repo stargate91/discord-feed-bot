@@ -1,4 +1,7 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
+
+// Force BIGINT (OID 20) to be returned as a string to prevent precision loss in JS
+types.setTypeParser(20, val => val);
 
 let pool;
 

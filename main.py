@@ -10,7 +10,8 @@ from core.bot import FeedBot
 async def main():
     # Setup logging
     setup_logging()
-    load_dotenv()
+    load_dotenv() # Load root .env
+    load_dotenv("web/.env.local") # Also load from web's .env.local if exists
     
     try:
         # Load configuration

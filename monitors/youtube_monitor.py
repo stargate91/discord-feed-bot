@@ -38,13 +38,45 @@ class YouTubeMonitor(BaseMonitor):
 
     @staticmethod
     async def resolve_channel_id(input_str):
-        """Scrapes the YouTube channel page to find the underlying UCID."""
+        """Resolves YouTube channel ID using API (preferred) or scraping (fallback)."""
         if not input_str: return None
         
         input_str = input_str.strip()
         if input_str.startswith("UC") and len(input_str) == 24:
             return input_str
             
+        api_key = os.getenv("YOUTUBE_API_KEY")
+        
+        # --- Attempt 1: Official YouTube API (Highly Reliable) ---
+        if api_key:
+            try:
+                log.info(f"[YouTubeAPI] Resolving '{input_str}' via official API...")
+                handle = input_str if input_str.startswith("@") else f"@{input_str}"
+                
+                # We use search endpoint to find the channel by handle/name
+                api_url = "https://www.googleapis.com/youtube/v3/search"
+                params = {
+                    "part": "snippet",
+                    "q": handle,
+                    "type": "channel",
+                    "maxResults": 1,
+                    "key": api_key
+                }
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(api_url, params=params, timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("items"):
+                                ucid = data["items"][0]["id"]["channelId"]
+                                log.info(f"[YouTubeAPI] Successfully resolved '{input_str}' to '{ucid}'")
+                                return ucid
+                        else:
+                            log.warning(f"[YouTubeAPI] API returned status {response.status}")
+            except Exception as e:
+                log.error(f"[YouTubeAPI] Error during resolution: {e}")
+
+        # --- Attempt 2: Scraping (Fallback) ---
         url = input_str
         if not url.startswith("http"):
             if input_str.startswith("@"):
@@ -52,6 +84,7 @@ class YouTubeMonitor(BaseMonitor):
             else:
                 url = f"https://www.youtube.com/@{input_str}"
         
+        log.info(f"[YouTubeScrape] Falling back to scraping for '{url}'...")
         # We'll try with and without the consent cookie
         attempts = [
             {"CONSENT": "YES+cb.20210328-17-p0.en+FX+417"},
@@ -74,27 +107,31 @@ class YouTubeMonitor(BaseMonitor):
                         if not html: continue
                         
                         # Pattern 1: RSS/Canonical/Meta (Common ones)
-                        # We use a very permissive regex to find any UCID-like string after a relevant prefix
                         patterns = [
                             r'channel_id=(UC[a-zA-Z0-9_-]{22})',
                             r'itemprop="channelId" content="(UC[a-zA-Z0-9_-]{22})"',
                             r'youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})',
                             r'"browseId":"(UC[a-zA-Z0-9_-]{22})"',
                             r'"externalId":"(UC[a-zA-Z0-9_-]{22})"',
-                            r'content="https://www\.youtube\.com/@.*?/channel/(UC[a-zA-Z0-9_-]{22})"'
+                            r'content="https://www\.youtube\.com/@.*?/channel/(UC[a-zA-Z0-9_-]{22})"',
+                            r'href="https://www\.youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})"',
+                            r'meta property="og:url" content="https://www\.youtube\.com/channel/(UC[a-zA-Z0-9_-]{22})"'
                         ]
                         
                         for p in patterns:
                             match = re.search(p, html)
-                            if match: return match.group(1)
+                            if match: 
+                                log.info(f"Resolved YouTube ID {match.group(1)} via pattern match.")
+                                return match.group(1)
                         
                         # Pattern 2: Broad search for ANY UCID-like string (UC + 22 chars)
                         uc_matches = re.findall(r'UC[a-zA-Z0-9_-]{22}', html)
                         if uc_matches:
                             from collections import Counter
-                            # Filter out common false positives if any, though UC... is very specific to YouTube IDs
                             most_common = Counter(uc_matches).most_common(1)
-                            if most_common: return most_common[0][0]
+                            if most_common: 
+                                log.info(f"Resolved YouTube ID {most_common[0][0]} via broad frequency search.")
+                                return most_common[0][0]
 
             except Exception as e:
                 log.error(f"Error resolving YouTube channel ID attempt: {e}")

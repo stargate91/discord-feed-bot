@@ -3,8 +3,9 @@ import os
 from dotenv import load_dotenv
 
 def load_config(config_file: str = "config.json"):
-    # Load environment variables from .env
+    # Load environment variables
     load_dotenv()
+    load_dotenv("web/.env.local")
     
     if not os.path.exists(config_file):
         raise FileNotFoundError(f"Configuration file not found: {config_file}")
