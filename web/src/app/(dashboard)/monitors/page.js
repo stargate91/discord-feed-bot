@@ -7,7 +7,7 @@ import Link from 'next/link';
 import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
 import BulkEditModal from '@/components/BulkEditModal';
-import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3 } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity } from 'lucide-react';
 
 const platformNames = {
   all: "All Feeds",
