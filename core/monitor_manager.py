@@ -187,7 +187,7 @@ class MonitorManager:
                     if hasattr(monitor, 'fetch_new_items'):
                         new_items = await monitor.fetch_new_items()
                         if new_items:
-                                                to_process = []
+                            to_process = []
                             for item in new_items:
                                 item_id = monitor.get_item_id(item)
                                 if item_id:
@@ -238,7 +238,7 @@ class MonitorManager:
 
             if hasattr(monitor, 'fetch_new_items'):
                 all_items = await monitor.fetch_new_items()
-                        new_items = []
+                new_items = []
                 if all_items:
                     for item in all_items:
                         item_id = monitor.get_item_id(item)
@@ -332,7 +332,6 @@ class MonitorManager:
 
     async def factory_reset(self):
         """WIPE EVERYTHING. Monitors, Settings, Premium Keys, History. Clean Slate."""
-        import database
         try:
             log.critical("!!! FACTORY RESET INITIATED !!! Wiping all database tables.")
             tables = [
