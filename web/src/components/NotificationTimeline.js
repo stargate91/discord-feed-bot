@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, ExternalLink } from "lucide-react";
+import { Clock } from "lucide-react";
 
 function formatRelativeTime(date) {
   const diff = Math.floor((new Date() - new Date(date)) / 1000);
@@ -25,6 +25,7 @@ const PLATFORM_ICONS = {
   tv_series: { icon: '/emojis/tmdb.png', color: "#3273dc" },
   tmdb_tv: { icon: '/emojis/tmdb.png', color: "#3273dc" },
   github: { icon: '/emojis/github.png', color: "#ffffff" },
+  system: { icon: null, color: "var(--accent-color)" },
   default: { icon: '/emojis/rss.png', color: "var(--accent-color)" }
 };
 
@@ -34,226 +35,194 @@ const getPlatformIcon = (platform) => {
   return PLATFORM_ICONS[platform] || PLATFORM_ICONS.default;
 };
 
-export default function NotificationTimeline({ notifications }) {
-  if (!notifications || notifications.length === 0) {
-    return (
-      <div className="card" style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>
-        <p>No recent notifications found.</p>
-      </div>
-    );
-  }
+export default function NotificationTimeline({ notifications, minimal = false }) {
+  const hasNotifications = notifications && notifications.length > 0;
+  
+  const baseData = hasNotifications 
+    ? notifications 
+    : [{ platform: 'system', title: 'Waiting for fresh activity from your feeds...', published_at: new Date() }];
+  
+  // If system message, only double it (minimum for seamless loop)
+  // If real notifications, quadruple for better density
+  const displayData = hasNotifications 
+    ? [...baseData, ...baseData, ...baseData, ...baseData]
+    : [...baseData, ...baseData];
+
+  const animationDuration = hasNotifications 
+    ? Math.max(10, baseData.length * 10)
+    : 20; // Fixed slow speed for single system message
 
   return (
-    <div className="card timeline-card">
-      <div className="card-header">
-        <h3 style={{
-          fontSize: '0.8rem',
-          fontWeight: '800',
-          color: 'rgba(255, 255, 255, 0.4)',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-          margin: 0
-        }}>Recent Notifications</h3>
-      </div>
-
-      <div className="timeline-list">
-        {notifications.map((notif, i) => {
-          const plat = getPlatformIcon(notif.platform);
-          const Icon = plat.icon;
-
-          return (
-            <div key={i} className="timeline-item">
-              <div className="timeline-icon-wrapper" style={{ '--plat-color': plat.color }}>
-                <img src={plat.icon} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
-              </div>
-              
-              <div className="timeline-content">
-                <div className="timeline-header">
-                  <span className="timeline-platform">{notif.platform.replace('_', ' ')}</span>
-                  {notif.author_name && <span className="timeline-author">by {notif.author_name}</span>}
-                  <span className="timeline-time">
-                    <Clock size={12} />
-                    {formatRelativeTime(notif.published_at)}
-                  </span>
-                </div>
-                
-                <div className="timeline-body">
-                  <div className="timeline-text-content">
-                    <p className="timeline-text">{notif.title || notif.entry_id}</p>
-                    {notif.feed_url && (
-                      <a href={notif.feed_url} target="_blank" rel="noopener noreferrer" className="timeline-link">
-                        <ExternalLink size={12} />
-                        View Source
-                      </a>
+    <div className={`ticker-wrapper ${minimal ? 'minimal' : 'card'}`}>
+      {!minimal && (
+        <div className="ticker-label">
+          <div className="live-pulse"></div>
+          <span>LIVE FEED</span>
+        </div>
+      )}
+      
+      <div className="ticker-viewport">
+        <div className="ticker-track" style={{ animationDuration: `${animationDuration}s` }}>
+          {displayData.map((notif, i) => {
+            const plat = getPlatformIcon(notif.platform);
+            return (
+              <div key={i} className="ticker-item">
+                {plat.icon && (
+                  <div className="ticker-icon-box" style={{ '--plat-color': plat.color }}>
+                    <img src={plat.icon} alt="" />
+                  </div>
+                )}
+                <div className="ticker-content">
+                  <span className="ticker-title">{notif.title || notif.entry_id}</span>
+                  <div className="ticker-meta">
+                    <span className="ticker-plat">{notif.platform.replace('_', ' ')}</span>
+                    {notif.platform !== 'system' && (
+                      <>
+                        <span className="ticker-dot">•</span>
+                        <span className="ticker-time">{formatRelativeTime(notif.published_at)}</span>
+                      </>
                     )}
                   </div>
-                  {notif.thumbnail_url && (
-                    <div className="timeline-thumb">
-                      <img src={notif.thumbnail_url} alt="Thumbnail" />
-                    </div>
-                  )}
                 </div>
               </div>
-              
-              {i < notifications.length - 1 && <div className="timeline-connector"></div>}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       <style jsx>{`
-        .timeline-card {
-          padding: 1.5rem;
+        .ticker-wrapper {
+          padding: 0 !important;
+          height: ${minimal ? '48px' : '64px'};
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .ticker-wrapper.card {
+          background: rgba(255, 255, 255, 0.01);
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          border-radius: 16px;
+        }
+
+        .ticker-wrapper.minimal {
+          background: transparent;
+          border: none;
+        }
+
+        .ticker-label {
+          padding: 0 1.5rem;
+          background: rgba(123, 44, 191, 0.1);
           height: 100%;
           display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
+          align-items: center;
+          gap: 10px;
+          border-right: 1px solid rgba(255, 255, 255, 0.05);
+          z-index: 10;
+          white-space: nowrap;
         }
 
-        .timeline-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
+        .ticker-label span {
+          font-size: 0.7rem;
+          font-weight: 900;
+          letter-spacing: 2px;
+          color: var(--accent-color);
+        }
+
+        .live-pulse {
+          width: 8px;
+          height: 8px;
+          background: #ef4444;
+          border-radius: 50%;
+          box-shadow: 0 0 10px #ef4444;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.2); }
+          100% { opacity: 0.5; transform: scale(1); }
+        }
+
+        .ticker-viewport {
+          flex: 1;
+          overflow: hidden;
           position: relative;
-          max-height: 500px;
-          overflow-y: auto;
-          padding-right: 10px;
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
 
-        .timeline-list::-webkit-scrollbar {
-          width: 4px;
-        }
-
-        .timeline-list::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .timeline-list::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-
-        .timeline-item {
+        .ticker-track {
           display: flex;
-          gap: 1rem;
-          position: relative;
-          z-index: 1;
+          width: fit-content;
+          animation: tickerScroll linear infinite;
+          will-change: transform;
         }
 
-        .timeline-icon-wrapper {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
+        .ticker-viewport:hover .ticker-track {
+          animation-play-state: paused;
+        }
+
+        @keyframes tickerScroll {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .ticker-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 ${hasNotifications ? '4rem' : '100vw'};
+          white-space: nowrap;
+        }
+
+        .ticker-icon-box {
+          width: 24px;
+          height: 24px;
           background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--plat-color);
-          flex-shrink: 0;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .timeline-connector {
-          position: absolute;
-          left: 15px;
-          top: 32px;
-          bottom: -24px;
-          width: 2px;
-          background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
-          z-index: 0;
+        .ticker-icon-box img {
+          width: 14px;
+          height: 14px;
+          object-fit: contain;
         }
 
-        .timeline-content {
-          flex: 1;
+        .ticker-content {
           display: flex;
           flex-direction: column;
-          gap: 0.4rem;
         }
 
-        .timeline-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .timeline-platform {
-          font-size: 0.7rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          color: rgba(255, 255, 255, 0.4);
-        }
-
-        .timeline-author {
-          font-size: 0.7rem;
-          color: var(--accent-color);
-          font-weight: 600;
-          opacity: 0.8;
-        }
-
-        .timeline-time {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-        }
-
-        .timeline-body {
-          display: flex;
-          gap: 1rem;
-          align-items: flex-start;
-          justify-content: space-between;
-        }
-
-        .timeline-text-content {
-          flex: 1;
-        }
-
-        .timeline-thumb {
-          width: 60px;
-          height: 40px;
-          border-radius: 6px;
-          overflow: hidden;
-          background: rgba(0,0,0,0.2);
-          border: 1px solid rgba(255,255,255,0.05);
-          flex-shrink: 0;
-        }
-
-        .timeline-thumb img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .timeline-text {
-          font-size: 0.9rem;
-          font-weight: 600;
+        .ticker-title {
+          font-size: 0.85rem;
+          font-weight: 700;
           color: white;
-          margin: 0;
-          line-height: 1.4;
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
+          opacity: 0.9;
         }
 
-        .timeline-link {
-          display: inline-flex;
+        .ticker-meta {
+          display: flex;
           align-items: center;
-          gap: 0.4rem;
-          font-size: 0.75rem;
-          color: var(--accent-color);
-          text-decoration: none;
-          margin-top: 0.2rem;
-          opacity: 0.8;
-          transition: opacity 0.2s;
+          gap: 6px;
+          font-size: 0.65rem;
+          color: var(--text-secondary);
+          font-weight: 600;
         }
 
-        .timeline-link:hover {
-          opacity: 1;
-          text-decoration: underline;
+        .ticker-plat {
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--accent-color);
+          opacity: 0.6;
+        }
+
+        .ticker-dot {
+          opacity: 0.2;
         }
       `}</style>
     </div>

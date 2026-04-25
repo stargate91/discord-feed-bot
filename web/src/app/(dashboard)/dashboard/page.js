@@ -99,13 +99,13 @@ async function getRecentNotifications(guildId = null) {
   try {
     let q = 'SELECT platform, entry_id, feed_url, published_at FROM published_entries_v2';
     let params = [];
-    
+
     if (guildId) {
       const cleanId = String(guildId).replace('-', '');
       q += ' WHERE guild_id = $1';
       params.push(cleanId);
     }
-    
+
     q += ' ORDER BY published_at DESC LIMIT 5';
     const res = await pool.query(q, params);
     return res.rows;
@@ -145,27 +145,42 @@ export default async function Dashboard({ searchParams }) {
 
   return (
     <div className="dashboard-page-content" style={{ maxWidth: '100%', margin: '0 auto' }}>
-      <header className="header" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Dashboard Overview</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Welcome back, {session.user.name}. Track your server&apos;s feed activity and performance.
+      <header className="header" style={{ 
+        marginBottom: '2rem', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        gap: '2rem',
+        padding: '0.5rem 0'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flexShrink: 0 }}>
+          <h2 style={{ margin: 0 }}>Dashboard Overview</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+            Welcome back, {session.user.name}.
           </p>
         </div>
-        <LoginButton session={session} />
+
+        {/* Integrated Live Ticker */}
+        <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+          <NotificationTimeline notifications={notifications} minimal={true} />
+        </div>
+
+        <div style={{ flexShrink: 0 }}>
+          <LoginButton session={session} />
+        </div>
       </header>
 
       <section className="dashboard-grid" style={{ marginBottom: '3rem' }}>
-        <StatCard 
-          title="Active Monitors" 
-          value={stats ? stats.activeMonitors : "0"} 
-          description="Running on this server" 
+        <StatCard
+          title="Active Monitors"
+          value={stats ? stats.activeMonitors : "0"}
+          description="Running on this server"
           icon={Activity}
         />
-        <StatCard 
-          title="Messages Sent" 
-          value={stats ? stats.totalPosts.toLocaleString() : "0"} 
-          description="Lifetime stats" 
+        <StatCard
+          title="Messages Sent"
+          value={stats ? stats.totalPosts.toLocaleString() : "0"}
+          description="Lifetime stats"
           icon={Send}
         />
         <StatCard
@@ -192,11 +207,11 @@ export default async function Dashboard({ searchParams }) {
               borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
               marginBottom: '1.5rem'
             }}>Plan Usage & Limits</h3>
-            <UsageIndicator 
-              label="Feed Monitors" 
-              current={stats?.totalMonitorsCount || 0} 
-              max={stats?.isLifetime ? 1000 : (stats?.maxMonitors || 5)} 
-              unit="monitors" 
+            <UsageIndicator
+              label="Feed Monitors"
+              current={stats?.totalMonitorsCount || 0}
+              max={stats?.isLifetime ? 1000 : (stats?.maxMonitors || 5)}
+              unit="monitors"
             />
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
               {stats?.tierName === "Master" ? (
@@ -208,31 +223,31 @@ export default async function Dashboard({ searchParams }) {
           </div>
 
           {!stats?.isLifetime && stats?.tier < 3 && (
-            <div className="card highlight-card" style={{ 
-              padding: '2rem', 
+            <div className="card highlight-card" style={{
+              padding: '2rem',
               background: 'linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(60, 9, 108, 0.05) 100%)',
               border: '1px solid rgba(123, 44, 191, 0.2)',
               position: 'relative',
               overflow: 'hidden'
             }}>
-              <div style={{ 
-                position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', 
-                background: 'var(--accent-color)', opacity: 0.05, borderRadius: '50%', filter: 'blur(30px)' 
+              <div style={{
+                position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px',
+                background: 'var(--accent-color)', opacity: 0.05, borderRadius: '50%', filter: 'blur(30px)'
               }}></div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                 <div>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.4rem' }}>
                     {stats?.tier === 0 ? "Ready for Premium?" : "Ready to scale up?"}
                   </h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '350px' }}>
-                    {stats?.tier === 0 
-                      ? "Unlock role pings, faster refresh, and more monitors." 
+                    {stats?.tier === 0
+                      ? "Unlock role pings, faster refresh, and more monitors."
                       : `Upgrade to ${stats?.tier === 1 ? "Operator" : "Architect"} for even higher limits and features.`}
                   </p>
                 </div>
                 <Link href={guildId ? `/premium?guild=${guildId}` : "/premium"}>
-                  <button className="btn" style={{ 
+                  <button className="btn" style={{
                     padding: '0.7rem 1.5rem', fontSize: '0.9rem', fontWeight: '700',
                     boxShadow: '0 10px 20px rgba(123, 44, 191, 0.1)'
                   }}>
@@ -247,7 +262,6 @@ export default async function Dashboard({ searchParams }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <QuickActions guildId={guildId} />
-          <NotificationTimeline notifications={notifications} />
         </div>
       </div>
     </div>
