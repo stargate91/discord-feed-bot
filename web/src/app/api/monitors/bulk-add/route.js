@@ -106,13 +106,15 @@ export async function POST(req) {
 
         // Insert into database
         await query(
-          `INSERT INTO monitors (guild_id, type, name, enabled, extra_settings)
-           VALUES ($1, $2, $3, true, $4)`,
+          `INSERT INTO monitors (guild_id, type, name, enabled, extra_settings, discord_channel_id, ping_role_id)
+           VALUES ($1, $2, $3, true, $4, $5, $6)`,
           [
             guildId, 
             type, 
             name,
-            JSON.stringify(extraSettings)
+            JSON.stringify(extraSettings),
+            channelIds[0] || 0,
+            roleIds[0] || 0
           ]
         );
         successCount++;
