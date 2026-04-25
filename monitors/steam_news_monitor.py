@@ -12,7 +12,19 @@ class SteamNewsMonitor(BaseMonitor):
     
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.appid = config.get("appid") or config.get("app_id")
+        raw_id = config.get("appid") or config.get("app_id")
+        self.appid = raw_id
+        
+        # Handle full URL input (e.g., https://store.steampowered.com/app/570/Dota_2/)
+        if isinstance(raw_id, str) and "steampowered.com/app/" in raw_id:
+            try:
+                # Extract the number after /app/
+                parts = raw_id.split("/app/")[1].split("/")
+                self.appid = parts[0]
+                log.info(f"[SteamNews] Extracted AppID {self.appid} from URL: {raw_id}")
+            except Exception as e:
+                log.error(f"[SteamNews] Failed to extract AppID from URL {raw_id}: {e}")
+
         self.api_url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=5"
 
     def get_shared_key(self):
@@ -55,7 +67,10 @@ class SteamNewsMonitor(BaseMonitor):
 
     async def process_item(self, item):
         title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
-        url = item.get("url")
+        url = item.get("url", "").strip()
+        # Basic validation to prevent Discord API errors
+        is_valid_url = isinstance(url, str) and url.startswith("http")
+        
         author = item.get("author", "Steam")
         raw_contents = item.get("contents", "")
         
@@ -66,13 +81,13 @@ class SteamNewsMonitor(BaseMonitor):
         alert_text = self.get_alert_message({
             "name": self.name,
             "title": title,
-            "url": url,
+            "url": url if is_valid_url else "",
             "author": author
         })
         
         embed = discord.Embed(
             title=title[:256],
-            url=url,
+            url=url if is_valid_url else None,
             description=description[:300] + "..." if len(description) > 300 else description,
             color=self.get_color(0x3d3f45)
         )
@@ -87,11 +102,13 @@ class SteamNewsMonitor(BaseMonitor):
         if image_url:
             embed.set_image(url=image_url)
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
+        view = None
+        if is_valid_url:
+            view = discord.ui.View()
+            btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
+            view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
         
-        await self.send_update(content=f"{alert_text}\n{url}", embed=embed, view=view)
+        await self.send_update(content=f"{alert_text}\n{url}" if is_valid_url else alert_text, embed=embed, view=view)
 
     def get_item_id(self, item):
         return item.get("gid")
@@ -134,7 +151,9 @@ class SteamNewsMonitor(BaseMonitor):
     def _format_news_item(self, item):
         """Helper to format a raw Steam News item into a standardized output dict."""
         title = item.get("title", self.bot.get_feedback("monitor_steam_news_fallback_title", guild_id=self.guild_id))
-        url = item.get("url")
+        url = item.get("url", "").strip()
+        is_valid_url = isinstance(url, str) and url.startswith("http")
+        
         author = item.get("author", "Steam")
         raw_contents = item.get("contents", "")
         
@@ -143,11 +162,16 @@ class SteamNewsMonitor(BaseMonitor):
         image_url = extract_image_url(raw_contents)
         
         # Formulate message
-        alert_text = self.get_alert_message({"name": self.name, "title": title, "url": url, "author": author})
+        alert_text = self.get_alert_message({
+            "name": self.name, 
+            "title": title, 
+            "url": url if is_valid_url else "", 
+            "author": author
+        })
         
         embed = discord.Embed(
             title=title[:256],
-            url=url,
+            url=url if is_valid_url else None,
             description=description[:300] + "..." if len(description) > 300 else description,
             color=self.get_color(0x3d3f45)
         )
@@ -163,12 +187,14 @@ class SteamNewsMonitor(BaseMonitor):
         if image_url:
             embed.set_image(url=image_url)
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
+        view = None
+        if is_valid_url:
+            view = discord.ui.View()
+            btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
+            view.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
         
         return {
-            "content": f"{alert_text}\n{url}",
+            "content": f"{alert_text}\n{url}" if is_valid_url else alert_text,
             "embed": embed,
             "view": view
         }
