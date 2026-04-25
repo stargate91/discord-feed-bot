@@ -70,10 +70,12 @@ export default function PremiumDashboard({ guildId, session }) {
 
   return (
     <div className="premium-dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-text">
+      <header className="header">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           <h2>Premium Plans</h2>
-          <p>Manage your server's premium status and unlock advanced features.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Manage your server's premium status and unlock advanced features.
+          </p>
         </div>
 
         <div className="billing-toggle-container">
@@ -110,15 +112,6 @@ export default function PremiumDashboard({ guildId, session }) {
           margin: 0 auto;
           padding: 2rem 1rem 5rem;
         }
-        .dashboard-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
-          margin-bottom: 3rem;
-          gap: 2rem;
-        }
-        .header-text h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; color: white; }
-        .header-text p { color: #a0a0b0; font-size: 0.95rem; }
 
         .pricing-grid {
           display: grid;
