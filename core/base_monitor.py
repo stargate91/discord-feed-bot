@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import discord
 from logger import log
-import database
+import database as db
 
 class BaseMonitor(ABC):
     def __init__(self, bot, config):
@@ -152,8 +152,8 @@ class BaseMonitor(ABC):
                 try:
                     await channel.send(content=content, embed=embed, view=view)
                     log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
-                    await database.increment_post_stat(self.guild_id, self.platform)
-                    await database.update_last_post_at(self.id)
+                    await db.increment_post_stat(self.guild_id, self.platform)
+                    await db.update_last_post_at(self.id)
                 except Exception as e:
                     log.error(f"Failed to send update to channel {ch_id} for {self.name}: {e}", extra={'guild_id': self.guild_id})
             else:

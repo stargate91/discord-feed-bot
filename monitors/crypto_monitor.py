@@ -5,7 +5,7 @@ import os
 import time
 from logger import log
 from core.base_monitor import BaseMonitor
-import database
+import database as db
 from core.emojis import (
     STATUS_SUCCESS, STATUS_ERROR,
     CRYPTO_UP, CRYPTO_DOWN, CRYPTO_BULLET_FILLED, CRYPTO_BULLET_EMPTY, CRYPTO_CHART_COLORFUL
@@ -190,7 +190,7 @@ class CryptoMonitor(BaseMonitor):
             pub_id = self.get_item_id(event)
             if pub_id:
                 title = f"{event['sym']} {event['direction'].upper()} {event['percent_str']}"
-                await database.mark_as_published(
+                await db.mark_as_published(
                     pub_id, "crypto", 
                     feed_url=f"https://www.coingecko.com/en/coins/{event['cid']}",
                     guild_id=self.guild_id,

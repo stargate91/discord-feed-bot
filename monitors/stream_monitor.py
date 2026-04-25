@@ -3,7 +3,7 @@ import discord
 import time
 from core.base_monitor import BaseMonitor
 from logger import log
-import database
+import database as db
 
 # Standard User-Agent to avoid being blocked
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -116,7 +116,7 @@ class BaseStreamMonitor(BaseMonitor):
 
         # Log to DB for dashboard timeline
         try:
-            await database.mark_as_published(
+            await db.mark_as_published(
                 entry_id=f"{self.platform}:{self.stream_username}:{int(time.time())}", 
                 platform=self.platform,
                 feed_url=stream_url,

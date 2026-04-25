@@ -1,4 +1,6 @@
 import asyncio
+import time
+import database as db
 from logger import log
 
 class MonitorManager:
@@ -14,7 +16,6 @@ class MonitorManager:
 
     def get_shared_data(self, key, max_age_seconds=120):
         """Get shared data from cache if it's still fresh."""
-        import time
         if key in self._shared_cache:
             ts, data = self._shared_cache[key]
             # Consider data fresh for max_age_seconds
@@ -24,7 +25,6 @@ class MonitorManager:
 
     def set_shared_data(self, key, data):
         """Store data in the shared cache."""
-        import time
         self._shared_cache[key] = (time.time(), data)
 
     def add_monitor(self, monitor_instance):
@@ -35,7 +35,6 @@ class MonitorManager:
     async def sync_with_db(self, is_startup=False):
         """Reload all monitors from database and sync with local memory."""
         log.info("Synchronizing monitors with database...")
-        import database
         from core.monitor_factory import create_monitor_instance
         
         try:
@@ -45,7 +44,7 @@ class MonitorManager:
                 for m in self.monitors:
                     old_assignments[m.id] = set(m.target_channels)
 
-            db_monitors = await database.get_all_monitors()
+            db_monitors = await db.get_all_monitors()
             new_monitors = []
             
             for m_config in db_monitors:
@@ -102,7 +101,6 @@ class MonitorManager:
         
         await self.bot.wait_until_ready()
         
-        import time
         
         while self.is_running and not self.bot.is_closed():
             # 1. Group monitors by shared feed key to avoid redundant API polling
@@ -150,7 +148,7 @@ class MonitorManager:
                                         # Per-guild publication check for shared items
                                         item_id = mon.get_item_id(item)
                                         if item_id:
-                                            is_pub = await database.is_published(item_id, mon.platform, mon.guild_id)
+                                            is_pub = await db.is_published(item_id, mon.platform, mon.guild_id)
                                             if is_pub:
                                                 continue
                                                 
@@ -189,12 +187,11 @@ class MonitorManager:
                     if hasattr(monitor, 'fetch_new_items'):
                         new_items = await monitor.fetch_new_items()
                         if new_items:
-                            import database
-                            to_process = []
+                                                to_process = []
                             for item in new_items:
                                 item_id = monitor.get_item_id(item)
                                 if item_id:
-                                    is_pub = await database.is_published(item_id, monitor.platform, monitor.guild_id)
+                                    is_pub = await db.is_published(item_id, monitor.platform, monitor.guild_id)
                                     if not is_pub:
                                         to_process.append(item)
                             
@@ -241,13 +238,12 @@ class MonitorManager:
 
             if hasattr(monitor, 'fetch_new_items'):
                 all_items = await monitor.fetch_new_items()
-                import database
-                new_items = []
+                        new_items = []
                 if all_items:
                     for item in all_items:
                         item_id = monitor.get_item_id(item)
                         if item_id:
-                            is_pub = await database.is_published(item_id, monitor.platform, monitor.guild_id)
+                            is_pub = await db.is_published(item_id, monitor.platform, monitor.guild_id)
                             if not is_pub:
                                 new_items.append(item)
                 
@@ -314,11 +310,10 @@ class MonitorManager:
         monitor = next((m for m in self.monitors if m.id == monitor_id), None)
         if not monitor: return False
         
-        import database
         try:
             log.info(f"Resetting history for monitor: {monitor.name}")
             q = "DELETE FROM published_entries_v2 WHERE platform = $1 AND guild_id = $2"
-            await database._execute(q, monitor.platform, monitor.guild_id)
+            await db._execute(q, monitor.platform, monitor.guild_id)
             return True
         except Exception as e:
             log.error(f"Error during history reset for {monitor.name}: {e}")
@@ -326,11 +321,10 @@ class MonitorManager:
 
     async def reset_all_history(self):
         """Clear ALL publication history for ALL monitors in the entire DB."""
-        import database
         try:
             log.warning("NUCLEAR ACTION: Resetting ALL publication history for ALL monitors!")
             q = "DELETE FROM published_entries_v2"
-            await database._execute(q)
+            await db._execute(q)
             return True
         except Exception as e:
             log.error(f"Error during global history reset: {e}")
@@ -351,7 +345,7 @@ class MonitorManager:
                 "monitor_stats_daily"
             ]
             for table in tables:
-                await database._execute(f"TRUNCATE TABLE {table} CASCADE")
+                await db._execute(f"TRUNCATE TABLE {table} CASCADE")
             
             # Reload monitors (will be empty)
             self.monitors = []
