@@ -2,7 +2,7 @@ import aiohttp
 import discord
 from core.base_monitor import BaseMonitor
 from logger import log
-import database
+import database as db
 
 # Standard User-Agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -52,7 +52,7 @@ class SteamNewsMonitor(BaseMonitor):
 
             # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
             if self.is_first_run:
-                await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
+                await db.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
             else:
                 all_candidates.append(item)
 
@@ -110,7 +110,7 @@ class SteamNewsMonitor(BaseMonitor):
         for item in items:
             gid = self.get_item_id(item)
             if gid:
-                await database.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
+                await db.mark_as_published(gid, "steam_news", self.api_url, guild_id=self.guild_id)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

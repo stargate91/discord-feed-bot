@@ -3,7 +3,7 @@ import discord
 import textwrap
 from core.base_monitor import BaseMonitor
 from logger import log
-import database
+import database as db
 from core.emojis import ICON_STAR
 
 class TVSeriesMonitor(BaseMonitor):
@@ -73,7 +73,7 @@ class TVSeriesMonitor(BaseMonitor):
             # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
             # This prevents "spam walls" of old items being detected as new.
             if self.is_first_run:
-                await database.mark_as_published(
+                await db.mark_as_published(
                     series_id, 
                     "tmdb_tv", 
                     f"https://www.themoviedb.org/tv/{series_id}", 
@@ -186,7 +186,7 @@ class TVSeriesMonitor(BaseMonitor):
                 title = series.get("name") or series.get("original_name")
                 poster_path = series.get("poster_path")
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
-                await database.mark_as_published(
+                await db.mark_as_published(
                     series_id, "tmdb_tv", tmdb_url,
                     guild_id=self.guild_id,
                     title=title,

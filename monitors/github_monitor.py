@@ -2,7 +2,7 @@ import discord
 import aiohttp
 from core.base_monitor import BaseMonitor
 from logger import log
-import database
+import database as db
 import asyncio
 from datetime import datetime
 
@@ -67,7 +67,7 @@ class GitHubMonitor(BaseMonitor):
 
             # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
             if self.is_first_run:
-                await database.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=title)
+                await db.mark_as_published(release_id, "github", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append(release)
 
@@ -95,7 +95,7 @@ class GitHubMonitor(BaseMonitor):
             if release_id != "None":
                 title = release.get("name") or release.get("tag_name") or "New Release"
                 author = release.get("author", {}).get("login", "Unknown")
-                await database.mark_as_published(
+                await db.mark_as_published(
                     release_id, "github", self.api_url,
                     guild_id=self.guild_id,
                     title=f"{self.repo_path}: {title}",

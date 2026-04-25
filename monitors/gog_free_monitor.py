@@ -6,7 +6,7 @@ from logger import log
 from core.emojis import THUMBNAIL_GOG
 # Standard User-Agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-import database
+import database as db
 
 class GOGFreeMonitor(BaseMonitor):
     """Monitor for free GOG game giveaways via GamerPower API."""
@@ -50,9 +50,9 @@ class GOGFreeMonitor(BaseMonitor):
             giveaway_id = str(game.get("id"))
             title = game.get("title", "Unknown")
             
-            if not await database.is_published(giveaway_id, "gog_free", self.guild_id):
+            if not await db.is_published(giveaway_id, "gog_free", self.guild_id):
                 if self.is_first_run:
-                    await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id, title=title)
+                    await db.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id, title=title)
                 else:
                     new_entries.append(game)
                     log.info(f"New GOG giveaway detected: {game.get('title')}")
@@ -123,7 +123,7 @@ class GOGFreeMonitor(BaseMonitor):
         for game in items:
             giveaway_id = self.get_item_id(game)
             if giveaway_id != "None":
-                await database.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id)
+                await db.mark_as_published(giveaway_id, "gog_free", self.api_url, guild_id=self.guild_id)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""

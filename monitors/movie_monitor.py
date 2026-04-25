@@ -3,7 +3,7 @@ import discord
 import textwrap
 from core.base_monitor import BaseMonitor
 from logger import log
-import database
+import database as db
 from core.emojis import ICON_STAR
 
 class MovieMonitor(BaseMonitor):
@@ -151,7 +151,7 @@ class MovieMonitor(BaseMonitor):
             # Silent Seeding logic: Always silent-seed the entire feed on the very first run after bot startup/sync
             # This prevents "spam walls" of old items being detected as new.
             if self.is_first_run:
-                await database.mark_as_published(
+                await db.mark_as_published(
                     movie_id, 
                     entry_type, 
                     self.api_url, 
@@ -266,7 +266,7 @@ class MovieMonitor(BaseMonitor):
                 title = movie.get("title") or movie.get("original_title")
                 poster_path = movie.get("poster_path")
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
-                await database.mark_as_published(
+                await db.mark_as_published(
                     movie_id, entry_type, self.api_url,
                     guild_id=self.guild_id,
                     title=title,

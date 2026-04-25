@@ -9,7 +9,7 @@ import calendar
 # Standard User-Agent to avoid being blocked by WordPress/Cloudflare
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
-import database
+import database as db
 
 class RSSMonitor(BaseMonitor):
     def __init__(self, bot, config):
@@ -48,7 +48,7 @@ class RSSMonitor(BaseMonitor):
             for entry in feed.entries:
                 entry_id = self.get_item_id(entry)
                 if entry_id:
-                    await database.mark_as_published(
+                    await db.mark_as_published(
                         entry_id, 
                         "rss", 
                         self.feed_url, 
@@ -119,7 +119,7 @@ class RSSMonitor(BaseMonitor):
             if entry_id:
                 title = entry.get("title", "New RSS Update")
                 author = entry.get("author") or entry.get("author_detail", {}).get("name")
-                await database.mark_as_published(
+                await db.mark_as_published(
                     entry_id, "rss", self.feed_url, 
                     guild_id=self.guild_id,
                     title=title,

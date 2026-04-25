@@ -5,7 +5,7 @@ import re
 from core.base_monitor import BaseMonitor
 from logger import log
 
-import database
+import database as db
 
 class YouTubeMonitor(BaseMonitor):
     def __init__(self, bot, config):
@@ -131,7 +131,7 @@ class YouTubeMonitor(BaseMonitor):
             for entry in feed.entries:
                 video_id = self.get_item_id(entry)
                 if video_id:
-                    await database.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
+                    await db.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=entry.get("title"))
             log.info(f"Initial silent seed (first run) completed for YouTube monitor: {self.name}")
             self.is_first_run = False
             return []
@@ -167,7 +167,7 @@ class YouTubeMonitor(BaseMonitor):
                 thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
                 title = entry.get("title", "Unknown Video")
                 author = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
-                await database.mark_as_published(
+                await db.mark_as_published(
                     video_id, "youtube", self.feed_url, 
                     guild_id=self.guild_id,
                     title=title,

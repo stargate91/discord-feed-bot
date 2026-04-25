@@ -6,7 +6,7 @@ from logger import log
 # Standard User-Agent to avoid being blocked
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 from core.emojis import THUMBNAIL_EPIC
-import database
+import database as db
 
 class EpicGamesMonitor(BaseMonitor):
     def __init__(self, bot, config):
@@ -85,7 +85,7 @@ class EpicGamesMonitor(BaseMonitor):
 
             # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
             if self.is_first_run:
-                await database.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
+                await db.mark_as_published(db_id, "epic_games", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append({
                     "game": game,
@@ -162,7 +162,7 @@ class EpicGamesMonitor(BaseMonitor):
             game = item["game"]
             title = game.get("title", "Unknown Game")
             image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
-            await database.mark_as_published(
+            await db.mark_as_published(
                 item["db_id"], "epic_games", self.api_url,
                 guild_id=self.guild_id,
                 title=title,

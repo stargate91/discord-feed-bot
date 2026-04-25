@@ -6,7 +6,7 @@ from logger import log
 from core.emojis import THUMBNAIL_STEAM
 # Standard User-Agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-import database
+import database as db
 
 class SteamFreeMonitor(BaseMonitor):
     """Monitor for free Steam game giveaways via GamerPower API."""
@@ -53,7 +53,7 @@ class SteamFreeMonitor(BaseMonitor):
 
             # Silent Seeding logic: Always silent-seed on the first run after bot startup/sync
             if self.is_first_run:
-                await database.mark_as_published(game_id, "steam_free", self.api_url, guild_id=self.guild_id, title=title)
+                await db.mark_as_published(game_id, "steam_free", self.api_url, guild_id=self.guild_id, title=title)
             else:
                 all_candidates.append(game)
 
@@ -122,7 +122,7 @@ class SteamFreeMonitor(BaseMonitor):
         for game in items:
             giveaway_id = self.get_item_id(game)
             if giveaway_id != "None":
-                await database.mark_as_published(giveaway_id, "steam_free", self.api_url, guild_id=self.guild_id)
+                await db.mark_as_published(giveaway_id, "steam_free", self.api_url, guild_id=self.guild_id)
 
     async def get_latest_item(self):
         """Wrapper for get_latest_items(1)"""
