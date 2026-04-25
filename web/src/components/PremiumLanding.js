@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import PricingCard from '@/components/PricingCard';
 import { Sparkles } from 'lucide-react';
 import LoginButton from '@/components/LoginButton';
+import MarketingNavbar from '@/components/MarketingNavbar';
 import { tiers } from '@/lib/premium-data';
 
 export default function PremiumLanding({ session }) {
@@ -23,27 +24,7 @@ export default function PremiumLanding({ session }) {
   return (
     <div className="premium-landing-root">
       {/* ── Navbar ── */}
-      <nav className="lp-navbar">
-        <div className="lp-navbar-inner">
-          <a href="/" className="lp-brand">
-            <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-brand-img" />
-            <span className="lp-brand-text">NovaFeeds</span>
-          </a>
-          <div className="lp-nav-links">
-            <a href="/" className="lp-nav-link">Home</a>
-            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="lp-nav-link">Support</a>
-            <a href="/premium" className="lp-nav-link">Premium</a>
-          </div>
-          <div className="lp-nav-right">
-            {session && (
-              <a href="/select-server" className="lp-nav-link" style={{ marginRight: '1rem', fontWeight: '800', color: 'var(--accent-color)' }}>
-                Servers
-              </a>
-            )}
-            <LoginButton session={session} />
-          </div>
-        </div>
-      </nav>
+      <MarketingNavbar session={session} />
 
       <div className="landing-container">
         <header className="marketing-header">

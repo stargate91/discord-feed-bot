@@ -16,6 +16,8 @@ class MovieMonitor(BaseMonitor):
         
         # Get server language for TMDB API
         self.tmdb_lang = bot.get_feedback("tmdb_lang_code", guild_id=self.guild_id)
+        # Set platform string used for publication tracking
+        self.platform = f"movie:{self.tmdb_lang}"
         
         # Base URL without api_key
         self.api_url = f"https://api.themoviedb.org/3/movie/now_playing?language={self.tmdb_lang}"
@@ -249,7 +251,7 @@ class MovieMonitor(BaseMonitor):
                 poster_path = movie.get("poster_path")
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
                 await db.mark_as_published(
-                    movie_id, entry_type, self.api_url,
+                    movie_id, self.platform, self.api_url,
                     guild_id=self.guild_id,
                     title=title,
                     thumbnail_url=thumbnail,

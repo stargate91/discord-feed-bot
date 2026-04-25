@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Search, Server, Crown, Shield, Plus, ChevronRight, Sparkles } from 'lucide-react';
-import LogoutButton from '@/components/LogoutButton';
-import LoginButton from '@/components/LoginButton';
+import MarketingNavbar from '@/components/MarketingNavbar';
 import Loading from '@/app/loading';
 
 export default function SelectServer() {
@@ -60,27 +59,7 @@ export default function SelectServer() {
   return (
     <div className="premium-root is-marketing">
       {/* ── Navbar ── */}
-      <nav className="lp-navbar">
-        <div className="lp-navbar-inner">
-          <a href="/" className="lp-brand">
-            <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-brand-img" />
-            <span className="lp-brand-text">NovaFeeds</span>
-          </a>
-          <div className="lp-nav-links">
-            <a href="/" className="lp-nav-link">Home</a>
-            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="lp-nav-link">Support</a>
-            <a href="/premium" className="lp-nav-link">Premium</a>
-          </div>
-          <div className="lp-nav-right">
-            {session && (
-              <a href="/select-server" className="lp-servers-btn">
-                Servers
-              </a>
-            )}
-            <LoginButton session={session} />
-          </div>
-        </div>
-      </nav>
+      <MarketingNavbar session={session} />
 
       <div className="select-container">
         {/* ── Hero Header ── */}

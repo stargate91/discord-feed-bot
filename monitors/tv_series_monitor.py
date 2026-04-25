@@ -16,7 +16,8 @@ class TVSeriesMonitor(BaseMonitor):
         
         # Get server language for TMDB API
         self.tmdb_lang = bot.get_feedback("tmdb_lang_code", guild_id=self.guild_id)
-        
+        # Set platform string used for publication tracking
+        self.platform = f"tv_series:{self.tmdb_lang}"
 
     def get_headers(self):
         if self.bearer_token:
@@ -170,7 +171,7 @@ class TVSeriesMonitor(BaseMonitor):
                 poster_path = series.get("poster_path")
                 thumbnail = f"https://image.tmdb.org/t/p/w200{poster_path}" if poster_path else None
                 await db.mark_as_published(
-                    series_id, "tmdb_tv", tmdb_url,
+                    series_id, self.platform, tmdb_url,
                     guild_id=self.guild_id,
                     title=title,
                     thumbnail_url=thumbnail,

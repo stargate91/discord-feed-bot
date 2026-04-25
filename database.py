@@ -165,6 +165,22 @@ async def init_db():
                 await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 3")
                 await conn.execute("ALTER TABLE premium_codes ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN DEFAULT false")
 
+                # Migration: Unify TMDB platform strings in history to prevent double-posts after restart
+                # 1. Update TV Series (tmdb_tv -> tv_series:lang)
+                await conn.execute("""
+                    UPDATE published_entries_v2 p
+                    SET platform = 'tv_series:' || COALESCE(s.language, 'en')
+                    FROM guild_settings s
+                    WHERE p.platform = 'tmdb_tv' AND p.guild_id = s.guild_id
+                """)
+                # 2. Update Movies (movie -> movie:lang)
+                await conn.execute("""
+                    UPDATE published_entries_v2 p
+                    SET platform = 'movie:' || COALESCE(s.language, 'en')
+                    FROM guild_settings s
+                    WHERE p.platform = 'movie' AND p.guild_id = s.guild_id
+                """)
+
                 log.info("DB Migration: Ensured schema freshness.")
             except Exception as e:
                 log.warning(f"DB Migration Issue: {e}")
