@@ -50,9 +50,11 @@ class BaseMonitor(ABC):
             
         # 3. System fallback
         if not msg:
-            msg = self.bot.get_feedback(f"new_{self.platform}_alert", guild_id=self.guild_id)
+            # Use base platform name (strip :lang suffix) for translation keys
+            base_type = self.platform.split(':')[0]
+            msg = self.bot.get_feedback(f"new_{base_type}_alert", guild_id=self.guild_id)
             # If still just the key, use a generic fallback
-            if msg == f"new_{self.platform}_alert":
+            if msg == f"new_{base_type}_alert":
                 msg = self.bot.get_feedback("default_new_item", name=self.name, guild_id=self.guild_id)
 
         # Apply variables
