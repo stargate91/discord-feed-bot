@@ -27,7 +27,7 @@ const TIER_CONFIG = {
   3: { name: 'Tier 3', speed: '2m', speedLabel: 'Turbo', speedColor: '#f472b6', canRepost: true, maxPurge: 100, maxMonitors: 100 },
 };
 
-export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium, tier = 0 }) {
+export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium, tier = 0, isSelected, onSelect, selectionMode }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showTools, setShowTools] = useState(false);
@@ -118,12 +118,29 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   };
 
   return (
-    <div className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''} ${showTools ? 'show-tools' : ''}`}>
+    <div 
+      className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''} ${showTools ? 'show-tools' : ''} ${isSelected ? 'card-selected' : ''}`}
+      onClick={() => {
+        if (selectionMode) {
+          onSelect(monitor.id);
+        }
+      }}
+    >
       <div className="card-glow"></div>
 
       <div className="card-header">
         <div className="platform-brand">
           <div className="platform-icon-wrapper">
+            <input 
+              type="checkbox" 
+              className="monitor-checkbox" 
+              checked={isSelected} 
+              onChange={(e) => {
+                e.stopPropagation();
+                onSelect(monitor.id);
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
             <img
               src={getTypeIconPath(monitor.type)}
               alt=""
@@ -264,6 +281,14 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
         .show-tools {
           border-color: rgba(123, 44, 191, 0.3);
           box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card-selected {
+          border-color: var(--accent-color) !important;
+          background: rgba(123, 44, 191, 0.08) !important;
+          box-shadow: 0 0 20px rgba(123, 44, 191, 0.2), inset 0 0 15px rgba(123, 44, 191, 0.1);
+          transform: scale(1.02);
+          z-index: 5;
         }
 
         .tools-toggle {
@@ -470,6 +495,23 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           width: 20px;
           height: 20px;
           object-fit: contain;
+        }
+
+        .monitor-checkbox {
+          position: absolute;
+          top: -6px;
+          left: -6px;
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+          accent-color: var(--accent-color);
+          z-index: 10;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .monitor-card:hover .monitor-checkbox, .monitor-checkbox:checked {
+          opacity: 1;
         }
 
         .platform-name {

@@ -28,14 +28,26 @@ export async function GET() {
 
     // 2. Fetch our bot's guild settings from DB
     console.log("[API/Guilds] Fetching bot settings from DB...");
-    const dbRes = await pool.query('SELECT guild_id, premium_until, is_active FROM guild_settings');
     const botGuildsMap = {};
-    dbRes.rows.forEach(row => {
-        botGuildsMap[String(row.guild_id)] = {
-            premiumUntil: row.premium_until,
-            isActive: row.is_active !== false // Treat null as true for legacy, only false is inactive
-        };
-    });
+    try {
+      const dbRes = await pool.query('SELECT guild_id, premium_until, is_active FROM guild_settings');
+      dbRes.rows.forEach(row => {
+          botGuildsMap[String(row.guild_id)] = {
+              premiumUntil: row.premium_until,
+              isActive: row.is_active !== false // Treat null as true for legacy, only false is inactive
+          };
+      });
+    } catch (dbErr) {
+      console.warn("[API/Guilds] Could not fetch is_active (likely migration pending):", dbErr.message);
+      // Fallback: try without is_active
+      const dbRes = await pool.query('SELECT guild_id, premium_until FROM guild_settings');
+      dbRes.rows.forEach(row => {
+          botGuildsMap[String(row.guild_id)] = {
+              premiumUntil: row.premium_until,
+              isActive: true // Fallback to true
+          };
+      });
+    }
 
 
     // 3. Load Master Guilds from config.json

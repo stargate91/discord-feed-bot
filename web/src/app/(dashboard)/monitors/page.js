@@ -6,7 +6,8 @@ import MonitorCard from '@/components/MonitorCard';
 import Link from 'next/link';
 import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
-import { Plus, Play, Pause, Trash2, Globe, AlertTriangle } from 'lucide-react';
+import BulkEditModal from '@/components/BulkEditModal';
+import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3 } from 'lucide-react';
 
 const platformNames = {
   all: "All Feeds",
@@ -35,6 +36,8 @@ export default function MonitorsPage() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [tier, setTier] = useState(0);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const guildId = searchParams.get('guild');
@@ -139,18 +142,21 @@ export default function MonitorsPage() {
 
     setBulkActionLoading(true);
     try {
+      const idsToUpdate = selectedIds.length > 0 ? selectedIds : filteredMonitors.map(m => m.id);
+      
       const res = await fetch('/api/monitors/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, guildId })
+        body: JSON.stringify({ action, guildId, monitorIds: selectedIds.length > 0 ? selectedIds : null })
       });
       
       if (res.ok) {
         if (action === 'delete') {
-          setMonitors([]);
+          setMonitors(monitors.filter(m => !idsToUpdate.includes(m.id)));
+          setSelectedIds([]);
         } else {
           const isEnabled = action === 'resume';
-          setMonitors(monitors.map(m => ({ ...m, enabled: isEnabled })));
+          setMonitors(monitors.map(m => idsToUpdate.includes(m.id) ? { ...m, enabled: isEnabled } : m));
         }
         setBulkDeleteConfirm(false);
       }
@@ -158,6 +164,53 @@ export default function MonitorsPage() {
       console.error(err);
     }
     setBulkActionLoading(false);
+  };
+
+  const handleBulkUpdate = async (updateData) => {
+    try {
+      const res = await fetch('/api/monitors/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'update', 
+          guildId, 
+          monitorIds: selectedIds,
+          ...updateData
+        })
+      });
+
+      if (res.ok) {
+        setMonitors(monitors.map(m => {
+          if (selectedIds.includes(m.id)) {
+            return {
+              ...m,
+              target_channels: updateData.target_channels || m.target_channels,
+              target_roles: updateData.target_roles || m.target_roles,
+              embed_color: updateData.embed_color || m.embed_color
+            };
+          }
+          return m;
+        }));
+        setSelectedIds([]);
+        setIsBulkEditOpen(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSelect = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredMonitors.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredMonitors.map(m => m.id));
+    }
   };
 
   const filteredMonitors = monitors.filter(m => {
@@ -234,30 +287,60 @@ export default function MonitorsPage() {
       {/* Bulk Actions Bar */}
       <div className="bulk-actions-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-            Bulk Actions ({filteredMonitors.length})
-          </span>
+          <div className="select-all-wrapper">
+            <input 
+              type="checkbox" 
+              checked={selectedIds.length > 0 && selectedIds.length === filteredMonitors.length}
+              onChange={handleSelectAll}
+              className="bulk-checkbox"
+            />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+              {selectedIds.length > 0 ? `${selectedIds.length} Selected` : `Bulk Actions (${filteredMonitors.length})`}
+            </span>
+          </div>
           <div className="vertical-divider"></div>
+          {selectedIds.length > 0 && (
+            <button 
+              className="bulk-btn" 
+              onClick={() => setSelectedIds([])}
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Deselect All
+            </button>
+          )}
           <button 
             className="bulk-btn" 
             onClick={() => handleBulkAction('resume')}
             disabled={bulkActionLoading || filteredMonitors.length === 0}
           >
-            <Play size={14} /> Resume All
+            <Play size={14} /> {selectedIds.length > 0 ? 'Resume Selected' : 'Resume All'}
           </button>
           <button 
             className="bulk-btn" 
             onClick={() => handleBulkAction('pause')}
             disabled={bulkActionLoading || filteredMonitors.length === 0}
           >
-            <Pause size={14} /> Pause All
+            <Pause size={14} /> {selectedIds.length > 0 ? 'Pause Selected' : 'Pause All'}
           </button>
+          
+          <button 
+            className="bulk-btn" 
+            onClick={() => setIsBulkEditOpen(true)}
+            disabled={bulkActionLoading || filteredMonitors.length === 0}
+          >
+            <Edit3 size={14} /> {selectedIds.length > 0 ? 'Edit Selected' : 'Edit All'}
+          </button>
+
           <button 
             className={`bulk-btn ${bulkDeleteConfirm ? 'danger-active' : 'danger'}`} 
             onClick={() => handleBulkAction('delete')}
             disabled={bulkActionLoading || filteredMonitors.length === 0}
           >
-            {bulkDeleteConfirm ? <><AlertTriangle size={14} /> Confirm Delete ALL?</> : <><Trash2 size={14} /> Delete All</>}
+            {bulkDeleteConfirm ? (
+              <><AlertTriangle size={14} /> Confirm Delete {selectedIds.length > 0 ? 'Selected' : 'ALL'}?</>
+            ) : (
+              <><Trash2 size={14} /> {selectedIds.length > 0 ? 'Delete Selected' : 'Delete All'}</>
+            )}
           </button>
         </div>
         
@@ -281,6 +364,9 @@ export default function MonitorsPage() {
               onToggle={handleToggle} 
               onDelete={handleDelete} 
               onEdit={openEditModal}
+              isSelected={selectedIds.includes(m.id)}
+              onSelect={handleSelect}
+              selectionMode={selectedIds.length > 0}
             />
           ))}
           
@@ -300,6 +386,16 @@ export default function MonitorsPage() {
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
             onSuccess={fetchMonitors}
+            tier={tier}
+            isPremium={isPremium}
+          />
+
+          <BulkEditModal 
+            isOpen={isBulkEditOpen}
+            onClose={() => setIsBulkEditOpen(false)}
+            onSave={handleBulkUpdate}
+            monitorCount={selectedIds.length > 0 ? selectedIds.length : monitors.length}
+            guildId={guildId}
             tier={tier}
             isPremium={isPremium}
           />
@@ -442,6 +538,17 @@ export default function MonitorsPage() {
           width: 1px;
           height: 16px;
           background: var(--border-color);
+        }
+        .select-all-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .bulk-checkbox {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+          accent-color: var(--accent-color);
         }
         .premium-badge {
           font-size: 0.65rem;
