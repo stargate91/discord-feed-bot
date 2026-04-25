@@ -3,9 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
 import { X, Save, AlertCircle, Info } from 'lucide-react';
 import { useToast } from "@/context/ToastContext";
+import { useSession } from 'next-auth/react';
 
 export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, guildId, tier = 0, isPremium = false }) {
   const { addToast } = useToast();
+  const { data: session } = useSession();
+  const isMasterUser = session?.user?.role === 'master';
   const [loading, setLoading] = useState(false);
   const [guildChannels, setGuildChannels] = useState([]);
   const [guildRoles, setGuildRoles] = useState([]);
@@ -21,7 +24,7 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
   });
 
   const colorInputRef = useRef(null);
-  const isLocked = tier < 2 && !(isPremium && tier === 0);
+  const isLocked = !isMasterUser && !isPremium && tier < 2;
 
   useEffect(() => {
     if (isOpen && guildId) {
@@ -78,7 +81,7 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
             <AlertCircle size={48} color="#ffb703" />
             <h3>Professional Feature</h3>
             <p>Tidying up many monitors at once is a professional-grade tool. Upgrade your server to unlock bulk editing.</p>
-            <button className="btn-primary" onClick={onClose}>I Understand</button>
+            <button className="btn-primary" onClick={onClose} style={{ alignSelf: 'center', flex: 'none', padding: '0.8rem 2.5rem' }}>I Understand</button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">

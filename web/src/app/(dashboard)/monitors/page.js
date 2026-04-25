@@ -308,20 +308,29 @@ export default function MonitorsPage() {
               Deselect All
             </button>
           )}
-          <button 
-            className="bulk-btn" 
-            onClick={() => handleBulkAction('resume')}
-            disabled={bulkActionLoading || filteredMonitors.length === 0}
-          >
-            <Play size={14} /> {selectedIds.length > 0 ? 'Resume Selected' : 'Resume All'}
-          </button>
-          <button 
-            className="bulk-btn" 
-            onClick={() => handleBulkAction('pause')}
-            disabled={bulkActionLoading || filteredMonitors.length === 0}
-          >
-            <Pause size={14} /> {selectedIds.length > 0 ? 'Pause Selected' : 'Pause All'}
-          </button>
+          {(() => {
+            const targets = selectedIds.length > 0 
+              ? monitors.filter(m => selectedIds.includes(m.id)) 
+              : filteredMonitors;
+            const activeCount = targets.filter(m => m.enabled).length;
+            const mostlyActive = activeCount > targets.length / 2;
+            const toggleAction = mostlyActive ? 'pause' : 'resume';
+            const suffix = selectedIds.length > 0 ? 'Selected' : 'All';
+
+            return (
+              <button 
+                className="bulk-btn" 
+                onClick={() => handleBulkAction(toggleAction)}
+                disabled={bulkActionLoading || filteredMonitors.length === 0}
+                style={{ minWidth: '130px' }}
+              >
+                {mostlyActive 
+                  ? <><Pause size={14} /> Pause {suffix}</>
+                  : <><Play size={14} /> Resume {suffix}</>
+                }
+              </button>
+            );
+          })()}
           
           <button 
             className="bulk-btn" 
