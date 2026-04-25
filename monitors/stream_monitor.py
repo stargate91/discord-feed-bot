@@ -42,11 +42,14 @@ class BaseStreamMonitor(BaseMonitor):
         current_live = stream_data.get("is_live", False) if stream_data else False
 
         if current_live and not self.is_live:
-            await self.process_item(stream_data)
+            # Notify only if NOT in silent start mode (e.g. newly added during runtime)
+            if not getattr(self, 'is_silent_start', False):
+                await self.process_item(stream_data)
             self.is_live = True
         elif not current_live and self.is_live:
             self.is_live = False
             
+        self.is_silent_start = False
         return items
 
     async def _fetch_platform_data(self):
@@ -294,14 +297,48 @@ class KickMonitor(BaseStreamMonitor):
                     if not livestream: return {"is_live": False}
                     
                     na_text = self.bot.get_feedback("default_unknown", guild_id=self.guild_id)
+                    
+                    # Robust thumbnail fetching
+                    thumbnail = None
+                    thumb_data = livestream.get("thumbnail")
+                    if isinstance(thumb_data, dict):
+                        thumbnail = thumb_data.get("url")
+                    elif isinstance(thumb_data, str):
+                        thumbnail = thumb_data
+                    
+                    if not thumbnail:
+                        thumbnail = livestream.get("thumbnail_url")
+                        
+                    # Ensure protocol
+                    if thumbnail and thumbnail.startswith("//"):
+                        thumbnail = f"https:{thumbnail}"
+
+                    # Ensure protocol for profile image too
+                    profile_image = data.get("user", {}).get("profile_pic")
+                    if profile_image and profile_image.startswith("//"):
+                        profile_image = f"https:{profile_image}"
+
+                    # Fallback thumbnail if still not found
+                    if not thumbnail:
+                        user_data = data.get("user", {})
+                        # Try banner first, then profile image
+                        banner = user_data.get("banner_image", {}).get("url")
+                        if not banner:
+                            # Sometimes it's in a different structure
+                            banner = user_data.get("offline_banner_url")
+                        
+                        thumbnail = banner or profile_image
+                        if thumbnail and thumbnail.startswith("//"):
+                            thumbnail = f"https:{thumbnail}"
+
                     return {
                         "is_live": True,
                         "title": livestream.get("session_title", ""),
                         "game": livestream.get("categories", [{}])[0].get("name", na_text),
                         "viewers": livestream.get("viewer_count", 0),
-                        "thumbnail": livestream.get("thumbnail", {}).get("url"),
+                        "thumbnail": thumbnail,
                         "display_name": data.get("user", {}).get("username"),
-                        "profile_image": data.get("user", {}).get("profile_pic"),
+                        "profile_image": profile_image,
                         "url": f"https://kick.com/{self.stream_username}"
                     }
         except Exception as e:

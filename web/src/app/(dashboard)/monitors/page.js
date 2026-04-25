@@ -26,6 +26,22 @@ const platformNames = {
   'crypto': 'Crypto'
 };
 
+const platformIcons = {
+  'all': <Globe size={14} />,
+  'youtube': <img src="/emojis/youtube.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'twitch': <img src="/emojis/twitch.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'kick': <img src="/emojis/kick.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'rss': <img src="/emojis/rss.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'github': <img src="/emojis/github.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'steam_news': <img src="/emojis/steam.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'epic_games': <img src="/emojis/epic.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'steam_free': <img src="/emojis/steam.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'gog_free': <img src="/emojis/gog.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'movie': <img src="/emojis/movie.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'tv_series': <img src="/emojis/tv.png" alt="" style={{ width: '16px', height: '16px' }} />,
+  'crypto': <img src="/emojis/crypto.png" alt="" style={{ width: '16px', height: '16px' }} />
+};
+
 function MonitorsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -45,7 +61,7 @@ function MonitorsContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
-  
+
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
@@ -97,7 +113,7 @@ function MonitorsContent() {
     if (addParam === 'true') {
       setIsCreateModalOpen(true);
     }
-    
+
     if (bulkParam === 'true') {
       setIsBulkAddOpen(true);
     }
@@ -210,7 +226,7 @@ function MonitorsContent() {
   };
 
   const handleSelect = (id) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -234,8 +250,8 @@ function MonitorsContent() {
   };
 
   const filteredMonitors = monitors.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) || 
-                         m.api_url?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.api_url?.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === 'all' || m.type === filter;
     return matchesSearch && matchesFilter;
   });
@@ -251,64 +267,68 @@ function MonitorsContent() {
             Configure and oversee your automated feed sources and notification targets.
           </p>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '1rem' }}>
-           <input 
-             type="text" 
-             placeholder="Search by name..." 
-             className="search-input"
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-           />
-           <button className="btn-bulk-magic" onClick={() => { console.log('Opening Bulk Wizard'); setIsBulkAddOpen(true); }}>
-              <Zap size={18} />
-              Bulk Wizard
-           </button>
-           <button className="btn btn-add" onClick={() => setIsCreateModalOpen(true)}>
-              <Plus size={18} />
-              Add Monitor
-           </button>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            className="search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="btn-bulk-magic" onClick={() => { console.log('Opening Bulk Wizard'); setIsBulkAddOpen(true); }}>
+            <Zap size={18} />
+            Bulk Wizard
+          </button>
+          <button className="btn btn-add" onClick={() => setIsCreateModalOpen(true)}>
+            <Plus size={18} />
+            Add Monitor
+          </button>
         </div>
       </header>
 
-      {/* Platform Tabs */}
-      <div className="filter-tabs-container">
-        <div className="filter-tabs">
-          {platforms.map(p => (
-            <button 
-              key={p}
-              className={`filter-tab ${filter === p ? 'active' : ''}`}
-              onClick={() => setFilter(p)}
-            >
-              {p === 'all' ? 'All Platforms' : (platformNames[p] || p)}
-              <span className="count-badge">
-                {p === 'all' ? monitors.length : monitors.filter(m => m.type === p).length}
-              </span>
-            </button>
-          ))}
+      {/* Platform Control Center */}
+      <div className="control-center">
+        <div className="filter-tabs-wrapper">
+          <div className="fade-left"></div>
+          <div className="filter-tabs">
+            {platforms.map(p => (
+              <button
+                key={p}
+                className={`filter-tab ${filter === p ? 'active' : ''}`}
+                onClick={() => setFilter(p)}
+              >
+                <span className="tab-icon">{platformIcons[p] || <Activity size={14} />}</span>
+                <span className="tab-label">{p === 'all' ? 'All Platforms' : (platformNames[p] || p)}</span>
+                <span className="count-badge">
+                  {p === 'all' ? monitors.length : monitors.filter(m => m.type === p).length}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="fade-right"></div>
         </div>
-      </div>
 
-      {/* Bulk Actions - separate row */}
-      <div className="bulk-actions-toolbar">
+        {/* Bulk Actions - separate row */}
+        <div className="bulk-actions-toolbar">
           {selectedIds.length > 0 && (
-            <button 
-              className="bulk-btn deselect" 
+            <button
+              className="bulk-btn deselect"
               onClick={() => setSelectedIds([])}
             >
               <X size={14} /> Deselect ({selectedIds.length})
             </button>
           )}
-          <button 
+          <button
             className={`bulk-btn toggle-btn ${(() => {
-              const target = selectedIds.length > 0 
-                ? monitors.filter(m => selectedIds.includes(m.id)) 
+              const target = selectedIds.length > 0
+                ? monitors.filter(m => selectedIds.includes(m.id))
                 : monitors;
               return target.every(m => m.enabled) ? 'is-active' : 'is-paused';
             })()}`}
             onClick={() => {
-              const target = selectedIds.length > 0 
-                ? monitors.filter(m => selectedIds.includes(m.id)) 
+              const target = selectedIds.length > 0
+                ? monitors.filter(m => selectedIds.includes(m.id))
                 : monitors;
               const allEnabled = target.every(m => m.enabled);
               handleBulkToggle(!allEnabled);
@@ -316,24 +336,24 @@ function MonitorsContent() {
             disabled={monitors.length === 0 || undefined}
           >
             {(() => {
-              const target = selectedIds.length > 0 
-                ? monitors.filter(m => selectedIds.includes(m.id)) 
+              const target = selectedIds.length > 0
+                ? monitors.filter(m => selectedIds.includes(m.id))
                 : monitors;
               const allEnabled = target.every(m => m.enabled);
-              return allEnabled 
+              return allEnabled
                 ? <><Pause size={14} /> {selectedIds.length > 0 ? 'Pause Selected' : 'Pause All'}</>
                 : <><Play size={14} /> {selectedIds.length > 0 ? 'Resume Selected' : 'Resume All'}</>;
             })()}
           </button>
-          <button 
-            className="bulk-btn edit" 
+          <button
+            className="bulk-btn edit"
             onClick={() => setIsBulkEditOpen(true)}
             disabled={monitors.length === 0 || undefined}
           >
             <Edit3 size={14} /> {selectedIds.length > 0 ? `Edit Selected (${selectedIds.length})` : 'Edit All'}
           </button>
-          <button 
-            className={`bulk-btn delete ${bulkDeleteConfirm ? 'confirm' : ''}`} 
+          <button
+            className={`bulk-btn delete ${bulkDeleteConfirm ? 'confirm' : ''}`}
             onClick={handleBulkDelete}
             disabled={monitors.length === 0 || undefined}
           >
@@ -343,6 +363,7 @@ function MonitorsContent() {
               <><Trash2 size={14} /> {selectedIds.length > 0 ? 'Delete Selected' : 'Delete All'}</>
             )}
           </button>
+        </div>
       </div>
 
       {guildId && !isPremium && (
@@ -357,13 +378,13 @@ function MonitorsContent() {
         <>
           <div className="dashboard-grid">
             {filteredMonitors.map(m => (
-              <MonitorCard 
-                key={m.id} 
-                monitor={m} 
+              <MonitorCard
+                key={m.id}
+                monitor={m}
                 isPremium={isPremium}
                 tier={tier}
-                onToggle={handleToggle} 
-                onDelete={handleDelete} 
+                onToggle={handleToggle}
+                onDelete={handleDelete}
                 onEdit={openEditModal}
                 isSelected={selectedIds.includes(m.id)}
                 onSelect={handleSelect}
@@ -408,17 +429,17 @@ function MonitorsContent() {
       )}
 
       {/* Modals outside main flow */}
-      <EditMonitorModal 
-        monitor={editingMonitor} 
+      <EditMonitorModal
+        monitor={editingMonitor}
         guildId={guildId}
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onSave={handleUpdate}
         tier={tier}
         isPremium={isPremium}
       />
 
-      <CreateMonitorModal 
+      <CreateMonitorModal
         guildId={guildId}
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -427,7 +448,7 @@ function MonitorsContent() {
         isPremium={isPremium}
       />
 
-      <BulkEditModal 
+      <BulkEditModal
         isOpen={isBulkEditOpen}
         onClose={() => setIsBulkEditOpen(false)}
         onSave={handleBulkUpdate}
@@ -437,7 +458,7 @@ function MonitorsContent() {
         isPremium={isPremium}
       />
 
-      <BulkAddModal 
+      <BulkAddModal
         isOpen={isBulkAddOpen}
         onClose={() => setIsBulkAddOpen(false)}
         guildId={guildId}
@@ -452,60 +473,186 @@ function MonitorsContent() {
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .filter-tabs-container {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
+        .control-center {
           background: rgba(255, 255, 255, 0.02);
-          padding: 0.75rem;
-          border-radius: 20px;
+          padding: 1rem;
+          border-radius: 24px;
           border: 1px solid rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(10px);
-          flex-wrap: wrap;
-          gap: 1rem;
+          margin-bottom: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+
+        .filter-tabs-wrapper {
+          position: relative;
+          width: 100%;
+        }
+
+        .fade-left, .fade-right {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 40px;
+          pointer-events: none;
+          z-index: 2;
+          transition: opacity 0.3s;
+        }
+
+        .fade-left {
+          left: 0;
+          background: linear-gradient(to right, #0f0f13 0%, transparent 100%);
+        }
+
+        .fade-right {
+          right: 0;
+          background: linear-gradient(to left, #0f0f13 0%, transparent 100%);
         }
 
         .filter-tabs {
           display: flex;
-          gap: 8px;
+          gap: 10px;
           overflow-x: auto;
-          padding-bottom: 4px;
+          padding: 4px 0;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE/Edge */
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+          display: none; /* Chrome/Safari */
         }
 
         .filter-tab {
-          background: transparent;
-          border: 1px solid transparent;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: var(--text-secondary);
-          padding: 0.6rem 1.2rem;
-          border-radius: 12px;
+          padding: 0.7rem 1.4rem;
+          border-radius: 14px;
           cursor: pointer;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 0.85rem;
-          transition: all 0.25s;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
           white-space: nowrap;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
+          position: relative;
+          overflow: hidden;
         }
 
         .filter-tab:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.08);
           color: white;
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.1);
         }
 
         .filter-tab.active {
           background: var(--accent-color);
           color: white;
-          box-shadow: 0 4px 15px rgba(123, 44, 191, 0.3);
+          border-color: rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 20px rgba(123, 44, 191, 0.4);
+        }
+
+        .tab-icon {
+          display: flex;
+          align-items: center;
+          opacity: 0.8;
+          transition: transform 0.3s;
+        }
+
+        .filter-tab:hover .tab-icon {
+          transform: scale(1.2) rotate(-5deg);
+          opacity: 1;
+        }
+
+        .filter-tab.active .tab-icon {
+          opacity: 1;
         }
 
         .count-badge {
-          background: rgba(0, 0, 0, 0.2);
-          padding: 1px 6px;
-          border-radius: 6px;
+          background: rgba(0, 0, 0, 0.25);
+          padding: 2px 8px;
+          border-radius: 8px;
           font-size: 0.7rem;
-          opacity: 0.8;
+          font-weight: 800;
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .bulk-actions-toolbar {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .bulk-btn {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: var(--text-secondary);
+          padding: 0.65rem 1.25rem;
+          border-radius: 12px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .bulk-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.08);
+          color: white;
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .bulk-btn.delete:hover:not(:disabled) {
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .bulk-btn.toggle-btn.is-active:hover:not(:disabled) {
+          background: rgba(251, 191, 36, 0.15);
+          color: #fbbf24;
+          border-color: rgba(251, 191, 36, 0.3);
+        }
+
+        .bulk-btn.toggle-btn.is-paused:hover:not(:disabled) {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10b981;
+          border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .bulk-btn.deselect {
+          background: rgba(123, 44, 191, 0.15);
+          border-color: rgba(123, 44, 191, 0.4);
+          color: #b085f5;
+        }
+        .bulk-btn.deselect:hover {
+          background: rgba(123, 44, 191, 0.25);
+          color: white;
+        }
+
+        .bulk-btn.delete.confirm {
+          background: #ef4444;
+          color: white;
+          border-color: #ef4444;
+          animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .bulk-btn:disabled {
+          opacity: 0.2;
+          cursor: not-allowed;
         }
 
         .search-input {
@@ -525,14 +672,6 @@ function MonitorsContent() {
           border-color: var(--accent-color);
           width: 320px;
           box-shadow: 0 0 20px rgba(123, 44, 191, 0.15);
-        }
-
-        .btn-add {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 0.75rem 1.5rem;
-          font-size: 0.9rem;
         }
 
         .btn-bulk-magic {
@@ -557,75 +696,12 @@ function MonitorsContent() {
           border-color: rgba(255,255,255,0.3);
         }
 
-        .bulk-actions-toolbar {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 1.5rem;
-          padding: 0.5rem 0;
-        }
-
-        .bulk-btn {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: var(--text-secondary);
-          padding: 0.6rem 1rem;
-          border-radius: 12px;
-          font-size: 0.8rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
+        .btn-add {
           display: flex;
           align-items: center;
-          gap: 6px;
-        }
-
-        .bulk-btn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.08);
-          color: white;
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .bulk-btn.delete:hover:not(:disabled) {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          border-color: rgba(239, 68, 68, 0.2);
-        }
-
-        .bulk-btn.toggle-btn.is-active:hover:not(:disabled) {
-          background: rgba(251, 191, 36, 0.1);
-          color: #fbbf24;
-          border-color: rgba(251, 191, 36, 0.2);
-        }
-
-        .bulk-btn.toggle-btn.is-paused:hover:not(:disabled) {
-          background: rgba(16, 185, 129, 0.1);
-          color: #10b981;
-          border-color: rgba(16, 185, 129, 0.2);
-        }
-
-        .bulk-btn.deselect {
-          background: rgba(123, 44, 191, 0.1);
-          border-color: rgba(123, 44, 191, 0.3);
-          color: var(--accent-hover);
-        }
-        .bulk-btn.deselect:hover {
-          background: rgba(123, 44, 191, 0.2);
-          color: white;
-        }
-
-        .bulk-btn.delete.confirm {
-          background: #ef4444;
-          color: white;
-          border-color: #ef4444;
-          animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        .bulk-btn:disabled {
-          opacity: 0.3;
-          cursor: not-allowed;
+          gap: 8px;
+          padding: 0.75rem 1.5rem;
+          font-size: 0.9rem;
         }
 
         .premium-badge {
@@ -637,6 +713,14 @@ function MonitorsContent() {
           border-radius: 20px;
           letter-spacing: 1px;
           box-shadow: 0 4px 15px rgba(255, 183, 3, 0.3);
+          margin-bottom: 1rem;
+          display: inline-block;
+        }
+
+        .dashboard-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+          gap: 1.5rem;
         }
 
         .empty-state-container {

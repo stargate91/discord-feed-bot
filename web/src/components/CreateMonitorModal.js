@@ -6,13 +6,13 @@ import { X, ChevronRight, ChevronLeft, Info, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/context/ToastContext";
 
 const PLATFORMS = [
-  { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: '@handle, Link or Name', hint: 'Enter a channel handle (@name), full URL, name or UCID.' },
+  { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: '@handle, Link or Name', hint: 'Format: @handle, channel link, name or UCID.' },
 
-  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#ee802f', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Provide the full URL to the RSS or Atom feed.' },
-  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'The application ID from the Steam store URL.' },
-  { id: 'twitch', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'The exact Twitch username of the creator.' },
-  { id: 'kick', name: 'Kick', logo: '/emojis/kick.png', color: '#53fc18', description: 'Go live alerts for Kick streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'kick_user', hint: 'The exact Kick username of the creator.' },
-  { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "username/repository-name".' },
+  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#ee802f', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Format: Full URL (e.g. https://site.com/feed.xml).' },
+  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'Format: App ID (e.g. 730) or Store URL.' },
+  { id: 'twitch', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'Format: Username or Channel Link.' },
+  { id: 'kick', name: 'Kick', logo: '/emojis/kick.png', color: '#53fc18', description: 'Go live alerts for Kick streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'kick_user', hint: 'Format: Username or Channel Link.' },
+  { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "owner/repo" or Repository URL.' },
   { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', isCrypto: true },
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
   { id: 'steam_free', name: 'Steam Free', logo: '/emojis/steam.png', color: '#66c0f4', description: 'New free games discovered on Steam.', isGlobal: true },
@@ -144,7 +144,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     if (!isOpen) {
       setStep(1);
       setSelectedPlatform(null);
-      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [] });
+      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [], send_initial_alert: true });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
@@ -495,23 +495,25 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
                </div>
 
-                <div className="form-group" style={{ 
-                  marginTop: '1.5rem', 
-                  background: 'rgba(255,255,255,0.02)', 
-                  padding: '1.25rem', 
-                  borderRadius: '20px', 
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  display: 'flex',
+                <div className="form-group alert-toggle-container" style={{ 
+                  marginTop: '1rem', 
+                  background: 'rgba(255,255,255,0.03)', 
+                  padding: '0.75rem 1.25rem', 
+                  borderRadius: '16px', 
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex !important',
+                  flexDirection: 'row !important',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  width: '100%'
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Send initial alert</label>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '80%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
                       Post an update immediately if the source is already live or has new items.
                     </p>
                   </div>
-                  <label className="switch">
+                  <label className="switch" style={{ margin: 0 }}>
                     <input 
                       type="checkbox" 
                       checked={formData.send_initial_alert} 
@@ -586,6 +588,13 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
         .switch input { 
           opacity: 0; width: 0; height: 0;
+        }
+        
+        .alert-toggle-container {
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: space-between !important;
         }
 
         .slider {

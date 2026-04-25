@@ -8,11 +8,12 @@ import MultiSelect from './MultiSelect';
 import { useToast } from '@/context/ToastContext';
 
 const platforms = [
-  { id: 'youtube', name: 'YouTube', icon: <img src="/emojis/youtube.png" alt="YT" style={{ width: '24px', height: '24px' }} />, color: '#ff0000', emoji: '/emojis/youtube.png' },
-  { id: 'stream', name: 'Twitch', icon: <img src="/emojis/twitch.png" alt="Twitch" style={{ width: '24px', height: '24px' }} />, color: '#9146ff', emoji: '/emojis/twitch.png' },
-  { id: 'rss', name: 'RSS Feed', icon: <Rss />, color: '#ee802f', emoji: '/emojis/rss.png' },
-  { id: 'github', name: 'GitHub', icon: <img src="/emojis/github.png" alt="GH" style={{ width: '24px', height: '24px' }} />, color: '#fafafa', emoji: '/emojis/github.png' },
-  { id: 'steam_news', name: 'Steam News', icon: <img src="/emojis/steam.png" alt="Steam" style={{ width: '24px', height: '24px' }} />, color: '#171a21', emoji: '/emojis/steam.png' },
+  { id: 'youtube', name: 'YouTube', icon: <img src="/emojis/youtube.png" alt="YT" style={{ width: '24px', height: '24px' }} />, color: '#ff0000', emoji: '/emojis/youtube.png', placeholder: 'https://youtube.com/@handle\n@username\nUCID', hint: 'Links, @handles or UCIDs' },
+  { id: 'stream', name: 'Twitch', icon: <img src="/emojis/twitch.png" alt="Twitch" style={{ width: '24px', height: '24px' }} />, color: '#9146ff', emoji: '/emojis/twitch.png', placeholder: 'twitch_user\nhttps://twitch.tv/user', hint: 'Usernames or Links' },
+  { id: 'kick', name: 'Kick', icon: <img src="/emojis/kick.png" alt="Kick" style={{ width: '24px', height: '24px' }} />, color: '#53fc18', emoji: '/emojis/kick.png', placeholder: 'kick_user\nhttps://kick.com/user', hint: 'Usernames or Links' },
+  { id: 'rss', name: 'RSS Feed', icon: <Rss />, color: '#ee802f', emoji: '/emojis/rss.png', placeholder: 'https://site.com/feed.xml\nhttps://blog.com/rss', hint: 'Full RSS/Atom URLs' },
+  { id: 'github', name: 'GitHub', icon: <img src="/emojis/github.png" alt="GH" style={{ width: '24px', height: '24px' }} />, color: '#fafafa', emoji: '/emojis/github.png', placeholder: 'owner/repo\nhttps://github.com/owner/repo', hint: '"owner/repo" or Links' },
+  { id: 'steam_news', name: 'Steam News', icon: <img src="/emojis/steam.png" alt="Steam" style={{ width: '24px', height: '24px' }} />, color: '#66c0f4', emoji: '/emojis/steam.png', placeholder: '730\nhttps://store.steampowered.com/app/730', hint: 'App IDs or Store URLs' },
 ];
 
 export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier, isPremium }) {
@@ -46,7 +47,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
         fetch(`/api/guilds/${guildId}/channels`),
         fetch(`/api/guilds/${guildId}/roles`)
       ]);
-      
+
       if (chanRes.ok) setChannels(await chanRes.json());
       if (roleRes.ok) setRoles(await roleRes.json());
     } catch (err) {
@@ -143,21 +144,21 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
 
         <div className="modal-body">
           {!isTierEligible ? (
-             <div className="premium-lock">
-                <div className="lock-content">
-                  <Shield size={48} color="#ffd700" style={{ marginBottom: '1.5rem', filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.3))' }} />
-                  <h4>Professional Feature</h4>
-                  <p>The Bulk Import Wizard is available exclusively for **Professional** and **Ultimate** tiers.</p>
-                  <a href={`/premium?guild=${guildId}`} className="upgrade-btn">Upgrade to Professional</a>
-                </div>
-             </div>
+            <div className="premium-lock">
+              <div className="lock-content">
+                <Shield size={48} color="#ffd700" style={{ marginBottom: '1.5rem', filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.3))' }} />
+                <h4>Professional Feature</h4>
+                <p>The Bulk Import Wizard is available exclusively for **Professional** and **Ultimate** tiers.</p>
+                <a href={`/premium?guild=${guildId}`} className="upgrade-btn">Upgrade to Professional</a>
+              </div>
+            </div>
           ) : (
             <>
               {step === 1 && (
                 <div className="step-1-grid">
                   {platforms.map(p => (
-                    <button 
-                      key={p.id} 
+                    <button
+                      key={p.id}
                       className={`platform-card ${selectedPlatform?.id === p.id ? 'active' : ''}`}
                       onClick={() => setSelectedPlatform(p)}
                     >
@@ -174,9 +175,14 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
               {step === 2 && (
                 <div className="step-2-form">
                   <div className="form-section">
-                    <label>Enter {selectedPlatform.name} links or usernames (one per line)</label>
-                    <textarea 
-                      placeholder={selectedPlatform.id === 'youtube' ? 'https://youtube.com/@channel\n@username\n...' : 'Source 1\nSource 2\n...'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ margin: 0 }}>Enter {selectedPlatform.name} sources (one per line)</label>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {selectedPlatform.hint}
+                      </span>
+                    </div>
+                    <textarea
+                      placeholder={selectedPlatform.placeholder}
                       value={inputList}
                       onChange={(e) => setInputList(e.target.value)}
                       className="bulk-textarea"
@@ -186,7 +192,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                   <div className="settings-grid">
                     <div className="form-group">
                       <label>Target Channels</label>
-                      <MultiSelect 
+                      <MultiSelect
                         options={channels.map(c => ({ id: c.id, name: `#${c.name}` }))}
                         value={targetChannels}
                         onChange={setTargetChannels}
@@ -195,7 +201,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                     </div>
                     <div className="form-group">
                       <label>Ping Roles (Optional)</label>
-                      <MultiSelect 
+                      <MultiSelect
                         options={roles.map(r => ({ id: r.id, name: r.name }))}
                         value={targetRoles}
                         onChange={setTargetRoles}
@@ -206,16 +212,16 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                       <div className="form-group">
                         <label>Accent Color</label>
                         <div className="color-input-wrapper">
-                          <input 
-                            type="color" 
-                            value={embedColor} 
-                            onChange={(e) => setEmbedColor(e.target.value)} 
+                          <input
+                            type="color"
+                            value={embedColor}
+                            onChange={(e) => setEmbedColor(e.target.value)}
                             className="color-picker"
                           />
-                          <input 
-                            type="text" 
-                            value={embedColor} 
-                            onChange={(e) => setEmbedColor(e.target.value)} 
+                          <input
+                            type="text"
+                            value={embedColor}
+                            onChange={(e) => setEmbedColor(e.target.value)}
                             className="color-text"
                           />
                         </div>
@@ -223,26 +229,28 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                     )}
                   </div>
 
-                  <div className="form-group" style={{ 
-                    marginTop: '1.5rem', 
-                    background: 'rgba(255,255,255,0.02)', 
-                    padding: '1.25rem', 
-                    borderRadius: '20px', 
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    display: 'flex',
+                  <div className="form-group alert-toggle-container" style={{
+                    marginTop: '0.75rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    padding: '0.6rem 1.1rem',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex !important',
+                    flexDirection: 'row !important',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    width: '100%'
                   }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Send initial alert</label>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '80%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
+                      <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
                         Post updates immediately for any source that is already live.
                       </p>
                     </div>
-                    <label className="switch">
-                      <input 
-                        type="checkbox" 
-                        checked={sendInitialAlert} 
+                    <label className="switch" style={{ margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={sendInitialAlert}
                         onChange={(e) => setSendInitialAlert(e.target.checked)}
                       />
                       <span className="slider round"></span>
@@ -363,6 +371,13 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
 
           .switch input { 
             opacity: 0; width: 0; height: 0;
+          }
+          
+          .alert-toggle-container {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
           }
 
           .slider {
@@ -594,7 +609,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           .step-2-form {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1.25rem;
           }
 
           .bulk-textarea {
