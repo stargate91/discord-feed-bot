@@ -84,7 +84,7 @@ export async function POST(req) {
           api_url: apiUrl,
           target_channels: channelIds,
           target_roles: roleIds,
-          embed_color: embedColor || (type === 'youtube' ? null : '#7b2cbf')
+          embed_color: embedColor || (type === 'youtube' ? null : '#3d3f45')
         };
 
         // For YouTube, also provide channel_id which the monitor specifically looks for

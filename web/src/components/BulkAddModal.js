@@ -22,7 +22,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
   const [inputList, setInputList] = useState('');
   const [targetChannels, setTargetChannels] = useState([]);
   const [targetRoles, setTargetRoles] = useState([]);
-  const [embedColor, setEmbedColor] = useState('#7b2cbf');
+  const [embedColor, setEmbedColor] = useState('#3d3f45');
   const [channels, setChannels] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
