@@ -355,7 +355,7 @@ function SettingsContent() {
       <div className="settings-grid">
         <div className="settings-main">
           {/* 1. Language */}
-          <SettingCard title="System Language" description="Default language for bot messages" icon={Globe}>
+          <SettingCard title="System Language" description="Select the language Nova uses for automated messages and alerts on your Discord server. This does not affect the dashboard's interface." icon={Globe}>
             <div className="language-toggle">
               <button className={`lang-btn ${settings.language === 'en' ? 'active' : ''}`} onClick={() => setSettings({ ...settings, language: 'en' })}>
                 <img src="https://flagcdn.com/w40/gb.png" alt="English" className="flag-icon-img" />
@@ -371,7 +371,7 @@ function SettingsContent() {
           {/* 2. Management Role */}
           <SettingCard 
             title="Management Role" 
-            description="Role allowed to configure the bot" 
+            description="Specify which Discord role is authorized to manage Nova's feeds and settings. Server owners and Administrators have access by default." 
             icon={Shield}
             style={{ zIndex: 10 }}
           >
@@ -436,7 +436,7 @@ function SettingsContent() {
           </SettingCard>
 
           {/* 4. Alert Templates (Professional Tier+) */}
-          <SettingCard title="Alert Templates" description="Customize how bot messages look per platform" icon={MessageSquare}>
+          <SettingCard title="Alert Templates" description="Craft unique message formats for each platform using dynamic tags. Define exactly how your automated alerts appear to your community." icon={MessageSquare}>
             {(settings.tier < 2 && !settings.isMaster) ? (
               <div className="premium-lock-overlay">
                 <Lock size={32} />
