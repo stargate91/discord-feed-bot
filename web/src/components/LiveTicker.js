@@ -51,9 +51,11 @@ export default function LiveTicker() {
   };
 
   const getIconSrc = (platform) => {
+    if (platform === 'tmdb_tv' || platform === 'tv_series' || platform === 'tv') return '/emojis/tmdb.png';
+    if (platform.startsWith('movie')) return '/emojis/tmdb.png';
+    
     let base = platform.replace('_news', '').replace('_free', '').replace('_', '-');
     if (base === 'stream') return '/emojis/twitch.png';
-    if (base === 'movie' || base === 'tv-series' || base === 'tv') return '/emojis/tmdb.png';
     return `/emojis/${base}.png`;
   };
 

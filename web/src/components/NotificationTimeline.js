@@ -23,8 +23,15 @@ const PLATFORM_ICONS = {
   crypto: { icon: '/emojis/crypto.png', color: "#F7931A" },
   movie: { icon: '/emojis/tmdb.png', color: "#00d1b2" },
   tv_series: { icon: '/emojis/tmdb.png', color: "#3273dc" },
+  tmdb_tv: { icon: '/emojis/tmdb.png', color: "#3273dc" },
   github: { icon: '/emojis/github.png', color: "#ffffff" },
   default: { icon: '/emojis/rss.png', color: "var(--accent-color)" }
+};
+
+const getPlatformIcon = (platform) => {
+  if (platform.startsWith('movie:')) return PLATFORM_ICONS.movie;
+  if (platform === 'tmdb_tv') return PLATFORM_ICONS.tmdb_tv;
+  return PLATFORM_ICONS[platform] || PLATFORM_ICONS.default;
 };
 
 export default function NotificationTimeline({ notifications }) {
@@ -51,7 +58,7 @@ export default function NotificationTimeline({ notifications }) {
 
       <div className="timeline-list">
         {notifications.map((notif, i) => {
-          const plat = PLATFORM_ICONS[notif.platform] || PLATFORM_ICONS.default;
+          const plat = getPlatformIcon(notif.platform);
           const Icon = plat.icon;
 
           return (
