@@ -39,9 +39,9 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Professional tier required for Bulk Import.' }, { status: 403 });
     }
 
-    // Build channel/role arrays as integers
-    const channelIds = targetChannels.map(id => parseInt(id));
-    const roleIds = (targetRoles || []).map(id => parseInt(id));
+    // Build channel/role arrays as strings (IMPORTANT: No parseInt here, would lose precision)
+    const channelIds = targetChannels.map(id => String(id));
+    const roleIds = (targetRoles || []).map(id => String(id));
 
     let successCount = 0;
     let errorCount = 0;
@@ -110,12 +110,12 @@ export async function POST(req) {
           `INSERT INTO monitors (guild_id, type, name, enabled, extra_settings, discord_channel_id, ping_role_id)
            VALUES ($1, $2, $3, true, $4, $5, $6)`,
           [
-            guildId, 
+            String(guildId), 
             type, 
             name,
             JSON.stringify(extraSettings),
-            channelIds[0] || 0,
-            roleIds[0] || 0
+            channelIds[0] ? String(channelIds[0]) : "0",
+            roleIds[0] ? String(roleIds[0]) : "0"
           ]
         );
         successCount++;
