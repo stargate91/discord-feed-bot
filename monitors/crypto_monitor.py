@@ -290,43 +290,43 @@ class CryptoMonitor(BaseMonitor):
         if not prices_data:
             return {"content": self.bot.get_feedback("crypto_waiting_for_data", guild_id=self.guild_id), "view": None}
                         
-                        crypto_emoji = "<:crypto:1495846010197381160>"
-                        title = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
-                        accent_color = self.get_color()
-                        
-                        summary_lines = []
-                        valid_count = 0
-                        
-                        container_items = [
-                            discord.ui.TextDisplay(f"### {crypto_emoji} {title}"),
-                            discord.ui.Separator()
-                        ]
+        crypto_emoji = "<:crypto:1495846010197381160>"
+        title = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
+        accent_color = self.get_color()
+        
+        summary_lines = []
+        valid_count = 0
+        
+        container_items = [
+            discord.ui.TextDisplay(f"### {crypto_emoji} {title}"),
+            discord.ui.Separator()
+        ]
 
-                        for sym, threshold in self.targets.items():
-                            cid = self.coin_id_map.get(sym)
-                            if cid and cid in prices_data:
-                                current_price = float(prices_data[cid]["usd"])
-                                diff = ((current_price - threshold) / threshold) * 100
-                                dir_emoji = CRYPTO_UP if diff >= 0 else CRYPTO_DOWN
-                                
-                                fmt_price = f"{current_price:,.2f}"
-                                fmt_diff = f"{diff:+.2f}"
-                                
-                                line = f"{dir_emoji} **{sym}**: {fmt_price} USD ({fmt_diff}% a küszöbtől)"
-                                summary_lines.append(line)
-                                valid_count += 1
-                        
-                        if valid_count == 0:
-                            return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "view": None}
+        for sym, threshold in self.targets.items():
+            cid = self.coin_id_map.get(sym)
+            if cid and cid in prices_data:
+                current_price = float(prices_data[cid]["usd"])
+                diff = ((current_price - threshold) / threshold) * 100
+                dir_emoji = CRYPTO_UP if diff >= 0 else CRYPTO_DOWN
+                
+                fmt_price = f"{current_price:,.2f}"
+                fmt_diff = f"{diff:+.2f}"
+                
+                line = f"{dir_emoji} **{sym}**: {fmt_price} USD ({fmt_diff}% a küszöbtől)"
+                summary_lines.append(line)
+                valid_count += 1
+        
+        if valid_count == 0:
+            return {"content": self.bot.get_feedback("crypto_no_data", guild_id=self.guild_id), "view": None}
 
-                        container_items.append(discord.ui.TextDisplay("\n".join(summary_lines)))
-                        
-                        view = discord.ui.LayoutView()
-                        view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
-                        
-                        return {
-                            "view": view
-                        }
+        container_items.append(discord.ui.TextDisplay("\n".join(summary_lines)))
+        
+        view = discord.ui.LayoutView()
+        view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
+        
+        return {
+            "view": view
+        }
 
     async def get_preview(self):
         """Show a simulated alert for one of the coins."""
