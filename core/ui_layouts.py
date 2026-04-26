@@ -424,10 +424,10 @@ def generate_steam_news_layout(
     # 4. Meta Section (Author + Date on left, Read More button on right)
     meta_lines = []
     if author:
-        meta_lines.append(f"👤 {author}")
+        meta_lines.append(f"**{author}**")
         
     if published_ts:
-        meta_lines.append(f"📅 **{bot.get_feedback('field_published_at', guild_id=guild_id)}:** <t:{published_ts}:f> (<t:{published_ts}:R>)")
+        meta_lines.append(f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:** <t:{published_ts}:f> (<t:{published_ts}:R>)")
         
     meta_text = "\n".join(meta_lines)
     
