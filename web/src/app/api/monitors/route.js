@@ -32,7 +32,7 @@ export async function GET(request) {
     let values = [];
 
     if (guildId) {
-      query += ' WHERE guild_id = $1';
+      query += ' WHERE guild_id = $1::bigint';
       values.push(guildId);
     }
 
