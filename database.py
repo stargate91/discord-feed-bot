@@ -30,7 +30,8 @@ async def init_db():
             tier INTEGER DEFAULT 0,
             stripe_subscription_id TEXT,
             is_master BOOLEAN DEFAULT false,
-            is_premium BOOLEAN DEFAULT false
+            is_premium BOOLEAN DEFAULT false,
+            custom_branding TEXT
         )''',
         # 2. Monitors
         '''CREATE TABLE IF NOT EXISTS monitors (
@@ -139,6 +140,7 @@ async def init_db():
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_master BOOLEAN DEFAULT false")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT false")
+                await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS custom_branding TEXT")
                 
                 # Migration: Update default refresh interval to 30 for free guilds
                 await conn.execute("UPDATE guild_settings SET refresh_interval = 30 WHERE refresh_interval IS NULL OR (refresh_interval = 15 AND tier = 0)")
@@ -343,29 +345,47 @@ async def get_guild_settings(guild_id):
         "tier": 0, "stripe_subscription_id": None
     }
 
-async def update_guild_settings(guild_id, language=None, alert_templates=None, admin_role_id=None, premium_until=None, refresh_interval=None, tier=None, stripe_subscription_id=None, bot=None):
-    current = await get_guild_settings(guild_id)
-    lang = language if language is not None else current["language"]
-    a_role = admin_role_id if admin_role_id is not None else current["admin_role_id"]
-    templates = alert_templates if alert_templates is not None else current["alert_templates"]
-    p_until = premium_until if premium_until is not None else current["premium_until"]
-    r_int = refresh_interval if refresh_interval is not None else current["refresh_interval"]
-    g_tier = tier if tier is not None else current["tier"]
-    sub_id = stripe_subscription_id if stripe_subscription_id is not None else current["stripe_subscription_id"]
+
+async def update_guild_settings(guild_id, lang=None, a_role=None, templates=None, p_until=None, r_int=None, g_tier=None, sub_id=None, bot=None, custom_branding=None):
+    # Retrieve current values first
+    curr = {}
+    if bot:
+        curr = bot.guild_settings_cache.get(guild_id, {})
+    else:
+        pool = await get_pool()
+        row = await pool.fetchrow('SELECT language, admin_role_id, alert_templates, premium_until, refresh_interval, tier, stripe_subscription_id, custom_branding FROM guild_settings WHERE guild_id=$1', guild_id)
+        if row: curr = dict(row)
+
+    # Use existing or defaults if not provided
+    lang = lang if lang is not None else curr.get('language', 'en')
+    a_role = a_role if a_role is not None else curr.get('admin_role_id', 0)
     
-    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, alert_templates, premium_until, refresh_interval, tier, stripe_subscription_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT(guild_id) DO UPDATE SET 
+    if templates is None:
+        templates = curr.get('alert_templates', {})
+    elif isinstance(templates, str):
+        try: templates = json.loads(templates)
+        except: templates = {}
+        
+    p_until = p_until if p_until is not None else curr.get('premium_until', None)
+    r_int = r_int if r_int is not None else curr.get('refresh_interval', 30)
+    g_tier = g_tier if g_tier is not None else curr.get('tier', 0)
+    sub_id = sub_id if sub_id is not None else curr.get('stripe_subscription_id', None)
+    custom_branding = custom_branding if custom_branding is not None else curr.get('custom_branding', {})
+
+    q = '''INSERT INTO guild_settings (guild_id, language, admin_role_id, alert_templates, premium_until, refresh_interval, tier, stripe_subscription_id, custom_branding)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (guild_id) DO UPDATE SET
                language=EXCLUDED.language, 
                admin_role_id=EXCLUDED.admin_role_id,
                alert_templates=EXCLUDED.alert_templates,
                premium_until=EXCLUDED.premium_until,
                refresh_interval=EXCLUDED.refresh_interval,
                tier=EXCLUDED.tier,
-               stripe_subscription_id=EXCLUDED.stripe_subscription_id'''
+               stripe_subscription_id=EXCLUDED.stripe_subscription_id,
+               custom_branding=EXCLUDED.custom_branding'''
 
     pool = await get_pool()
-    await pool.execute(q, guild_id, lang, a_role, json.dumps(templates), p_until, r_int, g_tier, sub_id)
+    await pool.execute(q, guild_id, lang, a_role, json.dumps(templates), p_until, r_int, g_tier, sub_id, custom_branding)
     
     # Update cache if bot instance provided
     if bot:
@@ -376,7 +396,8 @@ async def update_guild_settings(guild_id, language=None, alert_templates=None, a
             "premium_until": p_until,
             "refresh_interval": r_int,
             "tier": g_tier,
-            "stripe_subscription_id": sub_id
+            "stripe_subscription_id": sub_id,
+            "custom_branding": custom_branding
         }
 
         log.info(f"Updated guild settings cache for {guild_id}")

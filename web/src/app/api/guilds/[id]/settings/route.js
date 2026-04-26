@@ -39,7 +39,7 @@ export async function GET(req, { params }) {
     }
 
     const res = await pool.query(
-      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier, stripe_subscription_id FROM guild_settings WHERE guild_id = $1::bigint",
+      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier, stripe_subscription_id, custom_branding FROM guild_settings WHERE guild_id = $1::bigint",
       [guildId]
     );
 
@@ -84,7 +84,8 @@ export async function GET(req, { params }) {
             alert_templates: templates,
             tier: tier,
             isMaster: isMaster,
-            hasStripeSubscription: !!row.stripe_subscription_id
+            hasStripeSubscription: !!row.stripe_subscription_id,
+            custom_branding: row.custom_branding !== null ? row.custom_branding : null
         };
     }
 
@@ -110,7 +111,7 @@ export async function PATCH(req, { params }) {
   }
   
   const body = await req.json();
-  const { language, admin_role_id, refresh_interval, alert_templates } = body;
+  const { language, admin_role_id, refresh_interval, alert_templates, custom_branding } = body;
 
   // Validation
   const allowedLangs = ['en', 'hu'];
@@ -165,22 +166,31 @@ export async function PATCH(req, { params }) {
     }, { status: 400 });
   }
 
+  // Validate Custom Branding based on Tier
+  let finalCustomBranding = custom_branding;
+  if (!isMaster && guildTier < 1) {
+    // If they don't have permission, just ignore the field and keep it null
+    finalCustomBranding = null;
+  }
+
   try {
     const q = `
-      INSERT INTO guild_settings (guild_id, language, admin_role_id, refresh_interval, alert_templates)
-      VALUES ($1::bigint, $2, $3::bigint, $4, $5::jsonb)
+      INSERT INTO guild_settings (guild_id, language, admin_role_id, refresh_interval, alert_templates, custom_branding)
+      VALUES ($1::bigint, $2, $3::bigint, $4, $5::jsonb, $6)
       ON CONFLICT (guild_id) DO UPDATE SET
         language = EXCLUDED.language,
         admin_role_id = EXCLUDED.admin_role_id,
         refresh_interval = EXCLUDED.refresh_interval,
-        alert_templates = EXCLUDED.alert_templates
+        alert_templates = EXCLUDED.alert_templates,
+        custom_branding = EXCLUDED.custom_branding
     `;
     await pool.query(q, [
         guildId, 
         language, 
         admin_role_id, 
         refresh_interval, 
-        JSON.stringify(alert_templates || {})
+        JSON.stringify(alert_templates || {}),
+        finalCustomBranding !== undefined ? finalCustomBranding : null
     ]);
 
     return NextResponse.json({ success: true });

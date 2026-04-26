@@ -188,6 +188,7 @@ function SettingsContent() {
     admin_role_id: '0',
     refresh_interval: 30,
     alert_templates: {},
+    custom_branding: null,
     isMaster: false
   });
   const [roles, setRoles] = useState([]);
@@ -505,6 +506,41 @@ function SettingsContent() {
               </div>
             )}
           </SettingCard>
+
+          {/* 5. Custom Branding (Starter Tier+) */}
+          <SettingCard 
+            title="Custom Branding (Footer)" 
+            description="Override or completely remove the 'Delivered by Nova' footer at the bottom of the feed cards. Leave empty to hide it entirely." 
+            icon={Crown}
+          >
+            {(settings.tier < 1 && !settings.isMaster) ? (
+              <div className="premium-lock-overlay">
+                <Lock size={32} />
+                <p>Available for Starter Tier & above</p>
+                <Link href={`/premium?guild=${guildId}`}>
+                  <button className="upgrade-btn-small">Upgrade Now</button>
+                </Link>
+              </div>
+            ) : (
+              <div className="branding-input-wrapper">
+                <input
+                  type="text"
+                  className="branding-input"
+                  placeholder="Leave empty to hide footer..."
+                  value={
+                    settings.custom_branding !== null 
+                      ? settings.custom_branding 
+                      : (settings.language === 'hu' ? "-# *Küldte [**Nova**](https://novafeeds.xyz)*" : "-# *Delivered by [**Nova**](https://novafeeds.xyz)*")
+                  }
+                  onChange={(e) => setSettings({ ...settings, custom_branding: e.target.value })}
+                />
+                <p className="branding-tip">
+                  <Info size={14} />
+                  Type exactly what you want to appear in the footer. If you want to completely hide the footer and the separator line, leave this box empty.
+                </p>
+              </div>
+            )}
+          </SettingCard>
         </div>
 
         <div className="settings-sidebar">
@@ -704,6 +740,11 @@ function SettingsContent() {
         .template-textarea { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; min-height: 120px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; transition: border-color 0.2s; }
         .template-textarea:focus { border-color: var(--accent-color); }
         .template-tip { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); }
+
+        .branding-input-wrapper { display: flex; flex-direction: column; gap: 12px; }
+        .branding-input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+        .branding-input:focus { border-color: var(--accent-color); }
+        .branding-tip { display: flex; align-items: flex-start; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
 
         .save-button { display: flex; align-items: center; gap: 0.75rem; background: var(--accent-color); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 20px var(--accent-glow); }
         .save-button:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 15px 30px var(--accent-glow); }

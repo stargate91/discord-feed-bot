@@ -53,12 +53,23 @@ def generate_free_game_layout(
     )
     container_items.append(section)
     
-    # Native V2 Separator
-    container_items.append(discord.ui.Separator())
+    # Custom Branding Support
+    settings = bot.guild_settings_cache.get(guild_id, {})
+    custom_branding = settings.get("custom_branding")
     
-    # Branding
-    branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
-    container_items.append(discord.ui.TextDisplay(branding_text))
+    if custom_branding == "":
+        # Hide branding entirely
+        pass
+    else:
+        # Native V2 Separator
+        container_items.append(discord.ui.Separator())
+        
+        # Branding Text
+        if custom_branding:
+            container_items.append(discord.ui.TextDisplay(custom_branding))
+        else:
+            branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
+            container_items.append(discord.ui.TextDisplay(branding_text))
     
     # Put everything in a container
     container = discord.ui.Container(*container_items, accent_color=accent_color)
