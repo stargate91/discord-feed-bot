@@ -252,32 +252,32 @@ def generate_tmdb_layout(
             discord.ui.MediaGallery(discord.MediaGalleryItem(backdrop_url))
         )
     
-    # 3. Meta info section with button(s) as accessory
+    # 3. Meta info section with button as accessory
+    score_label = bot.get_feedback("field_score", guild_id=guild_id)
+    date_label = bot.get_feedback("field_release_date", guild_id=guild_id)
+    
     meta_lines = []
     if genre_text:
         meta_lines.append(f"**{genre_text}**")
     if score_text:
-        meta_lines.append(score_text)
+        meta_lines.append(f"{score_label}: {score_text}")
     if release_date:
-        meta_lines.append(release_date)
+        meta_lines.append(f"{date_label}: {release_date}")
     
     meta_text = "\n".join(meta_lines) if meta_lines else f"**{title}**"
     
     btn_label = bot.get_feedback("btn_view_tmdb", guild_id=guild_id)
-    button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
     
-    section = discord.ui.Section(
-        discord.ui.TextDisplay(meta_text),
-        accessory=button
-    )
-    container_items.append(section)
+    # Meta as plain text
+    container_items.append(discord.ui.TextDisplay(meta_text))
     
-    # 4. Trailer button in ActionRow (if available)
+    # 4. Buttons in a single ActionRow
+    action_row = discord.ui.ActionRow()
+    action_row.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
     if trailer_url:
-        action_row = discord.ui.ActionRow()
         t_label, t_emoji = bot.parse_emoji_text(bot.get_feedback("btn_watch_trailer", guild_id=guild_id))
         action_row.add_item(discord.ui.Button(label=t_label, emoji=t_emoji, url=trailer_url, style=discord.ButtonStyle.link))
-        container_items.append(action_row)
+    container_items.append(action_row)
     
     # 5. Branding
     settings = bot.guild_settings_cache.get(guild_id, {})

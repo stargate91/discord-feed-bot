@@ -3,7 +3,6 @@ import discord
 from core.base_monitor import BaseMonitor
 from logger import log
 import database as db
-from core.emojis import ICON_STAR
 from core.ui_layouts import generate_tmdb_layout
 
 class TVSeriesMonitor(BaseMonitor):
@@ -86,7 +85,7 @@ class TVSeriesMonitor(BaseMonitor):
         vote_avg = series.get("vote_average", 0)
         vote_count = series.get("vote_count", 0)
         na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+        score_text = f"{vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
         
         poster_path = series.get("poster_path")
         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
