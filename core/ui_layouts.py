@@ -148,3 +148,73 @@ def generate_news_layout(
     layout.add_item(container)
     
     return content, layout
+
+def generate_youtube_layout(
+    bot,
+    guild_id: int,
+    alert_text: str,
+    title: str,
+    url: str,
+    image_url: str,
+    author: str,
+    published_ts: int,
+    accent_color: int
+):
+    """
+    Centralized generator for YouTube feeds using Discord Components V2.
+    Returns (content, view).
+    """
+    # Wrap URL in <> so Discord DOES NOT generate its own native embed
+    content = f"{alert_text}\n<{url}>"
+    
+    layout = discord.ui.LayoutView()
+    container_items = []
+    
+    # 1. Main Title (Full width)
+    container_items.append(discord.ui.TextDisplay(f"### <:youtube:1490131427503636511> {title}"))
+    
+    # 2. Image (Thumbnail)
+    if image_url:
+        container_items.append(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
+        )
+        
+    # 3. Meta Section (Author + Published Date on the left, Button on the right)
+    btn_label = bot.get_feedback("btn_view_youtube", guild_id=guild_id)
+    button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
+    
+    meta_lines = []
+    if author:
+        meta_lines.append(f"**{author}**")
+        
+    if published_ts:
+        meta_lines.append(f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:**\n<t:{published_ts}:f> (<t:{published_ts}:R>)")
+        
+    meta_text = "\n".join(meta_lines)
+    
+    if meta_text:
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=button)
+        )
+    else:
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(f"🔗 **{btn_label}**"), accessory=button)
+        )
+        
+    settings = bot.guild_settings_cache.get(guild_id, {})
+    custom_branding = settings.get("custom_branding")
+    
+    if custom_branding == "":
+        pass
+    else:
+        container_items.append(discord.ui.Separator())
+        if custom_branding:
+            container_items.append(discord.ui.TextDisplay(custom_branding))
+        else:
+            branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
+            container_items.append(discord.ui.TextDisplay(branding_text))
+            
+    container = discord.ui.Container(*container_items, accent_color=accent_color)
+    layout.add_item(container)
+    
+    return content, layout

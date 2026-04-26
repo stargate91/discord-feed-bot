@@ -5,6 +5,8 @@ import re
 import os
 from core.base_monitor import BaseMonitor
 from logger import log
+from core.ui_layouts import generate_youtube_layout
+import calendar
 
 import database as db
 
@@ -147,17 +149,31 @@ class YouTubeMonitor(BaseMonitor):
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
         
+        published_ts = None
+        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+            published_ts = calendar.timegm(entry.published_parsed)
+            
+        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        
         alert_text = self.get_alert_message({
             "name": author_name,
             "title": entry_title,
             "url": short_link
         })
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_youtube", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
+        content, layout = generate_youtube_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=entry_title,
+            url=short_link,
+            image_url=thumbnail,
+            author=author_name,
+            published_ts=published_ts,
+            accent_color=self.get_color(0xff0000)
+        )
         
-        await self.send_update(content=f"{alert_text}\n{short_link}", embed=None, view=view)
+        await self.send_update(content=content, view=layout)
 
     def get_item_id(self, entry):
         return entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
@@ -218,6 +234,12 @@ class YouTubeMonitor(BaseMonitor):
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
         
+        published_ts = None
+        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+            published_ts = calendar.timegm(entry.published_parsed)
+            
+        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        
         # Format localized alert message
         alert_text = self.get_alert_message({
             "name": author_name,
@@ -225,12 +247,19 @@ class YouTubeMonitor(BaseMonitor):
             "url": short_link
         })
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_youtube", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=short_link, style=discord.ButtonStyle.link))
+        content, layout = generate_youtube_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=entry_title,
+            url=short_link,
+            image_url=thumbnail,
+            author=author_name,
+            published_ts=published_ts,
+            accent_color=self.get_color(0xff0000)
+        )
         
         return {
-            "content": f"{alert_text}\n{short_link}",
-            "embed": None,
-            "view": view
+            "content": content,
+            "view": layout
         }
