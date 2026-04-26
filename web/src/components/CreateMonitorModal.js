@@ -151,7 +151,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     if (!isOpen) {
       setStep(1);
       setSelectedPlatform(null);
-      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [], send_initial_alert: true });
+      setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [], send_initial_alert: true, use_native_player: false });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
     }
   }, [isOpen, guildId]);
@@ -511,8 +511,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     padding: '0.75rem 1.25rem', 
                     borderRadius: '16px', 
                     border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex !important',
-                    flexDirection: 'row !important',
+                    display: 'flex',
+                    flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     width: '100%'
@@ -541,8 +541,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     padding: '0.75rem 1.25rem', 
                     borderRadius: '16px', 
                     border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex !important',
-                    flexDirection: 'row !important',
+                    display: 'flex',
+                    flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     width: '100%',
