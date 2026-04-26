@@ -204,14 +204,18 @@ function MonitorsContent() {
           addToast(`Deleted ${idsToDelete.length} monitors`, 'success');
           fetchMonitors();
           setSelectedIds([]);
-          setIsBulkDeletingMode(false);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          addToast(errData.error || `Delete failed (${res.status})`, 'error');
         }
       } else if (monitorToDelete) {
         const res = await fetch(`/api/monitors/${monitorToDelete.id}`, { method: 'DELETE' });
         if (res.ok) {
           setMonitors(monitors.filter(m => m.id !== monitorToDelete.id));
           addToast('Monitor deleted', 'success');
-          setMonitorToDelete(null);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          addToast(errData.error || `Delete failed (${res.status})`, 'error');
         }
       }
     } catch (err) {
@@ -219,6 +223,8 @@ function MonitorsContent() {
       addToast('Failed to delete monitor(s)', 'error');
     } finally {
       setIsDeleting(false);
+      setMonitorToDelete(null);
+      setIsBulkDeletingMode(false);
     }
   };
 
