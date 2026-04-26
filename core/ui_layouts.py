@@ -117,7 +117,7 @@ def generate_news_layout(
     
     # Published date and Link Button section
     if published_ts:
-        published_text = f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:**\n<t:{published_ts}:f> (<t:{published_ts}:R>)"
+        published_text = f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:** <t:{published_ts}:f> (<t:{published_ts}:R>)"
         container_items.append(
             discord.ui.Section(discord.ui.TextDisplay(published_text), accessory=button)
         )
