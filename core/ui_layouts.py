@@ -560,11 +560,13 @@ def generate_dashboard_layout(bot, guild_id: int):
     layout = discord.ui.LayoutView()
     container_items = []
     
-    # 1. Header & Image
+    # 1. Header with Bot Avatar as thumbnail
     bot_avatar = bot.user.display_avatar.url
-    container_items.append(discord.ui.MediaGallery(discord.MediaGalleryItem(bot_avatar)))
-    container_items.append(discord.ui.Separator())
-    container_items.append(discord.ui.TextDisplay(f"### {title}"))
+    header_section = discord.ui.Section(
+        discord.ui.TextDisplay(f"### {title}"),
+        accessory=discord.ui.Thumbnail(bot_avatar)
+    )
+    container_items.append(header_section)
     container_items.append(discord.ui.Separator())
     
     # 2. Description
