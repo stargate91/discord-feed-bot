@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MonitorCard from '@/components/MonitorCard';
@@ -8,7 +8,7 @@ import EditMonitorModal from '@/components/EditMonitorModal';
 import CreateMonitorModal from '@/components/CreateMonitorModal';
 import BulkEditModal from '@/components/BulkEditModal';
 import BulkAddModal from '@/components/BulkAddModal';
-import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity, Zap, X } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Globe, AlertTriangle, Edit3, Activity, Zap, X, MousePointer2 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 
 const platformNames = {
@@ -65,6 +65,40 @@ function MonitorsContent() {
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+
+  const platforms = ['all', ...new Set(monitors.map(m => m.type))];
+  
+  const scrollRef = useRef(null);
+  const [canScroll, setCanScroll] = useState(false);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      setCanScroll(scrollRef.current.scrollWidth > scrollRef.current.clientWidth);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    
+    const el = scrollRef.current;
+    if (el) {
+      const onWheel = (e) => {
+        // If content overflows, take over the wheel event
+        if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY;
+        }
+      };
+      el.addEventListener('wheel', onWheel, { passive: false });
+      return () => {
+        window.removeEventListener('resize', checkScroll);
+        el.removeEventListener('wheel', onWheel);
+      };
+    }
+    
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [monitors, platforms]);
 
   const fetchMonitors = async () => {
     if (!guildId) return;
@@ -256,7 +290,7 @@ function MonitorsContent() {
     return matchesSearch && matchesFilter;
   });
 
-  const platforms = ['all', ...new Set(monitors.map(m => m.type))];
+
 
   return (
     <div className="monitors-page-wrapper" style={{ maxWidth: '100%', margin: '0 auto' }}>
@@ -291,7 +325,10 @@ function MonitorsContent() {
       <div className="control-center">
         <div className="filter-tabs-wrapper">
           <div className="fade-left"></div>
-          <div className="filter-tabs">
+          <div 
+            className="filter-tabs" 
+            ref={scrollRef}
+          >
             {platforms.map(p => (
               <button
                 key={p}
@@ -308,6 +345,13 @@ function MonitorsContent() {
           </div>
           <div className="fade-right"></div>
         </div>
+        
+        {canScroll && (
+          <div className="scroll-hint">
+            <MousePointer2 size={12} />
+            <span>Scroll horizontally to see all platforms</span>
+          </div>
+        )}
 
         {/* Bulk Actions - separate row */}
         <div className="bulk-actions-toolbar">
@@ -333,7 +377,7 @@ function MonitorsContent() {
               const allEnabled = target.every(m => m.enabled);
               handleBulkToggle(!allEnabled);
             }}
-            disabled={monitors.length === 0 || undefined}
+            disabled={monitors.length === 0}
           >
             {(() => {
               const target = selectedIds.length > 0
@@ -348,14 +392,14 @@ function MonitorsContent() {
           <button
             className="bulk-btn edit"
             onClick={() => setIsBulkEditOpen(true)}
-            disabled={monitors.length === 0 || undefined}
+            disabled={monitors.length === 0}
           >
             <Edit3 size={14} /> {selectedIds.length > 0 ? `Edit Selected (${selectedIds.length})` : 'Edit All'}
           </button>
           <button
             className={`bulk-btn delete ${bulkDeleteConfirm ? 'confirm' : ''}`}
             onClick={handleBulkDelete}
-            disabled={monitors.length === 0 || undefined}
+            disabled={monitors.length === 0}
           >
             {bulkDeleteConfirm ? (
               <><AlertTriangle size={14} /> Confirm Delete {selectedIds.length > 0 ? 'Selected' : 'ALL'}?</>
@@ -499,6 +543,24 @@ function MonitorsContent() {
           z-index: 2;
           transition: opacity 0.3s;
         }
+        
+        .scroll-hint {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: var(--text-secondary);
+          font-size: 0.7rem;
+          margin-top: -8px;
+          margin-bottom: 8px;
+          padding-left: 10px;
+          opacity: 0.6;
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 0.6; transform: translateY(0); }
+        }
 
         .fade-left {
           left: 0;
@@ -512,11 +574,13 @@ function MonitorsContent() {
 
         .filter-tabs {
           display: flex;
-          gap: 10px;
+          gap: 12px;
           overflow-x: auto;
-          padding: 4px 0;
+          padding: 10px 10px;
           scrollbar-width: none; /* Firefox */
           -ms-overflow-style: none; /* IE/Edge */
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
         }
 
         .filter-tabs::-webkit-scrollbar {
@@ -527,18 +591,19 @@ function MonitorsContent() {
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.05);
           color: var(--text-secondary);
-          padding: 0.7rem 1.4rem;
-          border-radius: 14px;
+          padding: 0.75rem 1.5rem;
+          border-radius: 16px;
           cursor: pointer;
           font-weight: 700;
           font-size: 0.85rem;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           white-space: nowrap;
           display: flex;
           align-items: center;
           gap: 10px;
           position: relative;
           overflow: hidden;
+          flex-shrink: 0;
         }
 
         .filter-tab:hover {
@@ -549,10 +614,10 @@ function MonitorsContent() {
         }
 
         .filter-tab.active {
-          background: var(--accent-color);
+          background: linear-gradient(135deg, var(--accent-color) 0%, #3c096c 100%);
           color: white;
-          border-color: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 8px 20px rgba(123, 44, 191, 0.4);
+          border-color: rgba(255, 255, 255, 0.3);
+          box-shadow: 0 8px 25px rgba(123, 44, 191, 0.4);
         }
 
         .tab-icon {
