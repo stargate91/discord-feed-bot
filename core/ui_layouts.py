@@ -414,7 +414,7 @@ def generate_steam_news_layout(
     if description:
         container_items.append(discord.ui.TextDisplay(description))
         
-    # 4. Meta Section (Author + Date)
+    # 4. Meta Section (Author + Date on left, Read More button on right)
     meta_lines = []
     if author:
         meta_lines.append(f"**{author}**")
@@ -423,14 +423,19 @@ def generate_steam_news_layout(
         meta_lines.append(f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:**\n<t:{published_ts}:f> (<t:{published_ts}:R>)")
         
     meta_text = "\n".join(meta_lines)
-    if meta_text:
-        container_items.append(discord.ui.TextDisplay(meta_text))
-        
-    # 5. Read More Button in ActionRow
+    
     btn_label = bot.get_feedback("btn_read_more", guild_id=guild_id)
-    action_row = discord.ui.ActionRow()
-    action_row.add_item(discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link))
-    container_items.append(action_row)
+    button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
+    
+    if meta_text:
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=button)
+        )
+    else:
+        # If no meta, just show the button on the right
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(f"**{btn_label}**"), accessory=button)
+        )
         
     # 5. Branding
     settings = bot.guild_settings_cache.get(guild_id, {})

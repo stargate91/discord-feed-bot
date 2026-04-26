@@ -133,7 +133,7 @@ class SteamNewsMonitor(BaseMonitor):
         
         # Fallback to official Steam game header if no image in the news post
         if not image_url:
-            image_url = f"https://shared.akamai.steamstatic.com/store_pictures/steam/apps/{self.appid}/header.jpg"
+            image_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{self.appid}/header.jpg"
         
         # Formulate message
         alert_text = self.get_alert_message({
