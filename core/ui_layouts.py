@@ -42,7 +42,7 @@ def generate_free_game_layout(
     # Top Wide Image (if any)
     if image_url:
         container_items.append(
-            discord.ui.MediaGallery(discord.MediaGalleryItem(url=image_url))
+            discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
         )
         
     # Text Section with the Link Button on the right
