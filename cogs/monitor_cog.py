@@ -49,15 +49,21 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                         msg_key = "check_no_active_offers"
                     await interaction.followup.send(self.bot.get_feedback(msg_key, name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
                 else:
-                    send_kwargs = {
-                        "content": data.get("content"),
-                        "embed": data.get("embed"),
-                        "ephemeral": True
-                    }
-                    if data.get("view"):
-                        send_kwargs["view"] = data.get("view")
-                        
-                    await interaction.followup.send(**send_kwargs)
+                    view = data.get("view")
+                    content = data.get("content")
+                    embed = data.get("embed")
+                    
+                    # Detect V2 LayoutView
+                    is_v2 = view and (hasattr(view, "_is_v2") or type(view).__name__ == "LayoutView")
+                    
+                    if is_v2 and content:
+                        # Message 1: Alert Text
+                        await interaction.followup.send(content=content, ephemeral=True, suppress_embeds=True)
+                        # Message 2: V2 Layout
+                        await interaction.followup.send(view=view, ephemeral=True)
+                    else:
+                        await interaction.followup.send(content=content, embed=embed, view=view, ephemeral=True)
+
                     await interaction.followup.send(self.bot.get_feedback("check_success", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
             else:
                 await interaction.followup.send(self.bot.get_feedback("error_no_content", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
@@ -177,13 +183,18 @@ class MonitorCog(commands.GroupCog, name="monitor"):
                 return
                 
             for i, p_data in enumerate(previews):
-                send_kwargs = {"ephemeral": True}
-                for field in ["content", "embed", "view"]:
-                    val = p_data.get(field)
-                    if val is not None:
-                        send_kwargs[field] = val
+                view = p_data.get("view")
+                content = p_data.get("content")
+                embed = p_data.get("embed")
                 
-                await interaction.followup.send(**send_kwargs)
+                is_v2 = view and (hasattr(view, "_is_v2") or type(view).__name__ == "LayoutView")
+                
+                if is_v2 and content:
+                    await interaction.followup.send(content=content, ephemeral=True, suppress_embeds=True)
+                    await interaction.followup.send(view=view, ephemeral=True)
+                else:
+                    await interaction.followup.send(content=content, embed=embed, view=view, ephemeral=True)
+
             
             await interaction.followup.send(self.bot.get_feedback("preview_success", name=monitor_name, guild_id=interaction.guild_id), ephemeral=True)
         except Exception as e:
