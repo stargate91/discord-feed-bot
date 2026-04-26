@@ -1,10 +1,10 @@
 import aiohttp
 import discord
-import textwrap
 from core.base_monitor import BaseMonitor
 from logger import log
 import database as db
 from core.emojis import ICON_STAR
+from core.ui_layouts import generate_tmdb_layout
 
 class TVSeriesMonitor(BaseMonitor):
     """Monitor for TV series updates via TMDB."""
@@ -68,11 +68,40 @@ class TVSeriesMonitor(BaseMonitor):
         for series in trending:
             series_id = str(series.get("id"))
             if not series_id: continue
-
-            # Determine if we should seed (silent save) or post
             all_candidates.append(series)
 
         return list(reversed(all_candidates))
+
+    def _build_tmdb_data(self, series, genre_map):
+        """Extract common data fields from a TMDB series object."""
+        series_id = str(series.get("id"))
+        name = series.get("name", "")
+        overview = series.get("overview", "")
+        first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
+        
+        genre_ids = series.get("genre_ids", [])
+        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
+        genre_text = ", ".join(genre_names) if genre_names else None
+        
+        vote_avg = series.get("vote_average", 0)
+        vote_count = series.get("vote_count", 0)
+        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
+        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
+        
+        poster_path = series.get("poster_path")
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+        
+        backdrop_path = series.get("backdrop_path")
+        backdrop_url = f"https://image.tmdb.org/t/p/w780{backdrop_path}" if backdrop_path else None
+        
+        tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
+        
+        return {
+            "series_id": series_id, "name": name, "overview": overview,
+            "first_air_date": first_air_date, "genre_text": genre_text,
+            "score_text": score_text, "poster_url": poster_url,
+            "backdrop_url": backdrop_url, "tmdb_url": tmdb_url
+        }
 
     async def process_item(self, series):
         target_genres = self.config.get("target_genres", [])
@@ -95,12 +124,13 @@ class TVSeriesMonitor(BaseMonitor):
                 return
 
         genre_map = await self._fetch_genres()
-
-        series_id = str(series.get("id"))
-        name = series.get("name", "")
-        overview = series.get("overview", "")
-        first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
-
+        data = self._build_tmdb_data(series, genre_map)
+        
+        name = data["name"]
+        overview = data["overview"]
+        series_id = data["series_id"]
+        
+        # Language fallbacks
         if (not name or not overview) and self.tmdb_lang != "en-US":
             en_data = await self._get_en_fallback("tv", series_id)
             if not name: name = en_data.get("name", "")
@@ -111,53 +141,30 @@ class TVSeriesMonitor(BaseMonitor):
             overview = orig_data.get("overview", "")
         if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
         
-        genre_ids = series.get("genre_ids", [])
-        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
-        genre_text = ", ".join(genre_names) if genre_names else None
-
-        vote_avg = series.get("vote_average", 0)
-        vote_count = series.get("vote_count", 0)
-        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
-
-        poster_path = series.get("poster_path")
-        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
-        tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
-        
         trailer_url = await self._get_trailer_url(series_id)
-
+        
         alert_text = self.get_alert_message({
             "name": self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id),
             "title": name,
-            "url": tmdb_url
+            "url": data["tmdb_url"]
         })
-
-
-        embed = discord.Embed(
+        
+        content, layout = generate_tmdb_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
             title=name[:256],
-            url=tmdb_url,
-            
-            color=self.get_color(0x3d3f45)
+            url=data["tmdb_url"],
+            backdrop_url=data["backdrop_url"],
+            poster_url=data["poster_url"],
+            score_text=data["score_text"],
+            genre_text=data["genre_text"],
+            release_date=data["first_air_date"],
+            trailer_url=trailer_url,
+            accent_color=self.get_color(0x01b4e4)
         )
-        if poster_url: embed.set_image(url=poster_url)
         
-        if genre_text:
-            wrapped_genres = textwrap.fill(genre_text, width=32)
-            embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
-        
-        embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
-        embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
-        
-        embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=first_air_date, guild_id=self.guild_id))
-
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=tmdb_url, style=discord.ButtonStyle.link))
-        if trailer_url:
-            t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id))
-            view.add_item(discord.ui.Button(label=t_label, emoji=t_emoji, url=trailer_url, style=discord.ButtonStyle.link))
-
-        await self.send_update(content=f"{alert_text}\n{tmdb_url}", embed=embed, view=view)
+        await self.send_update(content=content, view=layout)
 
     def get_item_id(self, item):
         return str(item.get("id"))
@@ -287,7 +294,6 @@ class TVSeriesMonitor(BaseMonitor):
                             
                             filtered_results.append(item)
                             if len(filtered_results) >= count:
-                                # We have enough results, exit BOTH loops
                                 break
                     
                     if len(filtered_results) >= count:
@@ -307,68 +313,44 @@ class TVSeriesMonitor(BaseMonitor):
 
     async def _format_series(self, series, genre_map):
         """Helper to format a TMDB series into standard output mapping."""
-        series_id = series.get("id")
-        name = series.get("name", "")
-        overview = series.get("overview", "")
-        tmdb_url = f"https://www.themoviedb.org/tv/{series_id}"
-        first_air_date = series.get("first_air_date", self.bot.get_feedback("default_na", guild_id=self.guild_id))
-
-        # English fallback for missing name/overview
+        data = self._build_tmdb_data(series, genre_map)
+        
+        name = data["name"]
+        overview = data["overview"]
+        series_id = data["series_id"]
+        
+        # Language fallbacks
         if (not name or not overview) and self.tmdb_lang != "en-US":
             en_data = await self._get_en_fallback("tv", series_id)
             if not name: name = en_data.get("name", "")
             if not overview: overview = en_data.get("overview", "")
-        # Original language fallback
         if not name: name = series.get("original_name", "")
         if not overview:
             orig_data = await self._get_en_fallback("tv", series_id, original=True)
             overview = orig_data.get("overview", "")
         if not name: name = self.bot.get_feedback("monitor_tv_fallback_title", guild_id=self.guild_id)
         
-        # Ratings
-        vote_avg = series.get("vote_average", 0)
-        vote_count = series.get("vote_count", 0)
-        na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
-        score_text = f"{ICON_STAR} {vote_avg:.1f} ({vote_count})" if vote_count > 0 else na_text
-
-        genre_ids = series.get("genre_ids", [])
-        genre_names = [genre_map.get(gid) for gid in genre_ids if genre_map.get(gid)]
-        genre_text = ", ".join(genre_names) if genre_names else None
-        
         trailer_url = await self._get_trailer_url(series_id)
         
         alert_text = self.get_alert_message({
             "name": self.bot.get_feedback("monitor_platform_tv", guild_id=self.guild_id),
             "title": name,
-            "url": tmdb_url
+            "url": data["tmdb_url"]
         })
         
-        # Wrap overview for better readability in Discord
-        
-        embed = discord.Embed(
+        content, layout = generate_tmdb_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
             title=name[:256],
-            url=tmdb_url,
-            
-            color=self.get_color(0x3d3f45)
+            url=data["tmdb_url"],
+            backdrop_url=data["backdrop_url"],
+            poster_url=data["poster_url"],
+            score_text=data["score_text"],
+            genre_text=data["genre_text"],
+            release_date=data["first_air_date"],
+            trailer_url=trailer_url,
+            accent_color=self.get_color(0x01b4e4)
         )
-        poster_path = series.get("poster_path")
-        if poster_path: embed.set_image(url=f"https://image.tmdb.org/t/p/w500{poster_path}")
         
-        if genre_text:
-            wrapped_genres = textwrap.fill(genre_text, width=32)
-            embed.add_field(name=self.bot.get_feedback("field_genres", guild_id=self.guild_id), value=wrapped_genres, inline=False)
-        embed.add_field(name=self.bot.get_feedback("field_release_date", guild_id=self.guild_id), value=first_air_date, inline=True)
-        embed.add_field(name=self.bot.get_feedback("field_score", guild_id=self.guild_id), value=score_text, inline=True)
-        embed.set_footer(text=self.bot.get_feedback("footer_tmdb", date=first_air_date, guild_id=self.guild_id))
-
-        view = discord.ui.View()
-        view.add_item(discord.ui.Button(label=self.bot.get_feedback("btn_view_tmdb", guild_id=self.guild_id), url=tmdb_url, style=discord.ButtonStyle.link))
-        if trailer_url:
-            t_label, t_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_watch_trailer", guild_id=self.guild_id))
-            view.add_item(discord.ui.Button(label=t_label, emoji=t_emoji, url=trailer_url, style=discord.ButtonStyle.link))
-        
-        return {
-            "content": f"{alert_text}\n{tmdb_url}",
-            "embed": embed,
-            "view": view
-        }
+        return {"content": content, "view": layout}
