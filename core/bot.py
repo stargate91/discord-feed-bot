@@ -19,6 +19,9 @@ class FeedBot(commands.Bot):
         prefix = config.get("command_prefix", "!")
         super().__init__(command_prefix=prefix, intents=intents)
         self.config = config
+        self.monitor_manager = None
+        self.language_data = {}
+        self.locales = {}
         self.guild_settings_cache = {}
         
         # Initialize Crypto Manager
