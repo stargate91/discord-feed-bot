@@ -110,7 +110,7 @@ class GitHubMonitor(BaseMonitor):
         return results
 
     def _format_release(self, release):
-        """Helper to format a GitHub release into standard output mapping."""
+        """Helper to format a GitHub release into standard output mapping using V2 Components."""
         tag_name = release.get("tag_name", "Unknown")
         name = release.get("name") or tag_name
         html_url = release.get("html_url")
@@ -122,26 +122,6 @@ class GitHubMonitor(BaseMonitor):
         if len(body) > 1000:
             body = body[:997] + "..."
             
-        embed = discord.Embed(
-            title=f"{self.repo_path} - {name}",
-            url=html_url,
-            description=body,
-            color=self.get_color(0x24292e)  # GitHub Dark Grey
-        )
-        
-        if published_at:
-            try:
-                # published_at format: 2024-04-18T12:34:56Z
-                dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
-                embed.timestamp = dt
-                ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
-                embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{ts}:f> (<t:{ts}:R>)", inline=False)
-            except:
-                pass
-                
-        embed.set_author(name=author)
-        embed.set_footer(text=self.bot.get_feedback("footer_github", guild_id=self.guild_id))
-        
         alert_text = self.get_alert_message({
             "name": self.repo_path,
             "title": name,
@@ -149,12 +129,31 @@ class GitHubMonitor(BaseMonitor):
             "author": author
         })
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_github", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=html_url, style=discord.ButtonStyle.link))
+        ts = None
+        if published_at:
+            try:
+                # published_at format: 2024-04-18T12:34:56Z
+                dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
+                ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
+            except:
+                pass
+                
+        from core.ui_layouts import generate_github_layout
+        content, layout = generate_github_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            repo_name=self.repo_path,
+            title=name,
+            url=html_url,
+            description=body,
+            author=author,
+            published_ts=ts,
+            accent_color=self.get_color(0x24292e)
+        )
         
         return {
-            "content": alert_text,
-            "embed": embed,
-            "view": view
+            "content": content,
+            "embed": None,
+            "view": layout
         }
