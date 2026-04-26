@@ -131,6 +131,10 @@ class SteamNewsMonitor(BaseMonitor):
         description = clean_html(raw_contents)
         image_url = extract_image_url(raw_contents)
         
+        # Fallback to official Steam game header if no image in the news post
+        if not image_url:
+            image_url = f"https://shared.akamai.steamstatic.com/store_pictures/steam/apps/{self.appid}/header.jpg"
+        
         # Formulate message
         alert_text = self.get_alert_message({
             "name": self.name, 
