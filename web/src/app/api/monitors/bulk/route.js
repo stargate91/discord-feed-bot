@@ -57,11 +57,10 @@ export async function POST(request) {
     if (action === "delete") {
       if (monitorIds && monitorIds.length > 0) {
         await pool.query("DELETE FROM monitors WHERE id = ANY($1::int[])", [monitorIds]);
-        await pool.query("DELETE FROM monitor_stats_daily WHERE monitor_id = ANY($1::int[])", [monitorIds]);
-      } else if (guildId) {
-        await pool.query("DELETE FROM monitors WHERE guild_id = $1::bigint", [guildId]);
-        await pool.query("DELETE FROM monitor_stats_daily WHERE guild_id = $1::bigint", [guildId]);
-        await pool.query("DELETE FROM published_entries_v2 WHERE guild_id = $1::bigint", [guildId]);
+      } else if (cleanId) {
+        await pool.query("DELETE FROM monitors WHERE guild_id = $1::bigint", [cleanId]);
+        await pool.query("DELETE FROM monitor_stats_daily WHERE guild_id = $1::bigint", [cleanId]);
+        await pool.query("DELETE FROM published_entries_v2 WHERE guild_id = $1::bigint", [cleanId]);
       } else {
         await pool.query("DELETE FROM monitors");
         await pool.query("DELETE FROM monitor_stats_daily");
