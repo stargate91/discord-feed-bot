@@ -157,8 +157,16 @@ class BaseMonitor(ABC):
                     if content is None and embed is None and view is None:
                         continue # Skip empty updates to prevent 50006 errors
                         
-                    if view and type(view).__name__ == "LayoutView" and content:
+                    # Logic to handle Discord Components V2 (LayoutView)
+                    # V2 messages (IS_COMPONENTS_V2 flag) cannot have the 'content' field.
+                    # If we have both content and a V2 view, we send them as two separate messages.
+                    is_v2 = view and (hasattr(view, "_is_v2") or type(view).__name__ == "LayoutView")
+                    
+                    if is_v2 and content:
+                        # Message 1: Alert Text (and URL)
+                        # We suppress embeds so Discord doesn't generate a native embed if a URL is present
                         await channel.send(content=content, suppress_embeds=True)
+                        # Message 2: The V2 Layout
                         await channel.send(view=view)
                     else:
                         await channel.send(content=content, embed=embed, view=view)
