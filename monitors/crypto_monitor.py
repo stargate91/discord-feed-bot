@@ -222,8 +222,8 @@ class CryptoMonitor(BaseMonitor):
         container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
         container_items.append(discord.ui.Separator())
         
-        # 2. Main Alert Message with dynamic direction arrow
-        container_items.append(discord.ui.TextDisplay(f"{dir_emoji} {msg}"))
+        # 2. Main Alert Message (direction arrow is already in msg)
+        container_items.append(discord.ui.TextDisplay(msg))
         
         # 3. Meta Data & Button
         meta_lines = [
@@ -376,7 +376,7 @@ class CryptoMonitor(BaseMonitor):
         container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
         container_items.append(discord.ui.Separator())
         
-        container_items.append(discord.ui.TextDisplay(f"{dir_emoji} {msg}"))
+        container_items.append(discord.ui.TextDisplay(msg))
         
         meta_lines = [
             f"**{self.bot.get_feedback('ui_crypto_field_price', guild_id=self.guild_id)}:** {current_price:,.2f} USD",
