@@ -217,13 +217,13 @@ class CryptoMonitor(BaseMonitor):
         view = discord.ui.LayoutView()
         container_items = []
         
-        # 1. Header with chart increase/decrease emoji
-        container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
+        crypto_emoji = "<:crypto:1495846010197381160>"
+        # 1. Header with crypto emoji
+        container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
         container_items.append(discord.ui.Separator())
         
-        # 2. Main Alert Message with user provided crypto icon
-        crypto_emoji = "<:crypto:1495846010197381160>"
-        container_items.append(discord.ui.TextDisplay(f"{crypto_emoji} {msg}"))
+        # 2. Main Alert Message with dynamic direction arrow
+        container_items.append(discord.ui.TextDisplay(f"{dir_emoji} {msg}"))
         
         # 3. Meta Data & Button
         meta_lines = [
@@ -372,11 +372,10 @@ class CryptoMonitor(BaseMonitor):
         view = discord.ui.LayoutView()
         container_items = []
         
-        container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
+        container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
         container_items.append(discord.ui.Separator())
         
-        crypto_emoji = "<:crypto:1495846010197381160>"
-        container_items.append(discord.ui.TextDisplay(f"{crypto_emoji} {msg}"))
+        container_items.append(discord.ui.TextDisplay(f"{dir_emoji} {msg}"))
         
         meta_lines = [
             f"**{self.bot.get_feedback('ui_crypto_field_price', guild_id=self.guild_id)}:** {current_price:,.2f} USD",
