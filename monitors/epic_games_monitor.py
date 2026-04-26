@@ -1,6 +1,6 @@
 import aiohttp
 import discord
-from datetime import datetime
+from datetime import datetime, timezone
 from core.base_monitor import BaseMonitor
 from logger import log
 # Standard User-Agent to avoid being blocked
@@ -120,7 +120,7 @@ class EpicGamesMonitor(BaseMonitor):
         if end_date_str:
             try:
                 dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                expiry_ts = int(dt.timestamp())
+                expiry_ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
             except: pass
 
         alert_text = self.get_alert_message({
@@ -227,7 +227,7 @@ class EpicGamesMonitor(BaseMonitor):
             if end_date_str:
                 try:
                     dt = datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    expiry_ts = int(dt.timestamp())
+                    expiry_ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
                 except: pass
 
             alert_text = self.get_alert_message({"name": "Epic Games", "title": title, "url": game_url})

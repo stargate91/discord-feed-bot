@@ -4,7 +4,7 @@ from core.base_monitor import BaseMonitor
 from logger import log
 import database as db
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 class GitHubMonitor(BaseMonitor):
     def __init__(self, bot, config):
@@ -134,7 +134,7 @@ class GitHubMonitor(BaseMonitor):
                 # published_at format: 2024-04-18T12:34:56Z
                 dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
                 embed.timestamp = dt
-                ts = int(dt.timestamp())
+                ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
                 embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{ts}:f> (<t:{ts}:R>)", inline=False)
             except:
                 pass
