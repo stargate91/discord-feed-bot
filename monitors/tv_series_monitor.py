@@ -161,7 +161,7 @@ class TVSeriesMonitor(BaseMonitor):
             genre_text=data["genre_text"],
             release_date=data["first_air_date"],
             trailer_url=trailer_url,
-            accent_color=self.get_color(0x01b4e4)
+            accent_color=self.get_color(0x3d3f45)
         )
         
         await self.send_update(content=content, view=layout)
@@ -350,7 +350,7 @@ class TVSeriesMonitor(BaseMonitor):
             genre_text=data["genre_text"],
             release_date=data["first_air_date"],
             trailer_url=trailer_url,
-            accent_color=self.get_color(0x01b4e4)
+            accent_color=self.get_color(0x3d3f45)
         )
         
         return {"content": content, "view": layout}
