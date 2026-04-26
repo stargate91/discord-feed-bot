@@ -30,6 +30,10 @@ def generate_free_game_layout(
     if expiry_ts:
         lines.append(f"**{bot.get_feedback('field_expiry', guild_id=guild_id)}:** <t:{expiry_ts}:R>")
         
+    lines.append("")
+    lines.append("---")
+    lines.append("-# *Delivered by [**NovaFeeds**](https://novafeeds.xyz)*")
+        
     desc_text = "\n".join(lines)
     section_text = f"### {title}\n{desc_text}" if desc_text else f"### {title}"
     

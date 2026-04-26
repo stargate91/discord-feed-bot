@@ -58,6 +58,8 @@ class SteamFreeMonitor(BaseMonitor):
     async def process_item(self, game):
         giveaway_id = str(game.get("id"))
         title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+        title = title.replace("(Steam)", "").replace("Giveaway", "").strip()
+        title = f"<:steam:1490131413956038656> {title}"
         description = game.get("description", "")
         game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
         image_url = game.get("image") or game.get("thumbnail")
@@ -141,6 +143,8 @@ class SteamFreeMonitor(BaseMonitor):
         for game in reversed(latest_data):
             na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+            title = title.replace("(Steam)", "").replace("Giveaway", "").strip()
+            title = f"<:steam:1490131413956038656> {title}"
             game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
             image_url = game.get("image") or game.get("thumbnail")
             worth = game.get("worth", na_text)
