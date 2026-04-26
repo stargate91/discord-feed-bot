@@ -564,7 +564,7 @@ def generate_dashboard_layout(bot, guild_id: int):
     bot_avatar = bot.user.display_avatar.url
     header_section = discord.ui.Section(
         discord.ui.TextDisplay(f"### {title}"),
-        accessory=discord.ui.MediaGallery(discord.ui.MediaGalleryItem(bot_avatar))
+        accessory=discord.ui.MediaGallery(discord.MediaGalleryItem(bot_avatar))
     )
     container_items.append(header_section)
     container_items.append(discord.ui.Separator())
