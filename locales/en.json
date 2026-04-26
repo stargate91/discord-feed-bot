@@ -110,5 +110,6 @@
         "Helping {count} feeds"
     ],
     "dashboard_cmd_title": "<:infocolorful:1496064819588235274> NovaFeeds Dashboard",
-    "dashboard_cmd_desc": "Manage all your feeds, settings, and premium subscriptions comfortably on our website.\n\nNeed help or want to suggest a feature? Join our Discord server!"
+    "dashboard_cmd_desc": "Manage all your feeds, settings, and premium subscriptions comfortably on our website.\n\nNeed help or want to suggest a feature? Join our Discord server!",
+    "branding_delivered_by": "-# *Delivered by [**Nova**](https://novafeeds.xyz)*"
 }

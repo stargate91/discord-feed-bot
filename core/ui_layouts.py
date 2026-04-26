@@ -57,7 +57,8 @@ def generate_free_game_layout(
     container_items.append(discord.ui.Separator())
     
     # Branding
-    container_items.append(discord.ui.TextDisplay("-# *Delivered by [**Nova**](https://novafeeds.xyz)*"))
+    branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
+    container_items.append(discord.ui.TextDisplay(branding_text))
     
     # Put everything in a container
     container = discord.ui.Container(*container_items, accent_color=accent_color)

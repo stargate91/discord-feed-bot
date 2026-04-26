@@ -110,5 +110,6 @@
         "Segítség {count} csatornának"
     ],
     "dashboard_cmd_title": "<:infocolorful:1496064819588235274> NovaFeeds Dashboard",
-    "dashboard_cmd_desc": "Kezeld az összes hírfolyamot, beállítást és prémium előfizetést kényelmesen a weboldalunkon.\n\nSegítségre van szükséged vagy ötleted van? Csatlakozz a Discord szerverünkhöz!"
+    "dashboard_cmd_desc": "Kezeld az összes hírfolyamot, beállítást és prémium előfizetést kényelmesen a weboldalunkon.\n\nSegítségre van szükséged vagy ötleted van? Csatlakozz a Discord szerverünkhöz!",
+    "branding_delivered_by": "-# *Küldte [**Nova**](https://novafeeds.xyz)*"
 }

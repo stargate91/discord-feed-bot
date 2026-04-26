@@ -59,6 +59,8 @@ class GOGFreeMonitor(BaseMonitor):
     async def process_item(self, game):
         giveaway_id = str(game.get("id"))
         title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+        title = title.replace("(GOG)", "").replace("Giveaway", "").strip()
+        title = f"<:gog:1490131412043431976> {title}"
         game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
         
         is_steam_link = "steampowered.com" in game_url.lower() or "steamcommunity.com" in game_url.lower()
@@ -137,6 +139,8 @@ class GOGFreeMonitor(BaseMonitor):
         for game in reversed(latest_data):
             na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+            title = title.replace("(GOG)", "").replace("Giveaway", "").strip()
+            title = f"<:gog:1490131412043431976> {title}"
             game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
             
             # Avoid Steam links in GOG monitor

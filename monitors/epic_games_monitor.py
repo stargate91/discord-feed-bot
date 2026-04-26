@@ -96,6 +96,7 @@ class EpicGamesMonitor(BaseMonitor):
         is_active = item["is_active"]
         
         title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+        title = f"<:epic_games:1490131410852253716> {title}"
         description = game.get("description", "")
         
         product_slug = game.get("productSlug") or next((m.get("pageSlug") for m in game.get("catalogNs", {}).get("mappings", [])), None) or game.get("urlSlug")
@@ -203,6 +204,7 @@ class EpicGamesMonitor(BaseMonitor):
             if not is_active and not is_upcoming: continue
 
             title = game.get("title", self.bot.get_feedback("default_unknown", guild_id=self.guild_id))
+            title = f"<:epic_games:1490131410852253716> {title}"
             description = game.get("description", "")
             product_slug = game.get("productSlug") or next((m.get("pageSlug") for m in game.get("catalogNs", {}).get("mappings", [])), None) or game.get("urlSlug")
             game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
