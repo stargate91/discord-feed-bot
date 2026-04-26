@@ -341,14 +341,30 @@ class KickMonitor(BaseStreamMonitor):
                         if thumbnail and thumbnail.startswith("//"):
                             thumbnail = f"https:{thumbnail}"
 
+                    # Kick's CDN (Cloudflare) blocks Discord's image proxy. 
+                    # We must proxy the images through a public resizer (wsrv.nl)
+                    import urllib.parse
+                    def proxy_img(img_url):
+                        if not img_url: return ""
+                        encoded = urllib.parse.quote(img_url)
+                        return f"https://wsrv.nl/?url={encoded}"
+                        
+                    # Extract game/category (API changes sometimes)
+                    game = na_text
+                    category = livestream.get("category")
+                    if isinstance(category, dict):
+                        game = category.get("name", na_text)
+                    elif isinstance(livestream.get("categories"), list) and livestream.get("categories"):
+                        game = livestream["categories"][0].get("name", na_text)
+
                     return {
                         "is_live": True,
                         "title": livestream.get("session_title", ""),
-                        "game": livestream.get("categories", [{}])[0].get("name", na_text),
+                        "game": game,
                         "viewers": livestream.get("viewer_count", 0),
-                        "thumbnail": thumbnail,
+                        "thumbnail": proxy_img(thumbnail),
                         "display_name": data.get("user", {}).get("username"),
-                        "profile_image": profile_image,
+                        "profile_image": proxy_img(profile_image),
                         "url": f"https://kick.com/{self.stream_username}"
                     }
         except Exception as e:

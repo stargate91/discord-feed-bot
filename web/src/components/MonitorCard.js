@@ -28,7 +28,6 @@ const TIER_CONFIG = {
 };
 
 export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium, tier = 0, isSelected, onSelect, selectionMode }) {
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // 'check', 'repost', 'purge', 'reset'
@@ -80,12 +79,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   };
 
   const handleDeleteClick = () => {
-    if (!deleteConfirm) {
-      setDeleteConfirm(true);
-      setTimeout(() => setDeleteConfirm(false), 3000);
-    } else {
-      onDelete(monitor.id);
-    }
+    onDelete(monitor.id);
   };
 
   const runAction = async (action) => {
@@ -258,10 +252,10 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
         </button>
 
         <button
-          className={`action-btn delete ${deleteConfirm ? 'confirm' : ''}`}
+          className="action-btn delete"
           onClick={handleDeleteClick}
         >
-          {deleteConfirm ? 'Confirm?' : 'Delete'}
+          Delete
         </button>
       </div>
 
@@ -647,12 +641,6 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           border-color: rgba(239, 68, 68, 0.3);
         }
 
-        .action-btn.delete.confirm {
-          background: #ef4444;
-          color: white;
-          border-color: #ef4444;
-        }
-
         .action-btn:hover:not(:disabled) {
           transform: translateY(-2px);
           border-color: rgba(255, 255, 255, 0.2);
@@ -664,7 +652,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
           transform: translateY(-2px) rotate(90deg);
         }
 
-        .action-btn.delete:hover:not(.confirm) {
+        .action-btn.delete:hover {
           background: rgba(239, 68, 68, 0.1);
         }
 

@@ -67,7 +67,7 @@ function MonitorsContent() {
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
-  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [isBulkDeletingMode, setIsBulkDeletingMode] = useState(false);
 
   const platforms = ['all', ...new Set(monitors.map(m => m.type))];
   
@@ -189,49 +189,41 @@ function MonitorsContent() {
   };
 
   const confirmDelete = async () => {
-    if (!monitorToDelete) return;
     setIsDeleting(true);
+    
     try {
-      const res = await fetch(`/api/monitors/${monitorToDelete.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setMonitors(monitors.filter(m => m.id !== monitorToDelete.id));
-        addToast('Monitor deleted', 'success');
-        setMonitorToDelete(null);
+      if (isBulkDeletingMode) {
+        const idsToDelete = selectedIds.length > 0 ? selectedIds : monitors.map(m => m.id);
+        const res = await fetch('/api/monitors/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', ids: idsToDelete, guildId })
+        });
+
+        if (res.ok) {
+          addToast(`Deleted ${idsToDelete.length} monitors`, 'success');
+          fetchMonitors();
+          setSelectedIds([]);
+          setIsBulkDeletingMode(false);
+        }
+      } else if (monitorToDelete) {
+        const res = await fetch(`/api/monitors/${monitorToDelete.id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setMonitors(monitors.filter(m => m.id !== monitorToDelete.id));
+          addToast('Monitor deleted', 'success');
+          setMonitorToDelete(null);
+        }
       }
     } catch (err) {
       console.error(err);
-      addToast('Failed to delete monitor', 'error');
+      addToast('Failed to delete monitor(s)', 'error');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (!bulkDeleteConfirm) {
-      setBulkDeleteConfirm(true);
-      setTimeout(() => setBulkDeleteConfirm(false), 3000);
-      return;
-    }
-
-    const idsToDelete = selectedIds.length > 0 ? selectedIds : monitors.map(m => m.id);
-    if (idsToDelete.length === 0) return;
-
-    try {
-      const res = await fetch('/api/monitors/bulk', {
-        method: 'POST', // Use POST for bulk delete payload
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', ids: idsToDelete, guildId })
-      });
-
-      if (res.ok) {
-        addToast(`Deleted ${idsToDelete.length} monitors`, 'success');
-        fetchMonitors();
-        setSelectedIds([]);
-        setBulkDeleteConfirm(false);
-      }
-    } catch (err) {
-      addToast('Failed to delete monitors', 'error');
-    }
+  const handleBulkDelete = () => {
+    setIsBulkDeletingMode(true);
   };
 
   const handleBulkUpdate = async (updateData) => {
@@ -415,15 +407,11 @@ function MonitorsContent() {
             <Edit3 size={14} /> {selectedIds.length > 0 ? `Edit Selected (${selectedIds.length})` : 'Edit All'}
           </button>
           <button
-            className={`bulk-btn delete ${bulkDeleteConfirm ? 'confirm' : ''}`}
+            className="bulk-btn delete"
             onClick={handleBulkDelete}
             disabled={monitors.length === 0}
           >
-            {bulkDeleteConfirm ? (
-              <><AlertTriangle size={14} /> Confirm Delete {selectedIds.length > 0 ? 'Selected' : 'ALL'}?</>
-            ) : (
-              <><Trash2 size={14} /> {selectedIds.length > 0 ? 'Delete Selected' : 'Delete All'}</>
-            )}
+            <Trash2 size={14} /> {selectedIds.length > 0 ? 'Delete Selected' : 'Delete All'}
           </button>
         </div>
       </div>
@@ -531,21 +519,32 @@ function MonitorsContent() {
         guildLoading={guildLoading}
       />
 
-      {monitorToDelete && (
+      {(monitorToDelete || isBulkDeletingMode) && (
         <div className="delete-modal-overlay">
           <div className="delete-modal-content">
             <div className="delete-modal-icon">
               <Trash2 size={36} color="#ef4444" />
             </div>
-            <h3>Delete Monitor</h3>
+            <h3>Delete Monitor{isBulkDeletingMode ? 's' : ''}</h3>
             <p>
-              Are you sure you want to delete <strong>{monitorToDelete.name}</strong>? 
-              This action cannot be undone and will stop all future notifications to your Discord server.
+              {isBulkDeletingMode ? (
+                <>
+                  Are you sure you want to delete <strong>{selectedIds.length > 0 ? `${selectedIds.length} selected` : 'ALL'}</strong> monitors? 
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete <strong>{monitorToDelete?.name}</strong>? 
+                </>
+              )}
+              <br/><br/>This action cannot be undone and will stop all future notifications to your Discord server.
             </p>
             <div className="delete-modal-actions">
               <button 
                 className="btn-cancel" 
-                onClick={() => setMonitorToDelete(null)}
+                onClick={() => {
+                  setMonitorToDelete(null);
+                  setIsBulkDeletingMode(false);
+                }}
                 disabled={isDeleting}
               >
                 Cancel
