@@ -560,17 +560,17 @@ def generate_dashboard_layout(bot, guild_id: int):
     layout = discord.ui.LayoutView()
     container_items = []
     
-    # 1. Header with Bot Avatar as thumbnail
-    bot_avatar = bot.user.display_avatar.url
-    header_section = discord.ui.Section(
-        discord.ui.TextDisplay(f"### {title}"),
-        accessory=discord.ui.Thumbnail(bot_avatar)
-    )
-    container_items.append(header_section)
+    # 1. Header
+    container_items.append(discord.ui.TextDisplay(f"### {title}"))
     container_items.append(discord.ui.Separator())
     
-    # 2. Description
-    container_items.append(discord.ui.TextDisplay(desc))
+    # 2. Description with Thumbnail
+    bot_avatar = bot.user.display_avatar.url
+    desc_section = discord.ui.Section(
+        discord.ui.TextDisplay(desc),
+        accessory=discord.ui.Thumbnail(bot_avatar)
+    )
+    container_items.append(desc_section)
     
     # 3. Action Buttons
     btn_db = discord.ui.Button(label=db_label, emoji=db_emoji, url="https://novafeeds.xyz", style=discord.ButtonStyle.link)
