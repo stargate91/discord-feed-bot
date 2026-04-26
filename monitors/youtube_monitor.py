@@ -153,8 +153,9 @@ class YouTubeMonitor(BaseMonitor):
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
             
-        # hqdefault is always guaranteed to exist, maxresdefault is not
         thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            thumbnail = entry.media_thumbnail[0]["url"]
         
         alert_text = self.get_alert_message({
             "name": author_name,
@@ -189,6 +190,9 @@ class YouTubeMonitor(BaseMonitor):
             video_id = self.get_item_id(entry)
             if video_id:
                 thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
+                if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+                    thumbnail = entry.media_thumbnail[0]["url"]
+                    
                 title = entry.get("title", "Unknown Video")
                 author = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
                 await db.mark_as_published(
@@ -244,7 +248,9 @@ class YouTubeMonitor(BaseMonitor):
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
             
-        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            thumbnail = entry.media_thumbnail[0]["url"]
         
         # Format localized alert message
         alert_text = self.get_alert_message({
