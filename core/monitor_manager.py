@@ -52,7 +52,7 @@ class MonitorManager:
                 if hasattr(m, 'is_first_run'): state['is_first_run'] = m.is_first_run
                 if state: old_states[m.id] = state
 
-            db_monitors = await database.get_all_monitors()
+            db_monitors = await db.get_all_monitors()
             new_monitors = []
             for m_config in db_monitors:
                 # Flatten extra_settings into the main config dict

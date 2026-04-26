@@ -16,7 +16,7 @@ const platforms = [
   { id: 'steam_news', name: 'Steam News', icon: <img src="/emojis/steam.png" alt="Steam" style={{ width: '24px', height: '24px' }} />, color: '#66c0f4', emoji: '/emojis/steam.png', placeholder: '730\nhttps://store.steampowered.com/app/730', hint: 'App IDs or Store URLs' },
 ];
 
-export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier, isPremium }) {
+export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier, isPremium, guildLoading }) {
   const { addToast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
@@ -143,7 +143,12 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
         </header>
 
         <div className="modal-body">
-          {!isTierEligible ? (
+          {guildLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 0', gap: '1.5rem' }}>
+              <RefreshCw size={48} className="animate-spin" style={{ color: 'var(--accent-color)', opacity: 0.5 }} />
+              <p className="loading-text">Verifying permissions...</p>
+            </div>
+          ) : !isTierEligible ? (
             <div className="premium-lock">
               <div className="lock-content">
                 <Shield size={48} color="#ffd700" style={{ marginBottom: '1.5rem', filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.3))' }} />
@@ -297,7 +302,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
         </div>
 
         <footer className="modal-footer">
-          {isTierEligible && step < 3 && (
+          {!guildLoading && isTierEligible && step < 3 && (
             <>
               {step > 1 && (
                 <button className="btn btn-ghost" onClick={handleBack} disabled={processing}>
@@ -524,6 +529,19 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+          }
+
+          .loading-text {
+            color: var(--text-secondary);
+            font-weight: 600;
+            animation: pulseText 1.5s infinite ease-in-out;
+            letter-spacing: 0.5px;
+          }
+
+          @keyframes pulseText {
+            0% { opacity: 0.4; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0.4; transform: scale(0.98); }
           }
 
           .bulk-modal {

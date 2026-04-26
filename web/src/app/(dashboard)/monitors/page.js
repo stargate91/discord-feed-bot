@@ -54,6 +54,7 @@ function MonitorsContent() {
   const [filter, setFilter] = useState('all');
   const [isPremium, setIsPremium] = useState(false);
   const [tier, setTier] = useState(0);
+  const [guildLoading, setGuildLoading] = useState(true);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +118,7 @@ function MonitorsContent() {
 
   const fetchGuildInfo = async () => {
     if (!guildId) return;
+    setGuildLoading(true);
     try {
       const res = await fetch('/api/guilds');
       if (res.ok) {
@@ -129,6 +131,8 @@ function MonitorsContent() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setGuildLoading(false);
     }
   };
 
@@ -427,6 +431,7 @@ function MonitorsContent() {
                 monitor={m}
                 isPremium={isPremium}
                 tier={tier}
+                loading={guildLoading}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onEdit={openEditModal}
@@ -509,6 +514,7 @@ function MonitorsContent() {
         onSuccess={fetchMonitors}
         tier={tier}
         isPremium={isPremium}
+        guildLoading={guildLoading}
       />
 
       <style jsx>{`
