@@ -32,7 +32,7 @@ def generate_free_game_layout(
         
     lines.append("")
     lines.append("---")
-    lines.append("-# *Delivered by [**NovaFeeds**](https://novafeeds.xyz)*")
+    lines.append("-# *Delivered by [**Nova**](https://novafeeds.xyz)*")
         
     desc_text = "\n".join(lines)
     section_text = f"### {title}\n{desc_text}" if desc_text else f"### {title}"
