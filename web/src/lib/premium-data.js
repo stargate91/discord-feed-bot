@@ -5,8 +5,8 @@ export const tiers = [
     description: "For small hobby projects",
     price: { mo: "0", yr: "0" },
     features: [
-      { text: "3 Feed Monitors" },
-      { text: "30 min Refresh Rate (Slow)" },
+      { text: "2 Feed Monitors" },
+      { text: "20 min Refresh Rate" },
       { text: "3 Days Analytics" },
       { text: "NovaFeeds Branding" },
       { text: "Repost Tool", disabled: true },

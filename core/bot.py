@@ -297,7 +297,7 @@ class FeedBot(commands.Bot):
         if tier == 1: # Starter
             return (10, 1440, 10, 10, 5, 5)
             
-        return (30, 1440, 30, 3, 1, 1) # Free Tier
+        return (20, 1440, 20, 2, 1, 1) # Free Tier
 
     def has_feature(self, guild_id, feature_name):
         """Check if a guild has access to a specific premium feature based on tier."""
