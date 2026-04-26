@@ -155,11 +155,14 @@ class SteamNewsMonitor(BaseMonitor):
                 wrapped_lines.append("")
         wrapped_desc = "\n".join(wrapped_lines)
         
+        # Wrap title to 55 characters
+        wrapped_title = "\n".join(textwrap.wrap(title, width=55, break_long_words=False))
+        
         content, layout = generate_steam_news_layout(
             bot=self.bot,
             guild_id=self.guild_id,
             alert_text=alert_text,
-            title=title[:256],
+            title=wrapped_title,
             url=url if is_valid_url else "",
             description=wrapped_desc,
             image_url=image_url,

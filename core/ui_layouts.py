@@ -402,7 +402,14 @@ def generate_steam_news_layout(
     container_items = []
     
     # 1. Main Title with Steam emoji
-    container_items.append(discord.ui.TextDisplay(f"### <:steam:1490131413956038656> {title}"))
+    formatted_title_lines = []
+    for i, line in enumerate(title.split('\n')):
+        if i == 0:
+            formatted_title_lines.append(f"### <:steam:1490131413956038656> {line}")
+        else:
+            formatted_title_lines.append(f"### {line}")
+            
+    container_items.append(discord.ui.TextDisplay("\n".join(formatted_title_lines)))
     
     # 2. Image (Thumbnail/Cover)
     if image_url:
