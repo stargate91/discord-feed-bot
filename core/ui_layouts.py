@@ -30,10 +30,6 @@ def generate_free_game_layout(
     if expiry_ts:
         lines.append(f"**{bot.get_feedback('field_expiry', guild_id=guild_id)}:** <t:{expiry_ts}:R>")
         
-    lines.append("")
-    lines.append("---")
-    lines.append("-# *Delivered by [**Nova**](https://novafeeds.xyz)*")
-        
     desc_text = "\n".join(lines)
     section_text = f"### {title}\n{desc_text}" if desc_text else f"### {title}"
     
@@ -56,6 +52,12 @@ def generate_free_game_layout(
         accessory=discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link)
     )
     container_items.append(section)
+    
+    # Native V2 Separator
+    container_items.append(discord.ui.Separator())
+    
+    # Branding
+    container_items.append(discord.ui.TextDisplay("-# *Delivered by [**Nova**](https://novafeeds.xyz)*"))
     
     # Put everything in a container
     container = discord.ui.Container(*container_items, accent_color=accent_color)
