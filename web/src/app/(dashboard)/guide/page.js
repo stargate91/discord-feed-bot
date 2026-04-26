@@ -5,12 +5,15 @@ import {
   PlusCircle, 
   Bell, 
   CheckCircle2, 
-  ArrowRight,
-  BookOpen,
-  Layout,
-  Zap,
-  Globe,
-  ShieldCheck
+  ArrowRight, 
+  BookOpen, 
+  Layout, 
+  Zap, 
+  Crown, 
+  ShieldCheck, 
+  Sparkles,
+  RefreshCw,
+  Palette
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -23,15 +26,15 @@ export default function GuidePage() {
     {
       id: 1,
       title: "Configure Base Settings",
-      description: "Start by setting your server's language and default polling intervals. This ensures Nova speaks your language and updates at the speed you want.",
+      description: "Start by setting your server's language and management roles. This ensures Nova speaks your language and updates at the speed you want.",
       icon: Settings,
       color: "#9d4edd",
       link: `/settings?guild=${guildId}`,
       linkText: "Configure Settings",
       tips: [
-        "Select English or Hungarian as your primary language",
-        "Set a Management Role so your staff can manage monitors",
-        "Default refresh interval is now 20 minutes for Free Tier"
+        { text: "Select English or Hungarian as your primary language", premium: false },
+        { text: "Set a Management Role so your staff can manage monitors", premium: false },
+        { text: "Unlock 1-minute polling intervals for real-time alerts", premium: true }
       ]
     },
     {
@@ -43,9 +46,9 @@ export default function GuidePage() {
       link: `/monitors?guild=${guildId}`,
       linkText: "Open Monitors",
       tips: [
-        "Paste any YouTube channel or Twitch profile URL",
-        "Multiple Discord channels? You can pick as many as you want",
-        "Add custom pings for roles to notify specific members"
+        { text: "Paste any YouTube channel or Twitch profile URL", premium: false },
+        { text: "Multiple Discord channels? You can pick as many as you want", premium: false },
+        { text: "Expand your limit up to 100+ monitors per server", premium: true }
       ]
     },
     {
@@ -55,9 +58,9 @@ export default function GuidePage() {
       icon: Bell,
       color: "#ffb703",
       tips: [
-        "Use {title}, {author}, and {url} tags in your messages",
-        "Set a specific color for each platform to stay organized",
-        "Role pings can be customized per monitor or globally"
+        { text: "Use {title}, {author}, and {url} tags in your messages", premium: false },
+        { text: "Fully custom alert templates (Pro Feature)", premium: true },
+        { text: "Remove 'Delivered by Nova' footer branding", premium: true }
       ]
     },
     {
@@ -69,20 +72,25 @@ export default function GuidePage() {
       link: `/analytics?guild=${guildId}`,
       linkText: "Check Stats",
       tips: [
-        "View detailed delivery statistics in the Analytics tab",
-        "Ensure the bot has 'Send Messages' permissions in channels",
-        "Upgrade to Premium for faster polling (up to 1 minute!)"
+        { text: "View detailed delivery statistics in the Analytics tab", premium: false },
+        { text: "Ensure the bot has 'Send Messages' permissions", premium: false },
+        { text: "Priority support and dedicated infrastructure", premium: true }
       ]
     }
   ];
 
   return (
     <div className="guide-wrapper">
+      <div className="bg-glow-container">
+        <div className="glow-orb orb-1"></div>
+        <div className="glow-orb orb-2"></div>
+      </div>
+
       <div className="guide-content">
         <header className="guide-hero">
           <div className="hero-badge">
-            <Zap size={14} />
-            <span>Setup Guide</span>
+            <Sparkles size={14} />
+            <span>Onboarding Experience</span>
           </div>
           <h1>Let's get <span>Nova</span> running.</h1>
           <p>Follow these 4 simple steps to start delivering the latest content to your community.</p>
@@ -93,10 +101,10 @@ export default function GuidePage() {
             <div key={step.id} className="guide-step-card">
               <div className="step-accent" style={{ background: step.color }}></div>
               <div className="step-header">
-                <div className="step-icon" style={{ background: `${step.color}20`, color: step.color }}>
-                  <step.icon size={24} />
+                <div className="step-icon" style={{ background: `${step.color}15`, color: step.color }}>
+                  <step.icon size={28} />
                 </div>
-                <div className="step-number">STEP 0{step.id}</div>
+                <div className="step-number">0{step.id}</div>
               </div>
 
               <div className="step-body">
@@ -105,9 +113,10 @@ export default function GuidePage() {
                 
                 <div className="pro-tips">
                   {step.tips.map((tip, i) => (
-                    <div key={i} className="tip-row">
-                      <CheckCircle2 size={14} />
-                      <span>{tip}</span>
+                    <div key={i} className={`tip-row ${tip.premium ? 'premium-tip' : ''}`}>
+                      {tip.premium ? <Crown size={14} className="crown-icon" /> : <CheckCircle2 size={14} className="check-icon" />}
+                      <span>{tip.text}</span>
+                      {tip.premium && <span className="premium-badge">PRO</span>}
                     </div>
                   ))}
                 </div>
@@ -115,9 +124,9 @@ export default function GuidePage() {
 
               {step.link && (
                 <div className="step-footer">
-                  <Link href={step.link} className="step-btn">
+                  <Link href={step.link} className="step-btn" style={{ '--hover-color': step.color }}>
                     <span>{step.linkText}</span>
-                    <ArrowRight size={16} />
+                    <ArrowRight size={18} />
                   </Link>
                 </div>
               )}
@@ -127,90 +136,128 @@ export default function GuidePage() {
 
         <div className="guide-final-cta">
           <div className="cta-icon">
-            <ShieldCheck size={32} />
+            <Crown size={32} />
           </div>
           <div className="cta-text">
-            <h3>Still have questions?</h3>
-            <p>Our support team is ready to help you 24/7 in our Discord server.</p>
+            <h3>Want the full experience?</h3>
+            <p>Upgrade to <strong>Nova Premium</strong> for 1-minute updates, custom branding, and 100+ monitors.</p>
           </div>
-          <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="cta-btn">
-            Join Support Server
+          <Link href={`/premium?guild=${guildId}`} className="cta-btn premium">
+            View Premium Plans
+          </Link>
+          <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="cta-btn secondary">
+            Discord Support
           </a>
         </div>
       </div>
 
       <style jsx>{`
         .guide-wrapper {
-          padding: 2rem 0;
-          animation: fadeIn 0.6s ease-out;
+          padding: 3rem 0;
+          position: relative;
+          min-height: 100vh;
+        }
+
+        .bg-glow-container {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .glow-orb {
+          position: absolute;
+          width: 500px;
+          height: 500px;
+          border-radius: 50%;
+          filter: blur(120px);
+          opacity: 0.1;
+        }
+
+        .orb-1 { top: -100px; right: -100px; background: #9d4edd; }
+        .orb-2 { bottom: -100px; left: -100px; background: #3296ff; }
+
+        .guide-content {
+          position: relative;
+          z-index: 1;
+          max-width: 1200px;
+          margin: 0 auto;
         }
 
         .guide-hero {
           text-align: center;
-          margin-bottom: 4rem;
+          margin-bottom: 5rem;
+          animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .hero-badge {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 6px 14px;
-          background: rgba(157, 78, 221, 0.1);
-          border: 1px solid rgba(157, 78, 221, 0.2);
+          gap: 10px;
+          padding: 8px 18px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 100px;
-          color: #c77dff;
-          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.8rem;
           font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 1.5rem;
+          letter-spacing: 2px;
+          margin-bottom: 2rem;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .guide-hero h1 {
-          font-size: 3.5rem;
-          font-weight: 900;
+          font-size: 4.5rem;
+          font-weight: 950;
           margin: 0;
-          letter-spacing: -2px;
-          line-height: 1.1;
+          letter-spacing: -3px;
+          line-height: 1;
         }
 
         .guide-hero h1 span {
-          color: var(--accent-color);
+          background: linear-gradient(to right, #9d4edd, #c77dff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
         .guide-hero p {
           color: var(--text-secondary);
-          font-size: 1.25rem;
-          margin-top: 1rem;
-          max-width: 600px;
+          font-size: 1.4rem;
+          margin-top: 1.5rem;
+          max-width: 700px;
           margin-left: auto;
           margin-right: auto;
+          line-height: 1.4;
+          opacity: 0.8;
         }
 
         .steps-container {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-          gap: 2rem;
-          margin-bottom: 4rem;
+          grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+          gap: 2.5rem;
+          margin-bottom: 5rem;
         }
 
         .guide-step-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 32px;
-          padding: 2.5rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 40px;
+          padding: 3rem;
           display: flex;
           flex-direction: column;
           position: relative;
           overflow: hidden;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          backdrop-filter: blur(20px);
         }
 
         .guide-step-card:hover {
-          transform: translateY(-8px);
+          transform: translateY(-12px) scale(1.02);
           background: rgba(255, 255, 255, 0.05);
           border-color: rgba(255, 255, 255, 0.1);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
         }
 
         .step-accent {
@@ -218,69 +265,86 @@ export default function GuidePage() {
           top: 0;
           left: 0;
           width: 100%;
-          height: 4px;
-          opacity: 0.5;
+          height: 6px;
+          opacity: 0.3;
         }
 
         .step-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 2rem;
+          margin-bottom: 2.5rem;
         }
 
         .step-icon {
-          width: 56px;
-          height: 56px;
-          border-radius: 18px;
+          width: 64px;
+          height: 64px;
+          border-radius: 22px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+          box-shadow: 0 15px 30px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.05);
         }
 
         .step-number {
-          font-size: 0.8rem;
-          font-weight: 900;
-          color: rgba(255, 255, 255, 0.2);
-          letter-spacing: 2px;
+          font-size: 3rem;
+          font-weight: 950;
+          color: rgba(255, 255, 255, 0.05);
+          letter-spacing: -2px;
+          line-height: 1;
         }
 
         .step-body h3 {
-          font-size: 1.5rem;
-          font-weight: 800;
+          font-size: 1.8rem;
+          font-weight: 900;
           margin: 0 0 1rem 0;
+          letter-spacing: -0.5px;
         }
 
         .step-body p {
           color: var(--text-secondary);
           line-height: 1.6;
-          margin-bottom: 2rem;
-          font-size: 1rem;
+          margin-bottom: 2.5rem;
+          font-size: 1.1rem;
         }
 
         .pro-tips {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          background: rgba(0,0,0,0.2);
-          padding: 1.5rem;
-          border-radius: 20px;
-          margin-bottom: 2rem;
+          gap: 15px;
+          background: rgba(0,0,0,0.3);
+          padding: 2rem;
+          border-radius: 28px;
+          margin-bottom: 2.5rem;
+          border: 1px solid rgba(255,255,255,0.03);
         }
 
         .tip-row {
           display: flex;
-          gap: 12px;
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.8);
+          align-items: center;
+          gap: 14px;
+          font-size: 0.95rem;
+          color: rgba(255, 255, 255, 0.7);
           line-height: 1.4;
         }
 
-        .tip-row :global(svg) {
-          color: #10b981;
-          flex-shrink: 0;
-          margin-top: 2px;
+        .check-icon { color: #10b981; flex-shrink: 0; }
+        .crown-icon { color: #ffb703; flex-shrink: 0; }
+
+        .premium-tip {
+          color: #ffb703;
+          font-weight: 600;
+        }
+
+        .premium-badge {
+          font-size: 0.6rem;
+          font-weight: 900;
+          background: #ffb703;
+          color: black;
+          padding: 2px 6px;
+          border-radius: 4px;
+          margin-left: auto;
+          letter-spacing: 1px;
         }
 
         .step-footer {
@@ -291,79 +355,97 @@ export default function GuidePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 1rem;
-          border-radius: 16px;
+          gap: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 1.25rem;
+          border-radius: 20px;
           color: white;
           text-decoration: none;
-          font-weight: 700;
-          transition: all 0.2s;
+          font-weight: 800;
+          transition: all 0.3s;
+          font-size: 1.05rem;
         }
 
         .step-btn:hover {
-          background: white;
-          color: black;
-          transform: translateY(-2px);
+          background: var(--hover-color);
+          border-color: var(--hover-color);
+          transform: translateY(-4px);
+          box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
         .guide-final-cta {
           display: flex;
           align-items: center;
-          gap: 2rem;
-          background: linear-gradient(135deg, rgba(123, 44, 191, 0.2) 0%, rgba(60, 9, 108, 0.1) 100%);
-          border: 1px solid rgba(123, 44, 191, 0.3);
-          border-radius: 32px;
-          padding: 2.5rem;
+          gap: 3rem;
+          background: linear-gradient(135deg, rgba(123, 44, 191, 0.15) 0%, rgba(60, 9, 108, 0.08) 100%);
+          border: 1px solid rgba(157, 78, 221, 0.2);
+          border-radius: 45px;
+          padding: 3.5rem;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
         }
 
         .cta-icon {
-          width: 80px;
-          height: 80px;
-          background: var(--accent-color);
-          border-radius: 24px;
+          width: 90px;
+          height: 90px;
+          background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+          border-radius: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
-          box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4);
+          color: black;
+          box-shadow: 0 20px 40px rgba(251, 133, 0, 0.3);
+          flex-shrink: 0;
         }
 
         .cta-text h3 {
           margin: 0;
-          font-size: 1.5rem;
-          font-weight: 800;
+          font-size: 2.2rem;
+          font-weight: 950;
+          letter-spacing: -1px;
         }
 
         .cta-text p {
-          margin: 5px 0 0;
+          margin: 10px 0 0;
           color: var(--text-secondary);
+          font-size: 1.2rem;
+          max-width: 500px;
         }
 
         .cta-btn {
-          margin-left: auto;
+          padding: 1.25rem 2.5rem;
+          border-radius: 22px;
+          font-weight: 900;
+          text-decoration: none;
+          transition: all 0.3s;
+          font-size: 1.1rem;
+          text-align: center;
+          min-width: 200px;
+        }
+
+        .cta-btn.premium {
           background: white;
           color: black;
-          padding: 1rem 2rem;
-          border-radius: 16px;
-          font-weight: 800;
-          text-decoration: none;
-          transition: all 0.2s;
+          box-shadow: 0 15px 35px rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-btn.secondary {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: white;
         }
 
         .cta-btn:hover {
-          transform: scale(1.05);
-          box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+          transform: translateY(-5px) scale(1.05);
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
 
-        @media (max-width: 900px) {
-          .guide-final-cta { flex-direction: column; text-align: center; }
-          .cta-btn { margin: 1.5rem 0 0 0; width: 100%; }
+        @media (max-width: 1100px) {
+          .guide-final-cta { flex-direction: column; text-align: center; padding: 3rem 2rem; gap: 2rem; }
+          .cta-btn { width: 100%; min-width: 0; }
         }
       `}</style>
     </div>
