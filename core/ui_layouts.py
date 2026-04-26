@@ -550,15 +550,23 @@ def generate_dashboard_layout(bot, guild_id: int):
     db_text = bot.get_feedback("btn_web_dashboard", guild_id=guild_id)
     sup_text = bot.get_feedback("btn_support_server", guild_id=guild_id)
     
-    db_label, db_emoji = bot.parse_emoji_text(db_text)
-    sup_label, sup_emoji = bot.parse_emoji_text(sup_text)
+    db_label, _ = bot.parse_emoji_text(db_text)
+    sup_label, _ = bot.parse_emoji_text(sup_text)
+    
+    # Custom requested emojis
+    db_emoji = "<:webcolorful:1498074998953476206>"
+    sup_emoji = "<:discord:1498075023871709224>"
     
     layout = discord.ui.LayoutView()
-    
     container_items = []
     
-    # 1. Header
-    container_items.append(discord.ui.TextDisplay(f"### <:web:1495835665802203176> {title}"))
+    # 1. Header with Bot Avatar as thumbnail
+    bot_avatar = bot.user.display_avatar.url
+    header_section = discord.ui.Section(
+        discord.ui.TextDisplay(f"### {title}"),
+        accessory=discord.ui.MediaGallery(discord.ui.MediaGalleryItem(bot_avatar))
+    )
+    container_items.append(header_section)
     container_items.append(discord.ui.Separator())
     
     # 2. Description
@@ -571,17 +579,7 @@ def generate_dashboard_layout(bot, guild_id: int):
     container_items.append(discord.ui.Separator())
     container_items.append(discord.ui.ActionRow(btn_db, btn_sup))
     
-    # 4. Branding
-    settings = bot.guild_settings_cache.get(guild_id, {})
-    custom_branding = settings.get("custom_branding")
-    
-    if custom_branding != "":
-        container_items.append(discord.ui.Separator())
-        if custom_branding:
-            container_items.append(discord.ui.TextDisplay(custom_branding))
-        else:
-            branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
-            container_items.append(discord.ui.TextDisplay(branding_text))
+    # Note: Branding removed per user request
             
     container = discord.ui.Container(*container_items, accent_color=0x2b2d31)
     layout.add_item(container)
