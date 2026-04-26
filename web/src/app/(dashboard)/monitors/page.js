@@ -334,7 +334,6 @@ function MonitorsContent() {
       {/* Platform Control Center */}
       <div className="control-center">
         <div className="filter-tabs-wrapper">
-          <div className="fade-left"></div>
           <div 
             className="filter-tabs" 
             ref={scrollRef}
@@ -353,7 +352,6 @@ function MonitorsContent() {
               </button>
             ))}
           </div>
-          <div className="fade-right"></div>
         </div>
         
         {canScroll && (

@@ -295,76 +295,97 @@ class KickMonitor(BaseStreamMonitor):
         super().__init__(bot, config)
         self.platform = "kick"
 
-    async def _fetch_platform_data(self):
+    async def _get_kick_token(self):
+        """Get or refresh a Kick App Access Token."""
+        cache_key = "kick_app_token"
+        token = self.bot.monitor_manager.get_shared_data(cache_key)
+        if token: return token
+
+        client_id = self.bot.config.get("kick_client_id")
+        client_secret = self.bot.config.get("kick_client_secret")
+        if not client_id or not client_secret:
+            log.error("Kick credentials (kick_client_id, kick_client_secret) missing in .env")
+            return None
+
+        url = "https://id.kick.com/oauth/token"
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+
         try:
-            url = f"https://kick.com/api/v1/channels/{self.stream_username}"
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers={"User-Agent": USER_AGENT}) as response:
-                    if response.status != 200: return None
+                async with session.post(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"}) as response:
+                    if response.status == 200:
+                        resp_data = await response.json()
+                        token = resp_data.get("access_token")
+                        self.bot.monitor_manager.set_shared_data(cache_key, token)
+                        return token
+                    else:
+                        log.error(f"Kick token error: {response.status} {await response.text()}")
+        except Exception as e:
+            log.error(f"Kick token error: {e}")
+        return None
+
+    async def _fetch_platform_data(self):
+        token = await self._get_kick_token()
+        if not token:
+            return None
+
+        try:
+            url = f"https://api.kick.com/public/v1/channels?slug={self.stream_username}"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json"
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 401:
+                        # Token might be expired, clear it from cache so it fetches a new one next time
+                        self.bot.monitor_manager.set_shared_data("kick_app_token", None)
+                        return None
+                        
+                    if response.status != 200:
+                        return None
+                        
                     data = await response.json()
+                    channels = data.get("data", [])
                     
-                    livestream = data.get("livestream")
-                    if not livestream: return {"is_live": False}
+                    if not channels:
+                        return {"is_live": False}
+                        
+                    channel_data = channels[0]
+                    stream_data = channel_data.get("stream")
+                    
+                    if not stream_data or not stream_data.get("is_live"):
+                        return {"is_live": False}
                     
                     na_text = self.bot.get_feedback("default_unknown", guild_id=self.guild_id)
                     
-                    # Robust thumbnail fetching
-                    thumbnail = None
-                    thumb_data = livestream.get("thumbnail")
-                    if isinstance(thumb_data, dict):
-                        thumbnail = thumb_data.get("url")
-                    elif isinstance(thumb_data, str):
-                        thumbnail = thumb_data
-                    
-                    if not thumbnail:
-                        thumbnail = livestream.get("thumbnail_url")
-                        
+                    # Extract info from new API structure
+                    title = channel_data.get("stream_title", "")
+                    game = channel_data.get("category", {}).get("name", na_text)
+                    viewers = stream_data.get("viewer_count", 0)
+                    thumbnail = stream_data.get("thumbnail", "")
+                    profile_image = channel_data.get("banner_picture", "") # They provide banner, not profile pic in this endpoint currently
+                    display_name = channel_data.get("slug", self.stream_username)
+
                     # Ensure protocol
                     if thumbnail and thumbnail.startswith("//"):
                         thumbnail = f"https:{thumbnail}"
-
-                    # Ensure protocol for profile image too
-                    profile_image = data.get("user", {}).get("profile_pic")
                     if profile_image and profile_image.startswith("//"):
                         profile_image = f"https:{profile_image}"
 
-                    # Fallback thumbnail if still not found
-                    if not thumbnail:
-                        user_data = data.get("user", {})
-                        # Try banner first, then profile image
-                        banner = user_data.get("banner_image", {}).get("url")
-                        if not banner:
-                            # Sometimes it's in a different structure
-                            banner = user_data.get("offline_banner_url")
-                        
-                        thumbnail = banner or profile_image
-                        if thumbnail and thumbnail.startswith("//"):
-                            thumbnail = f"https:{thumbnail}"
-
-                    # Kick's CDN (Cloudflare) blocks Discord's image proxy. 
-                    # We must proxy the images through a public resizer (wsrv.nl)
-                    import urllib.parse
-                    def proxy_img(img_url):
-                        if not img_url: return ""
-                        encoded = urllib.parse.quote(img_url)
-                        return f"https://wsrv.nl/?url={encoded}"
-                        
-                    # Extract game/category (API changes sometimes)
-                    game = na_text
-                    category = livestream.get("category")
-                    if isinstance(category, dict):
-                        game = category.get("name", na_text)
-                    elif isinstance(livestream.get("categories"), list) and livestream.get("categories"):
-                        game = livestream["categories"][0].get("name", na_text)
-
                     return {
                         "is_live": True,
-                        "title": livestream.get("session_title", ""),
+                        "title": title,
                         "game": game,
-                        "viewers": livestream.get("viewer_count", 0),
-                        "thumbnail": proxy_img(thumbnail),
-                        "display_name": data.get("user", {}).get("username"),
-                        "profile_image": proxy_img(profile_image),
+                        "viewers": viewers,
+                        "thumbnail": thumbnail,  # Try direct URL first, hopefully the official API thumbnail works without proxy
+                        "display_name": display_name,
+                        "profile_image": profile_image,
                         "url": f"https://kick.com/{self.stream_username}"
                     }
         except Exception as e:
