@@ -298,3 +298,84 @@ def generate_tmdb_layout(
     
     return content, layout
 
+# Platform emoji mapping for streams
+STREAM_EMOJIS = {
+    "twitch": "<:twitch:1495846084352934139>",
+    "kick": "<:kick:1498048392335724664>",
+}
+
+def generate_stream_layout(
+    bot,
+    guild_id: int,
+    alert_text: str,
+    display_name: str,
+    title: str,
+    url: str,
+    thumbnail_url: str,
+    profile_image_url: str,
+    game: str,
+    viewers: int,
+    platform: str,
+    accent_color: int
+):
+    """
+    Centralized generator for Twitch/Kick stream notifications using Discord Components V2.
+    Returns (content, view).
+    """
+    content = f"{alert_text}\n{url}"
+    
+    layout = discord.ui.LayoutView()
+    container_items = []
+    
+    # 1. Title with platform emoji + LIVE indicator
+    platform_emoji = STREAM_EMOJIS.get(platform, "")
+    container_items.append(discord.ui.TextDisplay(f"### {platform_emoji} {display_name} • LIVE"))
+    
+    # 2. Stream title as subtitle
+    if title:
+        container_items.append(discord.ui.TextDisplay(title))
+    
+    # 3. Stream thumbnail
+    if thumbnail_url:
+        container_items.append(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(thumbnail_url))
+        )
+    
+    # 4. Meta section (game + viewers) with watch button as accessory
+    na_text = bot.get_feedback("default_unknown", guild_id=guild_id)
+    game_label = bot.get_feedback("field_game", guild_id=guild_id)
+    viewers_label = bot.get_feedback("field_viewers", guild_id=guild_id)
+    
+    meta_lines = []
+    if game and game != na_text:
+        meta_lines.append(f"**{game_label}:** {game}")
+    if viewers:
+        meta_lines.append(f"**{viewers_label}:** {viewers:,}")
+    
+    meta_text = "\n".join(meta_lines) if meta_lines else f"**{display_name}**"
+    
+    btn_label = bot.get_feedback("btn_view_stream", guild_id=guild_id)
+    button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
+    
+    container_items.append(
+        discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=button)
+    )
+    
+    # 5. Branding
+    settings = bot.guild_settings_cache.get(guild_id, {})
+    custom_branding = settings.get("custom_branding")
+    
+    if custom_branding == "":
+        pass
+    else:
+        container_items.append(discord.ui.Separator())
+        if custom_branding:
+            container_items.append(discord.ui.TextDisplay(custom_branding))
+        else:
+            branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
+            container_items.append(discord.ui.TextDisplay(branding_text))
+    
+    container = discord.ui.Container(*container_items, accent_color=accent_color)
+    layout.add_item(container)
+    
+    return content, layout

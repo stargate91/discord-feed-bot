@@ -4,6 +4,7 @@ import time
 from core.base_monitor import BaseMonitor
 from logger import log
 import database as db
+from core.ui_layouts import generate_stream_layout
 
 # Standard User-Agent to avoid being blocked
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -70,8 +71,8 @@ class BaseStreamMonitor(BaseMonitor):
     async def process_item(self, stream_data):
         await self._send_live_notification(stream_data)
 
-    async def _send_live_notification(self, stream_data):
-        """Send a Discord notification that the stream went live."""
+    def _build_stream_output(self, stream_data):
+        """Build Components V2 layout from stream data. Returns (content, view) dict."""
         title = stream_data.get("title", self.bot.get_feedback(f"monitor_{self.platform}_fallback_title", guild_id=self.guild_id))
         na_text = self.bot.get_feedback("default_unknown", guild_id=self.guild_id)
         game = stream_data.get("game", na_text)
@@ -81,32 +82,10 @@ class BaseStreamMonitor(BaseMonitor):
         profile_image = stream_data.get("profile_image", "")
         stream_url = stream_data.get("url", "")
 
-        embed = discord.Embed(
-            title=title[:256],
-            url=stream_url,
-            color=self.get_color(0x3d3f45),
-        )
-        embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)
-
+        # Cache-bust thumbnail
         if thumbnail:
-            embed.set_image(url=f"{thumbnail}?t={int(time.time())}")
+            thumbnail = f"{thumbnail}?t={int(time.time())}"
 
-        if game and game != na_text:
-            embed.add_field(
-                name=self.bot.get_feedback("field_game", guild_id=self.guild_id),
-                value=game,
-                inline=True,
-            )
-        if viewers:
-            embed.add_field(
-                name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id),
-                value=f"{viewers:,}",
-                inline=True,
-            )
-
-        embed.set_footer(text=self.platform.capitalize())
-
-        # Format alert
         alert_text = self.get_alert_message({
             "name": display_name,
             "url": stream_url,
@@ -116,22 +95,46 @@ class BaseStreamMonitor(BaseMonitor):
             "platform": self.platform.capitalize()
         })
 
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=stream_url, style=discord.ButtonStyle.link))
+        content, layout = generate_stream_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            display_name=display_name,
+            title=title[:256],
+            url=stream_url,
+            thumbnail_url=thumbnail,
+            profile_image_url=profile_image,
+            game=game,
+            viewers=viewers,
+            platform=self.platform,
+            accent_color=self.get_color(0x3d3f45)
+        )
 
-        await self.send_update(content=f"{alert_text}\n{stream_url}", embed=embed, view=view)
+        return {
+            "content": content,
+            "view": layout,
+            "title": title,
+            "display_name": display_name,
+            "thumbnail": stream_data.get("thumbnail", ""),
+            "stream_url": stream_url
+        }
+
+    async def _send_live_notification(self, stream_data):
+        """Send a Discord notification that the stream went live."""
+        output = self._build_stream_output(stream_data)
+        
+        await self.send_update(content=output["content"], view=output["view"])
 
         # Log to DB for dashboard timeline
         try:
             await db.mark_as_published(
                 entry_id=f"{self.platform}:{self.stream_username}:{int(time.time())}", 
                 platform=self.platform,
-                feed_url=stream_url,
+                feed_url=output["stream_url"],
                 guild_id=self.guild_id,
-                title=title,
-                thumbnail_url=thumbnail,
-                author_name=display_name
+                title=output["title"],
+                thumbnail_url=output["thumbnail"],
+                author_name=output["display_name"]
             )
         except Exception as e:
             log.error(f"Failed to log stream notification: {e}")
@@ -143,42 +146,8 @@ class BaseStreamMonitor(BaseMonitor):
         if not stream_data or not stream_data.get("is_live"):
             return {"empty": True}
         
-        title = stream_data.get("title", self.bot.get_feedback(f"monitor_{self.platform}_fallback_title", guild_id=self.guild_id))
-        na_text = self.bot.get_feedback("default_unknown", guild_id=self.guild_id)
-        game = stream_data.get("game", na_text)
-        viewers = stream_data.get("viewers", 0)
-        thumbnail = stream_data.get("thumbnail", "")
-        display_name = stream_data.get("display_name", self.stream_username)
-        profile_image = stream_data.get("profile_image", "")
-        stream_url = stream_data.get("url", "")
-
-        embed = discord.Embed(title=title[:256], url=stream_url, color=self.get_color(0x3d3f45))
-        embed.set_author(name=f"{display_name} • LIVE", icon_url=profile_image or discord.Embed.Empty)
-        if thumbnail: embed.set_image(url=f"{thumbnail}?t={int(time.time())}")
-        if game and game != na_text:
-            embed.add_field(name=self.bot.get_feedback("field_game", guild_id=self.guild_id), value=game, inline=True)
-        if viewers:
-            embed.add_field(name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id), value=f"{viewers:,}", inline=True)
-        embed.set_footer(text=self.platform.capitalize())
-
-        alert_text = self.get_alert_message({
-            "name": display_name,
-            "url": stream_url,
-            "game": game,
-            "title": title,
-            "viewers": f"{viewers:,}",
-            "platform": self.platform.capitalize()
-        })
-        
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=stream_url, style=discord.ButtonStyle.link))
-
-        return {
-            "content": f"{alert_text}\n{stream_url}",
-            "embed": embed,
-            "view": view
-        }
+        output = self._build_stream_output(stream_data)
+        return {"content": output["content"], "view": output["view"]}
 
     async def get_preview(self):
         """Provide a mock preview even if the streamer is offline."""
@@ -187,35 +156,19 @@ class BaseStreamMonitor(BaseMonitor):
             return [item]
             
         # If offline, generate a mock preview
-        display_name = self.stream_username
-        stream_url = f"https://{self.platform}.com/{self.stream_username}"
-        game = "Just Chatting"
-        title = f"Mock Preview Alert for {display_name}"
+        mock_data = {
+            "title": f"Mock Preview Alert for {self.stream_username}",
+            "game": "Just Chatting",
+            "viewers": 1234,
+            "thumbnail": "",
+            "display_name": self.stream_username,
+            "profile_image": "",
+            "url": f"https://{self.platform}.com/{self.stream_username}",
+            "is_live": True
+        }
         
-        embed = discord.Embed(title=title, url=stream_url, color=self.get_color(0x3d3f45))
-        embed.set_author(name=f"{display_name} • LIVE")
-        embed.set_footer(text=self.platform.capitalize())
-        embed.add_field(name=self.bot.get_feedback("field_game", guild_id=self.guild_id), value=game, inline=True)
-        embed.add_field(name=self.bot.get_feedback("field_viewers", guild_id=self.guild_id), value="1,234", inline=True)
-        
-        alert_text = self.get_alert_message({
-            "name": display_name,
-            "url": stream_url,
-            "game": game,
-            "title": title,
-            "viewers": "1,234",
-            "platform": self.platform.capitalize()
-        })
-        
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_stream", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=stream_url, style=discord.ButtonStyle.link))
-        
-        return [{
-            "content": f"{alert_text}\n{stream_url}",
-            "embed": embed,
-            "view": view
-        }]
+        output = self._build_stream_output(mock_data)
+        return [{"content": output["content"], "view": output["view"]}]
 
 class TwitchMonitor(BaseStreamMonitor):
     def __init__(self, bot, config):
@@ -384,7 +337,7 @@ class KickMonitor(BaseStreamMonitor):
                         "title": title,
                         "game": game,
                         "viewers": viewers,
-                        "thumbnail": thumbnail,  # Try direct URL first, hopefully the official API thumbnail works without proxy
+                        "thumbnail": thumbnail,
                         "display_name": display_name,
                         "profile_image": profile_image,
                         "url": f"https://kick.com/{self.stream_username}"
