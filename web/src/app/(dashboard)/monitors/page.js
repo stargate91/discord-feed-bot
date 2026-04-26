@@ -574,16 +574,8 @@ function MonitorsContent() {
         .filter-tabs-wrapper {
           position: relative;
           width: 100%;
-        }
-
-        .fade-left, .fade-right {
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          width: 40px;
-          pointer-events: none;
-          z-index: 2;
-          transition: opacity 0.3s;
+          mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
         }
         
         .scroll-hint {
@@ -602,16 +594,6 @@ function MonitorsContent() {
         @keyframes slideIn {
           from { opacity: 0; transform: translateY(-5px); }
           to { opacity: 0.6; transform: translateY(0); }
-        }
-
-        .fade-left {
-          left: 0;
-          background: linear-gradient(to right, #0f0f13 0%, transparent 100%);
-        }
-
-        .fade-right {
-          right: 0;
-          background: linear-gradient(to left, #0f0f13 0%, transparent 100%);
         }
 
         .filter-tabs {
