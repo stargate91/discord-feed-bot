@@ -13,7 +13,8 @@ import {
   ShieldCheck, 
   Sparkles,
   RefreshCw,
-  Palette
+  Palette,
+  MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -34,7 +35,7 @@ export default function GuidePage() {
       tips: [
         { text: "Select English or Hungarian as your primary language", premium: false },
         { text: "Set a Management Role so your staff can manage monitors", premium: false },
-        { text: "Unlock 1-minute polling intervals for real-time alerts", premium: true }
+        { text: "Unlock ultra-fast 2-minute polling intervals", premium: true }
       ]
     },
     {
@@ -47,8 +48,8 @@ export default function GuidePage() {
       linkText: "Open Monitors",
       tips: [
         { text: "Paste any YouTube channel or Twitch profile URL", premium: false },
-        { text: "Multiple Discord channels? You can pick as many as you want", premium: false },
-        { text: "Expand your limit up to 100+ monitors per server", premium: true }
+        { text: "Select multiple Discord channels for alerts", premium: true },
+        { text: "Expand your limit up to 100 monitors per server", premium: true }
       ]
     },
     {
@@ -58,8 +59,8 @@ export default function GuidePage() {
       icon: Bell,
       color: "#ffb703",
       tips: [
-        { text: "Use {title}, {author}, and {url} tags in your messages", premium: false },
-        { text: "Fully custom alert templates (Pro Feature)", premium: true },
+        { text: "Use pre-configured high-quality alert templates", premium: false },
+        { text: "Fully custom messages with {title}, {url} tags", premium: true },
         { text: "Remove 'Delivered by Nova' footer branding", premium: true }
       ]
     },
@@ -74,7 +75,7 @@ export default function GuidePage() {
       tips: [
         { text: "View detailed delivery statistics in the Analytics tab", premium: false },
         { text: "Ensure the bot has 'Send Messages' permissions", premium: false },
-        { text: "Priority support and dedicated infrastructure", premium: true }
+        { text: "Help us grow! Your feedback directly shapes Nova", premium: false }
       ]
     }
   ];
@@ -124,9 +125,11 @@ export default function GuidePage() {
 
               {step.link && (
                 <div className="step-footer">
-                  <Link href={step.link} className="step-btn" style={{ '--hover-color': step.color }}>
-                    <span>{step.linkText}</span>
-                    <ArrowRight size={18} />
+                  <Link href={step.link} style={{ textDecoration: 'none' }}>
+                    <div className="step-btn" style={{ '--hover-color': step.color }}>
+                      <span>{step.linkText}</span>
+                      <ArrowRight size={18} />
+                    </div>
                   </Link>
                 </div>
               )}
@@ -142,10 +145,12 @@ export default function GuidePage() {
             <h3>Want the full experience?</h3>
             <p>Upgrade to <strong>Nova Premium</strong> for 1-minute updates, custom branding, and 100+ monitors.</p>
           </div>
-          <Link href={`/premium?guild=${guildId}`} className="cta-btn premium">
-            View Premium Plans
+          <Link href={`/premium?guild=${guildId}`} style={{ textDecoration: 'none' }}>
+            <div className="cta-btn premium">
+              View Premium Plans
+            </div>
           </Link>
-          <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="cta-btn secondary">
+          <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className="cta-btn secondary" style={{ textDecoration: 'none' }}>
             Discord Support
           </a>
         </div>
@@ -356,35 +361,38 @@ export default function GuidePage() {
           align-items: center;
           justify-content: center;
           gap: 12px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           padding: 1.25rem;
           border-radius: 20px;
           color: white;
           text-decoration: none;
           font-weight: 800;
-          transition: all 0.3s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           font-size: 1.05rem;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
         .step-btn:hover {
           background: var(--hover-color);
           border-color: var(--hover-color);
-          transform: translateY(-4px);
-          box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+          transform: translateY(-5px);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+          filter: brightness(1.1);
         }
 
         .guide-final-cta {
           display: flex;
           align-items: center;
           gap: 3rem;
-          background: linear-gradient(135deg, rgba(123, 44, 191, 0.15) 0%, rgba(60, 9, 108, 0.08) 100%);
-          border: 1px solid rgba(157, 78, 221, 0.2);
+          background: linear-gradient(135deg, rgba(123, 44, 191, 0.25) 0%, rgba(60, 9, 108, 0.15) 100%);
+          border: 1px solid rgba(157, 78, 221, 0.4);
           border-radius: 45px;
           padding: 3.5rem;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
         }
 
         .cta-icon {
@@ -396,7 +404,7 @@ export default function GuidePage() {
           align-items: center;
           justify-content: center;
           color: black;
-          box-shadow: 0 20px 40px rgba(251, 133, 0, 0.3);
+          box-shadow: 0 20px 40px rgba(251, 133, 0, 0.4);
           flex-shrink: 0;
         }
 
@@ -405,40 +413,61 @@ export default function GuidePage() {
           font-size: 2.2rem;
           font-weight: 950;
           letter-spacing: -1px;
+          color: white;
         }
 
         .cta-text p {
           margin: 10px 0 0;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.7);
           font-size: 1.2rem;
           max-width: 500px;
         }
 
         .cta-btn {
-          padding: 1.25rem 2.5rem;
-          border-radius: 22px;
-          font-weight: 900;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem 2.5rem;
+          border-radius: 18px;
+          font-weight: 800;
           text-decoration: none;
-          transition: all 0.3s;
-          font-size: 1.1rem;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          font-size: 1rem;
           text-align: center;
-          min-width: 200px;
+          min-width: 220px;
+          letter-spacing: 0.5px;
+          cursor: pointer;
         }
 
         .cta-btn.premium {
-          background: white;
-          color: black;
-          box-shadow: 0 15px 35px rgba(255, 255, 255, 0.1);
+          background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+          color: #000;
+          box-shadow: 0 10px 30px rgba(251, 133, 0, 0.2);
+          border: none;
         }
 
         .cta-btn.secondary {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.04);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
+          color: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(10px);
         }
 
         .cta-btn:hover {
-          transform: translateY(-5px) scale(1.05);
+          transform: translateY(-4px);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .cta-btn.premium:hover {
+          filter: brightness(1.1);
+          box-shadow: 0 15px 40px rgba(251, 133, 0, 0.4);
+          transform: translateY(-5px) scale(1.02);
+        }
+
+        .cta-btn.secondary:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.3);
+          color: white;
         }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
