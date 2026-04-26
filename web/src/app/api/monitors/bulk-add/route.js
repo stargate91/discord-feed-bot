@@ -11,7 +11,7 @@ export async function POST(req) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { guildId, type, sources, targetChannels, targetRoles, embedColor, sendInitialAlert } = await req.json();
+    const { guildId, type, sources, targetChannels, targetRoles, embedColor, sendInitialAlert, use_native_player } = await req.json();
 
     if (!guildId || !type || !sources || !targetChannels || targetChannels.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -92,6 +92,9 @@ export async function POST(req) {
         // For YouTube, also provide channel_id which the monitor specifically looks for
         if (type === 'youtube') {
            extraSettings.channel_id = name; // 'name' here is the handle/id extracted
+           if (use_native_player !== undefined) {
+             extraSettings.use_native_player = use_native_player;
+           }
         }
 
         // Check for duplicates in this guild by searching in extra_settings text

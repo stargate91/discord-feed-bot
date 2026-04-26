@@ -30,6 +30,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState(null);
   const [sendInitialAlert, setSendInitialAlert] = useState(false);
+  const [useNativePlayer, setUseNativePlayer] = useState(false);
 
   useEffect(() => {
     if (isOpen && guildId) {
@@ -88,7 +89,8 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           targetChannels,
           targetRoles,
           embedColor,
-          sendInitialAlert: ['stream', 'kick'].includes(selectedPlatform.id) ? sendInitialAlert : false
+          sendInitialAlert: ['stream', 'kick'].includes(selectedPlatform.id) ? sendInitialAlert : false,
+          use_native_player: selectedPlatform.id === 'youtube' ? useNativePlayer : undefined
         })
       });
 
@@ -213,7 +215,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                         placeholder="No ping roles"
                       />
                     </div>
-                    {selectedPlatform?.id !== 'youtube' && (
+                    {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !useNativePlayer)) && (
                       <div className="form-group">
                         <label>Accent Color</label>
                         <div className="color-input-wrapper">
@@ -258,6 +260,36 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                           type="checkbox"
                           checked={sendInitialAlert}
                           onChange={(e) => setSendInitialAlert(e.target.checked)}
+                        />
+                        <span className="slider round"></span>
+                      </label>
+                    </div>
+                  )}
+
+                  {selectedPlatform?.id === 'youtube' && (
+                    <div className="form-group alert-toggle-container" style={{
+                      marginTop: '0.75rem',
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '0.6rem 1.1rem',
+                      borderRadius: '14px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                        <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                          Bypass the custom layout and let Discord embed the video directly.
+                        </p>
+                      </div>
+                      <label className="switch" style={{ margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={useNativePlayer}
+                          onChange={(e) => setUseNativePlayer(e.target.checked)}
                         />
                         <span className="slider round"></span>
                       </label>
@@ -381,10 +413,10 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           }
           
           .alert-toggle-container {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: space-between !important;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
           }
 
           .slider {

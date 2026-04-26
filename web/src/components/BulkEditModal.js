@@ -20,7 +20,9 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
     embed_color: '#3d3f45',
     use_channels: false,
     use_roles: false,
-    use_color: false
+    use_color: false,
+    use_native: false,
+    use_native_player: false
   });
 
   const colorInputRef = useRef(null);
@@ -53,6 +55,7 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
     if (formData.use_channels) updateData.target_channels = formData.target_channels;
     if (formData.use_roles) updateData.target_roles = formData.target_roles;
     if (formData.use_color) updateData.embed_color = formData.embed_color;
+    if (formData.use_native) updateData.use_native_player = formData.use_native_player;
 
     if (Object.keys(updateData).length === 0) {
       addToast("Please select at least one field to update.", "info", "No changes");
@@ -146,6 +149,39 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
                   className="styled-input-main"
                   style={{ flex: 1 }}
                 />
+              </div>
+            </div>
+
+            <div className="form-group-bulk">
+              <div className="bulk-check-label">
+                <input type="checkbox" checked={formData.use_native} onChange={e => setFormData({...formData, use_native: e.target.checked})} />
+                <label>Update Native YouTube Player</label>
+              </div>
+              <div style={{ opacity: formData.use_native ? 1 : 0.4, pointerEvents: formData.use_native ? 'auto' : 'none', marginTop: '8px' }}>
+                <div className="alert-toggle-container" style={{ 
+                  background: 'rgba(255,255,255,0.03)', 
+                  padding: '0.75rem 1.25rem', 
+                  borderRadius: '16px', 
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
+                      Only applies to YouTube monitors.
+                    </p>
+                  </div>
+                  <label className="switch" style={{ margin: 0 }}>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.use_native_player} 
+                      onChange={(e) => setFormData({...formData, use_native_player: e.target.checked})}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -265,6 +301,35 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
           transition: all 0.2s;
         }
         .close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        /* Switch Toggle Styles */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 46px;
+          height: 24px;
+          flex-shrink: 0;
+        }
+
+        .switch input { 
+          opacity: 0; width: 0; height: 0;
+        }
+
+        .slider {
+          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+          background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); transition: .3s;
+        }
+
+        .slider:before {
+          position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px;
+          background-color: white; transition: .3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider { background-color: var(--accent-color); border-color: var(--accent-color); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
       `}</style>
     </div>
   );

@@ -13,7 +13,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { action, guildId, monitorIds, target_channels, target_roles, embed_color } = body;
+  const { action, guildId, monitorIds, target_channels, target_roles, embed_color, use_native_player } = body;
   const cleanId = guildId ? String(guildId).replace('-', '') : null;
 
   // 1. Authorization: Master users can do anything. 
@@ -90,14 +90,18 @@ export async function POST(request) {
         query = "UPDATE monitors SET enabled = true";
       }
     } else if (action === "update") {
+      let guildTier = 0;
       if (!isMaster) {
         const guildCheck = await pool.query(
           'SELECT tier FROM guild_settings WHERE guild_id = $1',
           [cleanId]
         );
-        if ((guildCheck.rows[0]?.tier || 0) < 2) {
+        guildTier = guildCheck.rows[0]?.tier || 0;
+        if (guildTier < 2) {
           return NextResponse.json({ error: "Bulk editing requires Professional Tier (Tier 2) or higher" }, { status: 403 });
         }
+      } else {
+        guildTier = 999;
       }
       
       let monitorsToUpdate = [];
@@ -113,15 +117,19 @@ export async function POST(request) {
       }
 
       for (const id of monitorsToUpdate) {
-        const currentRes = await pool.query("SELECT extra_settings FROM monitors WHERE id = $1", [id]);
+        const currentRes = await pool.query("SELECT type, extra_settings FROM monitors WHERE id = $1", [id]);
         let extra = {};
-        if (currentRes.rows[0]?.extra_settings) {
-          try { extra = JSON.parse(currentRes.rows[0].extra_settings); } catch(e) {}
+        const row = currentRes.rows[0];
+        if (row?.extra_settings) {
+          try { extra = JSON.parse(row.extra_settings); } catch(e) {}
         }
 
         if (target_channels) extra.target_channels = target_channels;
         if (target_roles) extra.target_roles = target_roles;
         if (embed_color) extra.embed_color = embed_color;
+        if (use_native_player !== undefined && row?.type === 'youtube' && guildTier >= 1) {
+          extra.use_native_player = use_native_player;
+        }
 
         await pool.query(
           "UPDATE monitors SET extra_settings = $1 WHERE id = $2",
