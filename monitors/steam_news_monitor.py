@@ -32,10 +32,53 @@ class SteamNewsMonitor(BaseMonitor):
     def get_shared_key(self):
         return f"steam_news:{self.appid}"
 
+    async def _resolve_appid(self):
+        """Try to resolve the appid if it's a name or URL."""
+        if not self.appid:
+            return
+
+        # If it's already a number, we are good
+        if str(self.appid).isdigit():
+            return
+
+        # Check Cache
+        cached_id = await db.get_steam_cached_id(str(self.appid))
+        if cached_id:
+            self.appid = cached_id
+            return
+
+        # Search via Steam API
+        log.info(f"[SteamNews] Resolving AppID for: {self.appid}")
+        search_url = f"https://store.steampowered.com/api/storesearch/?term={self.appid}&l=english&cc=US"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(search_url, headers={"User-Agent": USER_AGENT}) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        items = data.get("items", [])
+                        if items:
+                            best_match = items[0]
+                            found_id = str(best_match.get("id"))
+                            found_name = best_match.get("name")
+                            
+                            log.info(f"[SteamNews] Resolved '{self.appid}' to AppID {found_id} ({found_name})")
+                            
+                            # Cache it
+                            await db.cache_steam_id(str(self.appid), found_id, found_name)
+                            
+                            self.appid = found_id
+                        else:
+                            log.warning(f"[SteamNews] No Steam apps found matching: {self.appid}")
+        except Exception as e:
+            log.error(f"[SteamNews] Error resolving AppID for {self.appid}: {e}")
+
     async def fetch_new_items(self):
         """Fetch Steam News and look for new posts."""
-        if not self.appid:
-            log.warning(f"No Steam AppID for monitor: {self.name}")
+        await self._resolve_appid()
+        
+        if not self.appid or not str(self.appid).isdigit():
+            log.warning(f"No valid Steam AppID for monitor: {self.name} (Value: {self.appid})")
             return []
 
         # Check for shared data
@@ -91,7 +134,8 @@ class SteamNewsMonitor(BaseMonitor):
 
     async def get_latest_items(self, count=1):
         """Fetch the N most recent official news items from the Steam feed."""
-        if not self.appid:
+        await self._resolve_appid()
+        if not self.appid or not str(self.appid).isdigit():
             return []
             
         try:

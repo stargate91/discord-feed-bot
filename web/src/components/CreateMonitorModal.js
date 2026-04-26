@@ -14,7 +14,7 @@ const PLATFORMS = [
   // Gaming
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
   { id: 'steam_free', name: 'Steam Free', logo: '/emojis/steam.png', color: '#66c0f4', description: 'New free games discovered on Steam.', isGlobal: true },
-  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'Format: App ID (e.g. 730) or Store URL.' },
+  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'Steam Game', inputKey: 'app_id', placeholder: 'Dota 2, 730 or Link', hint: 'Format: Game Name, App ID or Store URL.' },
   { id: 'gog_free', name: 'GOG Free', logo: '/emojis/gog.png', color: '#b237c1', description: 'Limited time free offers on GOG.com.', isGlobal: true },
   
   // Entertainment

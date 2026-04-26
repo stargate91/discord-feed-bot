@@ -120,6 +120,13 @@ async def init_db():
             title TEXT NOT NULL,
             thumbnail TEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''',
+        # 12. Steam Resolution Cache
+        '''CREATE TABLE IF NOT EXISTS steam_cache (
+            query TEXT PRIMARY KEY,
+            appid TEXT NOT NULL,
+            title TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )'''
     ]
 
@@ -475,3 +482,20 @@ async def close():
         await _pool.close()
         _pool = None
     log.info("Database connection closed.")
+
+async def get_steam_cached_id(query: str):
+    q = "SELECT appid FROM steam_cache WHERE query = $1"
+    pool = await get_pool()
+    return await pool.fetchval(q, query.lower().strip())
+
+async def cache_steam_id(query: str, appid: str, title: str):
+    q = """
+        INSERT INTO steam_cache (query, appid, title, updated_at)
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        ON CONFLICT (query) DO UPDATE SET 
+            appid = EXCLUDED.appid,
+            title = EXCLUDED.title,
+            updated_at = CURRENT_TIMESTAMP
+    """
+    pool = await get_pool()
+    await pool.execute(q, query.lower().strip(), str(appid), title)
