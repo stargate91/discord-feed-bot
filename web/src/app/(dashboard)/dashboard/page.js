@@ -11,6 +11,8 @@ import fs from "fs";
 import path from "path";
 import UsageIndicator from "@/components/UsageIndicator";
 import QuickActions from "@/components/QuickActions";
+import EmptyStateCard from "@/components/EmptyStateCard";
+
 
 async function getGlobalStats() {
   try {
@@ -174,7 +176,12 @@ export default async function Dashboard({ searchParams }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '3rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {stats?.totalMonitorsCount === 0 && (
+            <EmptyStateCard guildId={guildId} />
+          )}
+
           <div className="card" style={{ padding: '2rem' }}>
+
             <h3 style={{
               fontSize: '0.8rem',
               fontWeight: '800',

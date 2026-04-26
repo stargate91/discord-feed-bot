@@ -2,14 +2,14 @@ import { Check, X, Zap, Shield, BarChart3, Settings, Crown } from "lucide-react"
 
 export default function PremiumComparisonTable() {
   const tiers = ["Free", "Starter", "Professional", "Ultimate"];
-  
+
   const categories = [
     {
       name: "Monitoring Capacity",
       icon: <Zap size={18} />,
       features: [
-        { name: "Max Feed Monitors", values: ["3", "10", "30", "100"] },
-        { name: "Refresh Interval", values: ["30m", "10m", "5m", "2m"], highlight: [3] },
+        { name: "Max Feed Monitors", values: ["2", "10", "30", "100"] },
+        { name: "Refresh Interval", values: ["20m", "10m", "5m", "2m"], highlight: [3] },
         { name: "Target Channels", values: ["1", "5", "10", "20"] },
         { name: "Ping Roles", values: ["1", "5", "10", "20"] },
       ]
@@ -50,12 +50,12 @@ export default function PremiumComparisonTable() {
 
   const renderValue = (val, isHighlighted) => {
     if (typeof val === "boolean") {
-      return val ? 
-        <Check size={20} color={isHighlighted ? "#9d4edd" : "#4ade80"} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px #9d4edd)' : 'none' }} /> : 
+      return val ?
+        <Check size={20} color={isHighlighted ? "#9d4edd" : "#4ade80"} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px #9d4edd)' : 'none' }} /> :
         <X size={20} color="rgba(255,255,255,0.1)" />;
     }
-    return <span style={{ 
-      color: isHighlighted ? "#9d4edd" : "white", 
+    return <span style={{
+      color: isHighlighted ? "#9d4edd" : "white",
       fontWeight: isHighlighted ? "900" : "600",
       fontSize: isHighlighted ? "1.1rem" : "0.95rem",
       textShadow: isHighlighted ? "0 0 10px rgba(157, 78, 221, 0.4)" : "none"
