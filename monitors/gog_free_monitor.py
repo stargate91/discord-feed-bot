@@ -1,6 +1,6 @@
 import aiohttp
 import discord
-from datetime import datetime, timezone
+from datetime import datetime
 from core.base_monitor import BaseMonitor
 from logger import log
 from core.emojis import THUMBNAIL_GOG
@@ -75,7 +75,7 @@ class GOGFreeMonitor(BaseMonitor):
         if end_date and end_date != na_text:
             try:
                 dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
-                expiry_ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
+                expiry_ts = int(dt.timestamp())
             except:
                 pass
 
@@ -155,7 +155,7 @@ class GOGFreeMonitor(BaseMonitor):
             if end_date and end_date != na_text:
                 try:
                     dt = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
-                    expiry_ts = int(dt.replace(tzinfo=timezone.utc).timestamp())
+                    expiry_ts = int(dt.timestamp())
                 except: pass
 
             alert_text = self.get_alert_message({"name": "GOG", "title": title, "url": final_url})
