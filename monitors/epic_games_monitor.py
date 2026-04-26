@@ -7,6 +7,7 @@ from logger import log
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 from core.emojis import THUMBNAIL_EPIC
 import database as db
+from core.ui_layouts import generate_free_game_layout
 
 class EpicGamesMonitor(BaseMonitor):
     def __init__(self, bot, config):
@@ -119,30 +120,26 @@ class EpicGamesMonitor(BaseMonitor):
                 expiry_ts = int(dt.timestamp())
             except: pass
 
-        embed = discord.Embed(
-            title=title,
-            url=game_url,
-            description=description[:300] + "..." if len(description) > 300 else description,
-            color=self.get_color(0x3d3f45)
-        )
-        if image_url: embed.set_image(url=image_url)
-        embed.set_thumbnail(url=THUMBNAIL_EPIC)
-        if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):
-            embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
-        if expiry_ts:
-            embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-        embed.set_footer(text=self.bot.get_feedback("footer_epic_store", guild_id=self.guild_id))
-
         alert_text = self.get_alert_message({
             "name": "Epic Games",
             "title": title,
             "url": game_url
         })
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
         
-        await self.send_update(content=f"{alert_text}\n{game_url}", embed=embed, view=view)
+        layout = generate_free_game_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=title,
+            game_url=game_url,
+            image_url=image_url,
+            worth=original_price,
+            giveaway_type="Game",
+            expiry_ts=expiry_ts,
+            accent_color=self.get_color(0x3d3f45)
+        )
+        
+        await self.send_update(view=layout)
 
     def get_item_id(self, item):
         return item.get("db_id")
@@ -227,25 +224,22 @@ class EpicGamesMonitor(BaseMonitor):
                     expiry_ts = int(dt.timestamp())
                 except: pass
 
-            embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x3d3f45))
-            if image_url: embed.set_image(url=image_url)
-            embed.set_thumbnail(url=THUMBNAIL_EPIC)
-            if original_price and original_price != "0" and original_price != self.bot.get_feedback("default_na", guild_id=self.guild_id):
-                embed.add_field(name=self.bot.get_feedback("field_worth", guild_id=self.guild_id), value=original_price, inline=True)
-            if expiry_ts:
-                embed.add_field(name=self.bot.get_feedback("field_expiry", guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-            embed.set_footer(text=self.bot.get_feedback("footer_epic_store", guild_id=self.guild_id))
-
-            alert_text = self.get_alert_message({
-                "name": "Epic Games",
-                "title": title,
-                "url": game_url
-            })
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_get_game", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+            alert_text = self.get_alert_message({"name": "Epic Games", "title": title, "url": game_url})
             
-            results.append({"content": f"{alert_text}\n{game_url}", "embed": embed, "view": view})
+            layout = generate_free_game_layout(
+                bot=self.bot,
+                guild_id=self.guild_id,
+                alert_text=alert_text,
+                title=title,
+                game_url=game_url,
+                image_url=image_url,
+                worth=original_price,
+                giveaway_type="Game",
+                expiry_ts=expiry_ts,
+                accent_color=self.get_color(0x3d3f45)
+            )
+            
+            results.append({"view": layout})
             
         # Reverse to get Oldest -> Newest (sequential reposting)
         results.reverse()

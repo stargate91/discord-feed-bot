@@ -7,6 +7,7 @@ from core.emojis import THUMBNAIL_STEAM
 # Standard User-Agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 import database as db
+from core.ui_layouts import generate_free_game_layout
 
 class SteamFreeMonitor(BaseMonitor):
     """Monitor for free Steam game giveaways via GamerPower API."""
@@ -72,38 +73,26 @@ class SteamFreeMonitor(BaseMonitor):
             except:
                 pass
 
-        embed = discord.Embed(
-            title=title,
-            url=game_url,
-            color=self.get_color(0x3d3f45)
-        )
-        if image_url:
-            embed.set_image(url=image_url)
-        
-        embed.set_thumbnail(url=THUMBNAIL_STEAM)
-        if worth and worth != na_text:
-            embed.add_field(name=self.bot.get_feedback('field_worth', guild_id=self.guild_id), value=worth, inline=True)
-        embed.add_field(name=self.bot.get_feedback('field_type', guild_id=self.guild_id), value=giveaway_type, inline=True)
-        if expiry_ts:
-            embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-        elif end_date and end_date != na_text:
-            embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
-        
-        embed.set_footer(text=f"{self.bot.get_feedback('footer_steam_news', guild_id=self.guild_id).split(' ')[0]} • GamerPower")
-        
-        # Format custom alert message
         alert_text = self.get_alert_message({
             "name": "Steam",
             "title": title,
             "url": game_url
         })
         
-        # Create interactive button
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_view_steam", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
+        layout = generate_free_game_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=title,
+            game_url=game_url,
+            image_url=image_url,
+            worth=worth,
+            giveaway_type=giveaway_type,
+            expiry_ts=expiry_ts,
+            accent_color=self.get_color(0x3d3f45)
+        )
         
-        await self.send_update(content=f"{alert_text}\n{game_url}", embed=embed, view=view)
+        await self.send_update(view=layout)
 
     def get_item_id(self, game):
         return str(game.get("id"))
@@ -156,23 +145,21 @@ class SteamFreeMonitor(BaseMonitor):
                     expiry_ts = int(dt.timestamp())
                 except: pass
 
-            embed = discord.Embed(title=title, url=game_url, color=self.get_color(0x3d3f45))
-            if image_url: embed.set_image(url=image_url)
-            embed.set_thumbnail(url=THUMBNAIL_STEAM)
-            if worth and worth != na_text:
-                embed.add_field(name=self.bot.get_feedback('field_worth', guild_id=self.guild_id), value=worth, inline=True)
-            embed.add_field(name=self.bot.get_feedback('field_type', guild_id=self.guild_id), value=giveaway_type, inline=True)
-            if expiry_ts:
-                embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=f"<t:{expiry_ts}:R>", inline=True)
-            elif end_date and end_date != na_text:
-                embed.add_field(name=self.bot.get_feedback('field_expiry', guild_id=self.guild_id), value=end_date, inline=True)
-            embed.set_footer(text=f"{self.bot.get_feedback('footer_steam_news', guild_id=self.guild_id).split(' ')[0]} • GamerPower")
-
             alert_text = self.get_alert_message({"name": "Steam", "title": title, "url": game_url})
-            view = discord.ui.View()
-            btn_label = self.bot.get_feedback("btn_view_steam", guild_id=self.guild_id)
-            view.add_item(discord.ui.Button(label=btn_label, url=game_url, style=discord.ButtonStyle.link))
             
-            results.append({"content": f"{alert_text}\n{game_url}", "embed": embed, "view": view})
+            layout = generate_free_game_layout(
+                bot=self.bot,
+                guild_id=self.guild_id,
+                alert_text=alert_text,
+                title=title,
+                game_url=game_url,
+                image_url=image_url,
+                worth=worth,
+                giveaway_type=giveaway_type,
+                expiry_ts=expiry_ts,
+                accent_color=self.get_color(0x3d3f45)
+            )
+            
+            results.append({"view": layout})
         
         return results
