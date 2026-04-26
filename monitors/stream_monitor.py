@@ -13,7 +13,17 @@ class BaseStreamMonitor(BaseMonitor):
     
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.stream_username = config.get("username", self.name)
+        raw_username = config.get("username", self.name)
+        
+        # Clean up URL if user pasted a full link
+        if raw_username:
+            raw_username = raw_username.strip().rstrip('/')
+            if 'kick.com/' in raw_username:
+                raw_username = raw_username.split('kick.com/')[-1].split('?')[0]
+            elif 'twitch.tv/' in raw_username:
+                raw_username = raw_username.split('twitch.tv/')[-1].split('?')[0]
+                
+        self.stream_username = raw_username
         self.is_live = False
 
     def get_shared_key(self):

@@ -62,6 +62,8 @@ function MonitorsContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
+  const [monitorToDelete, setMonitorToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState([]);
@@ -179,16 +181,28 @@ function MonitorsContent() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this monitor?')) return;
+  const handleDelete = (id) => {
+    const monitor = monitors.find(m => m.id === id);
+    if (monitor) {
+      setMonitorToDelete(monitor);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!monitorToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/monitors/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/monitors/${monitorToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
-        setMonitors(monitors.filter(m => m.id !== id));
+        setMonitors(monitors.filter(m => m.id !== monitorToDelete.id));
         addToast('Monitor deleted', 'success');
+        setMonitorToDelete(null);
       }
     } catch (err) {
       console.error(err);
+      addToast('Failed to delete monitor', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -516,6 +530,37 @@ function MonitorsContent() {
         isPremium={isPremium}
         guildLoading={guildLoading}
       />
+
+      {monitorToDelete && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal-content">
+            <div className="delete-modal-icon">
+              <Trash2 size={36} color="#ef4444" />
+            </div>
+            <h3>Delete Monitor</h3>
+            <p>
+              Are you sure you want to delete <strong>{monitorToDelete.name}</strong>? 
+              This action cannot be undone and will stop all future notifications to your Discord server.
+            </p>
+            <div className="delete-modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setMonitorToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-confirm-delete" 
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .monitors-page-wrapper {
@@ -868,6 +913,106 @@ function MonitorsContent() {
         }
         .empty-state-btn-ghost:hover {
           background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sexy Delete Modal */
+        .delete-modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 99999;
+          animation: overlayIn 0.3s ease-out;
+        }
+
+        .delete-modal-content {
+          background: #111116;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: 24px;
+          padding: 2.5rem;
+          width: 90%;
+          max-width: 450px;
+          text-align: center;
+          box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(239, 68, 68, 0.1);
+          animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .delete-modal-icon {
+          width: 70px;
+          height: 70px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1.5rem;
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .delete-modal-content h3 {
+          font-size: 1.5rem;
+          font-weight: 800;
+          margin: 0 0 1rem;
+          color: white;
+        }
+
+        .delete-modal-content p {
+          color: var(--text-secondary);
+          font-size: 0.95rem;
+          line-height: 1.6;
+          margin-bottom: 2rem;
+        }
+
+        .delete-modal-content strong {
+          color: white;
+          font-weight: 700;
+        }
+
+        .delete-modal-actions {
+          display: flex;
+          gap: 1rem;
+        }
+
+        .btn-cancel, .btn-confirm-delete {
+          flex: 1;
+          padding: 0.85rem;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 0.95rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+        }
+
+        .btn-cancel {
+          background: rgba(255, 255, 255, 0.05);
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-cancel:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-confirm-delete {
+          background: #ef4444;
+          color: white;
+          box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-confirm-delete:hover:not(:disabled) {
+          background: #dc2626;
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-cancel:disabled, .btn-confirm-delete:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       `}</style>
     </div>
