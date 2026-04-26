@@ -98,6 +98,10 @@ class CryptoMonitor(BaseMonitor):
                 mapping[sym] = cid
                 
         self.coin_id_map = mapping
+        
+        # Register these IDs with the central CryptoManager
+        if hasattr(self.bot, 'crypto_manager'):
+            self.bot.crypto_manager.register_coins(list(mapping.values()))
 
     async def fetch_new_items(self):
         if not self.targets:
@@ -118,23 +122,21 @@ class CryptoMonitor(BaseMonitor):
         if not ids_to_fetch:
             return []
 
-        ids_str = ",".join(ids_to_fetch)
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids_str}&vs_currencies=usd"
+        # Ensure manager is tracking these
+        if hasattr(self.bot, 'crypto_manager'):
+            self.bot.crypto_manager.register_coins(ids_to_fetch)
+            
+        prices_data = {}
+        for cid in ids_to_fetch:
+            p_data = self.bot.crypto_manager.get_price_data(cid)
+            if p_data:
+                prices_data[cid] = p_data
         
-        items_to_process = []
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        prices_data = await resp.json()
-                        items_to_process = await self._cache_and_detect_crossings(prices_data)
-                    elif resp.status == 429:
-                        log.warning("CryptoMonitor: CoinGecko rate limit reached (429).")
-                    else:
-                        log.error(f"CryptoMonitor: API error {resp.status}")
-            except Exception as e:
-                log.error(f"CryptoMonitor check error: {e}")
-
+        if not prices_data:
+            # If manager has no data yet (e.g. first run), we wait for next loop
+            return []
+            
+        items_to_process = await self._cache_and_detect_crossings(prices_data)
         return items_to_process
 
     async def _cache_and_detect_crossings(self, prices_data):
@@ -275,14 +277,18 @@ class CryptoMonitor(BaseMonitor):
         if not ids_to_fetch:
             return None
 
-        ids_str = ",".join(ids_to_fetch)
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids_str}&vs_currencies=usd"
-        
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        prices_data = await resp.json()
+        # Register with manager
+        if hasattr(self.bot, 'crypto_manager'):
+            self.bot.crypto_manager.register_coins(ids_to_fetch)
+
+        prices_data = {}
+        for cid in ids_to_fetch:
+            p_data = self.bot.crypto_manager.get_price_data(cid)
+            if p_data:
+                prices_data[cid] = p_data
+
+        if not prices_data:
+            return {"content": self.bot.get_feedback("crypto_waiting_for_data", guild_id=self.guild_id), "view": None}
                         
                         crypto_emoji = "<:crypto:1495846010197381160>"
                         title = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
@@ -321,13 +327,7 @@ class CryptoMonitor(BaseMonitor):
                         return {
                             "view": view
                         }
-                    elif resp.status == 429:
-                        return {"content": self.bot.get_feedback("crypto_rate_limited", guild_id=self.guild_id), "embed": None}
-                    else:
-                        return {"content": self.bot.get_feedback("crypto_api_error", status=resp.status, guild_id=self.guild_id), "embed": None}
-            except Exception as e:
-                log.error(f"Crypto get_latest_item error: {e}")
-                return {"content": self.bot.get_feedback("crypto_technical_error", error=str(e), guild_id=self.guild_id), "embed": None}
+
     async def get_preview(self):
         """Show a simulated alert for one of the coins."""
         if not self.targets:

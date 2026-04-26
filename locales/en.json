@@ -88,6 +88,7 @@
     "crypto_rate_limited": "<:xfilledcircle:1495830088523059341> CoinGecko Error: Rate limited (429). Please wait a few minutes.",
     "crypto_api_error": "<:xfilledcircle:1495830088523059341> CoinGecko API Error: HTTP {status}",
     "crypto_technical_error": "<:xfilledcircle:1495830088523059341> Technical Error: {error}",
+    "crypto_waiting_for_data": "Fetching price data, please wait a few seconds...",
     "crypto_price_check": "Crypto Price Check",
     "error_premium_only_crypto": "<:infocolorful:1496064819588235274> The Crypto monitor is part of **Nova Premium**. Track prices live!",
     "error_premium_only_repost": "<:infocolorful:1496064819588235274> The Repost feature is part of **Nova Premium**. Elevate your server today!",

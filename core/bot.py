@@ -19,10 +19,11 @@ class FeedBot(commands.Bot):
         prefix = config.get("command_prefix", "!")
         super().__init__(command_prefix=prefix, intents=intents)
         self.config = config
-        self.monitor_manager = None
-        self.language_data = {}
-        self.locales = {}
         self.guild_settings_cache = {}
+        
+        # Initialize Crypto Manager
+        from core.crypto_manager import CryptoManager
+        self.crypto_manager = CryptoManager(self)
 
     async def setup_hook(self):
         """Perform initialization tasks before the bot connects."""
@@ -78,6 +79,9 @@ class FeedBot(commands.Bot):
         
         # Load Cogs
         await self.load_all_extensions()
+
+        # Start Crypto Manager
+        await self.crypto_manager.start()
 
 
         # Load monitors from DB
@@ -424,3 +428,9 @@ class FeedBot(commands.Bot):
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(save_config, f, indent=4, ensure_ascii=False)
         log.info("config.json saved to disk.")
+
+    async def close(self):
+        """Cleanup before shutdown."""
+        if self.crypto_manager:
+            await self.crypto_manager.stop()
+        await super().close()

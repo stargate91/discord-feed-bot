@@ -88,6 +88,7 @@
     "crypto_rate_limited": "<:xfilledcircle:1495830088523059341> CoinGecko Hiba: Rate limited (429). Kérlek várj pár percet.",
     "crypto_api_error": "<:xfilledcircle:1495830088523059341> CoinGecko API Hiba: HTTP {status}",
     "crypto_technical_error": "<:xfilledcircle:1495830088523059341> Technikai Hiba: {error}",
+    "crypto_waiting_for_data": "Az árfolyamadatok lekérése folyamatban van, kérlek várj pár másodpercet...",
     "crypto_price_check": "Kripto Árfolyam Ellenőrzés",
     "error_premium_only_crypto": "<:infocolorful:1496064819588235274> A Kripto monitor a **Nova Premium** része. Kövesd az árfolyamokat élőben!",
     "error_premium_only_repost": "<:infocolorful:1496064819588235274> A Repost funkció a **Nova Premium** része. Emeld új szintre a szerveredet még ma!",
