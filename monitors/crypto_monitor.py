@@ -340,6 +340,7 @@ class CryptoMonitor(BaseMonitor):
         threshold = self.targets[sym]
         current_price = threshold * 1.05 # Mock 5% increase
         dir_emoji = CRYPTO_UP
+        crypto_emoji = "<:crypto:1495846010197381160>"
         percent_str = "+5.00%"
         cid = self.coin_id_map.get(sym)
         
