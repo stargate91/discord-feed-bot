@@ -197,7 +197,7 @@ function MonitorsContent() {
         const res = await fetch('/api/monitors/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', ids: idsToDelete, guildId })
+          body: JSON.stringify({ action: 'delete', monitorIds: idsToDelete, guildId })
         });
 
         if (res.ok) {
@@ -232,7 +232,7 @@ function MonitorsContent() {
       const res = await fetch('/api/monitors/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update', ids: idsToUpdate, data: updateData, guildId })
+        body: JSON.stringify({ action: 'update', monitorIds: idsToUpdate, ...updateData, guildId })
       });
 
       if (res.ok) {
