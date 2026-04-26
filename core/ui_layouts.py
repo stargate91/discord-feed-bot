@@ -96,33 +96,37 @@ def generate_news_layout(
     """
     content = f"{alert_text}\n{url}"
     
-    if author:
-        title_text = f"### {title}\n**{author}**"
-    else:
-        title_text = f"### {title}"
-        
     layout = discord.ui.LayoutView()
     container_items = []
     
+    # 1. Main Title (Full width)
+    container_items.append(discord.ui.TextDisplay(f"### {title}"))
+    
+    # 2. Image (if present)
     if image_url:
         container_items.append(
             discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
         )
         
-    # Main Title and Author (Full width)
-    container_items.append(discord.ui.TextDisplay(title_text))
-        
+    # 3. Meta Section (Author + Published Date on the left, Button on the right)
     btn_label = bot.get_feedback("btn_read_more", guild_id=guild_id)
     button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
     
-    # Published date and Link Button section
+    meta_lines = []
+    if author:
+        meta_lines.append(f"**{author}**")
+        
     if published_ts:
-        published_text = f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:** <t:{published_ts}:f> (<t:{published_ts}:R>)"
+        meta_lines.append(f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:**\n<t:{published_ts}:f> (<t:{published_ts}:R>)")
+        
+    meta_text = "\n".join(meta_lines)
+    
+    if meta_text:
         container_items.append(
-            discord.ui.Section(discord.ui.TextDisplay(published_text), accessory=button)
+            discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=button)
         )
     else:
-        # Fallback if no published date
+        # Fallback if neither author nor date
         container_items.append(
             discord.ui.Section(discord.ui.TextDisplay(f"🔗 **{btn_label}**"), accessory=button)
         )
