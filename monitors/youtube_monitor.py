@@ -153,7 +153,8 @@ class YouTubeMonitor(BaseMonitor):
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
             
-        thumbnail = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        # hqdefault is always guaranteed to exist, maxresdefault is not
+        thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
         
         alert_text = self.get_alert_message({
             "name": author_name,
