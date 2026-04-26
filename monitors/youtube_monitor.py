@@ -161,19 +161,24 @@ class YouTubeMonitor(BaseMonitor):
             "url": short_link
         })
         
-        content, layout = generate_youtube_layout(
-            bot=self.bot,
-            guild_id=self.guild_id,
-            alert_text=alert_text,
-            title=entry_title,
-            url=short_link,
-            image_url=thumbnail,
-            author=author_name,
-            published_ts=published_ts,
-            accent_color=self.get_color(0xff0000)
-        )
+        use_native = self.config.get("use_native_player", False)
         
-        await self.send_update(content=content, view=layout)
+        if use_native:
+            # Native layout: Send the raw URL unbracketed so Discord creates the player. No layout view.
+            await self.send_update(content=f"{alert_text}\n{short_link}", view=None)
+        else:
+            content, layout = generate_youtube_layout(
+                bot=self.bot,
+                guild_id=self.guild_id,
+                alert_text=alert_text,
+                title=entry_title,
+                url=short_link,
+                image_url=thumbnail,
+                author=author_name,
+                published_ts=published_ts,
+                accent_color=self.get_color(0xff0000)
+            )
+            await self.send_update(content=content, view=layout)
 
     def get_item_id(self, entry):
         return entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
@@ -247,19 +252,27 @@ class YouTubeMonitor(BaseMonitor):
             "url": short_link
         })
         
-        content, layout = generate_youtube_layout(
-            bot=self.bot,
-            guild_id=self.guild_id,
-            alert_text=alert_text,
-            title=entry_title,
-            url=short_link,
-            image_url=thumbnail,
-            author=author_name,
-            published_ts=published_ts,
-            accent_color=self.get_color(0xff0000)
-        )
+        use_native = self.config.get("use_native_player", False)
         
-        return {
-            "content": content,
-            "view": layout
-        }
+        if use_native:
+            return {
+                "content": f"{alert_text}\n{short_link}",
+                "view": None
+            }
+        else:
+            content, layout = generate_youtube_layout(
+                bot=self.bot,
+                guild_id=self.guild_id,
+                alert_text=alert_text,
+                title=entry_title,
+                url=short_link,
+                image_url=thumbnail,
+                author=author_name,
+                published_ts=published_ts,
+                accent_color=self.get_color(0xff0000)
+            )
+            
+            return {
+                "content": content,
+                "view": layout
+            }

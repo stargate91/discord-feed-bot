@@ -76,9 +76,11 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
     embed_color: '',
     steam_patch_only: false,
     target_genres: [],
+    target_genres: [],
     target_languages: [],
     custom_alert: '',
-    include_upcoming: false
+    include_upcoming: false,
+    use_native_player: false
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -122,7 +124,8 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
         target_genres: monitor.target_genres || [],
         target_languages: monitor.target_languages || [],
         custom_alert: monitor.custom_alert || monitor.extra_settings?.custom_alert || '',
-        include_upcoming: !!(monitor.include_upcoming || monitor.extra_settings?.include_upcoming)
+        include_upcoming: !!(monitor.include_upcoming || monitor.extra_settings?.include_upcoming),
+        use_native_player: !!(monitor.use_native_player || monitor.extra_settings?.use_native_player)
       });
 
       if (monitor.type === 'crypto') {
@@ -171,6 +174,10 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
       custom_alert: formData.custom_alert,
       include_upcoming: formData.include_upcoming,
     };
+    
+    if (monitor.type === 'youtube') {
+      updateData.use_native_player = formData.use_native_player;
+    }
 
     if (monitor.type === 'crypto') {
       updateData.symbols = cryptoPairs
@@ -349,29 +356,67 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
             </div>
           </div>
 
-          {monitor.type !== 'youtube' && (
-            <div className="form-group" style={{ position: 'relative' }}>
+          {monitor.type === 'youtube' && (
+            <div className="form-group alert-toggle-container" style={{ 
+              marginTop: '1rem', 
+              background: 'rgba(255,255,255,0.03)', 
+              padding: '0.75rem 1.25rem', 
+              borderRadius: '16px', 
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex !important',
+              flexDirection: 'row !important',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+              opacity: isLocked(1) ? 0.5 : 1
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
+                <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
+                  Bypass the custom layout and let Discord embed the video directly.
+                </p>
+              </div>
+              {isLocked(1) ? (
+                <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+                  <Info size={12} /> Starter Tier+
+                </div>
+              ) : (
+                <label className="switch" style={{ margin: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    name="use_native_player"
+                    checked={formData.use_native_player} 
+                    onChange={handleChange}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              )}
+            </div>
+          )}
+
+          {(!['youtube'].includes(monitor.type) || (monitor.type === 'youtube' && !formData.use_native_player)) && (
+            <div className="form-group" style={{ position: 'relative', marginTop: '1rem' }}>
               <label>Embed Accent Color</label>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center', opacity: isLocked(1) ? 0.5 : 1 }}>
                 <input
                   type="color"
                   ref={colorInputRef}
                   value={formData.embed_color || '#3d3f45'}
-                  onChange={(e) => handleMultiChange('embed_color', e.target.value)}
+                  onChange={(e) => !isLocked(1) && handleMultiChange('embed_color', e.target.value)}
                   style={{ display: 'none' }}
                   disabled={isLocked(1)}
                 />
                 <div
                   className="color-trigger"
                   onClick={() => !isLocked(1) && colorInputRef.current.click()}
-                  style={{ background: formData.embed_color || '#3d3f45' }}
+                  style={{ background: formData.embed_color || '#3d3f45', cursor: isLocked(1) ? 'not-allowed' : 'pointer' }}
                   title={isLocked(1) ? "Requires Starter Tier" : "Open color picker"}
                 ></div>
                 <input
                   type="text"
                   name="embed_color"
                   value={formData.embed_color}
-                  onChange={handleChange}
+                  onChange={(e) => !isLocked(1) && handleChange(e)}
                   placeholder="#3d3f45"
                   className="styled-input-main"
                   style={{ flex: 1 }}
@@ -629,6 +674,35 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           letter-spacing: 0.5px;
           pointer-events: auto;
         }
+        
+        /* Switch Toggle Styles */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 46px;
+          height: 24px;
+          flex-shrink: 0;
+        }
+
+        .switch input { 
+          opacity: 0; width: 0; height: 0;
+        }
+
+        .slider {
+          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+          background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); transition: .3s;
+        }
+
+        .slider:before {
+          position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px;
+          background-color: white; transition: .3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider { background-color: var(--accent-color); border-color: var(--accent-color); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
       `}</style>
     </div>
   );

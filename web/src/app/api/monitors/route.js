@@ -161,8 +161,13 @@ export async function POST(request) {
       if (rest.custom_alert && tier < 2) delete extra_settings.custom_alert;
       if (rest.target_genres && tier < 1) delete extra_settings.target_genres;
       if (rest.target_languages && tier < 1) delete extra_settings.target_languages;
+      if (rest.use_native_player !== undefined) {
+        if (tier < 1) delete extra_settings.use_native_player;
+        else extra_settings.use_native_player = rest.use_native_player;
+      }
     } else {
       extra_settings.embed_color = embed_color || "#3d3f45";
+      if (rest.use_native_player !== undefined) extra_settings.use_native_player = rest.use_native_player;
     }
 
     const query = `

@@ -34,6 +34,7 @@ export default function PremiumComparisonTable() {
         { name: "Custom Templates", values: [false, false, true, true] },
         { name: "Advanced Filters", values: [false, true, true, true] },
         { name: "Custom Embed Color", values: [false, true, true, true] },
+        { name: "Native YouTube Player", values: [false, true, true, true] },
       ]
     },
     {

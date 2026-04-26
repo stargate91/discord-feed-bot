@@ -124,6 +124,14 @@ export async function PATCH(request, { params }) {
       extraSettings.target_languages = target_languages;
     }
     
+    // Native Player Mode (YouTube) — Tier 1+ (Starter)
+    if (body.use_native_player !== undefined) {
+      if (tier < 1) {
+        return NextResponse.json({ error: "Native player mode requires Starter tier or higher" }, { status: 403 });
+      }
+      extraSettings.use_native_player = body.use_native_player;
+    }
+    
     // Merge any other platform-specific settings
     extraSettings = { ...extraSettings, ...extra };
 

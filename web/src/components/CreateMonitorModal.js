@@ -105,6 +105,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     target_genres: [],
     target_languages: [],
     send_initial_alert: true,
+    use_native_player: false,
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -206,6 +207,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       target_genres: formData.target_genres,
       target_languages: formData.target_languages,
       send_initial_alert: ['twitch', 'kick'].includes(selectedPlatform.id) ? formData.send_initial_alert : false,
+      use_native_player: selectedPlatform.id === 'youtube' ? formData.use_native_player : undefined,
     };
 
     if (!selectedPlatform.isGlobal) {
@@ -532,29 +534,75 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                   </div>
                 )}
 
-               {selectedPlatform?.id !== 'youtube' && (
-                 <div className="form-group" style={{ marginTop: '1rem' }}>
-                    <label>Embed Color</label>
+                {selectedPlatform?.id === 'youtube' && (
+                  <div className="form-group alert-toggle-container" style={{ 
+                    marginTop: '1rem', 
+                    background: 'rgba(255,255,255,0.03)', 
+                    padding: '0.75rem 1.25rem', 
+                    borderRadius: '16px', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex !important',
+                    flexDirection: 'row !important',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    opacity: isLocked(1) ? 0.5 : 1
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
+                      <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
+                        Bypass the custom layout and let Discord embed the video directly.
+                      </p>
+                    </div>
+                    {isLocked(1) ? (
+                      <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+                        <Info size={12} /> Starter Tier+
+                      </div>
+                    ) : (
+                      <label className="switch" style={{ margin: 0 }}>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.use_native_player} 
+                          onChange={(e) => setFormData({...formData, use_native_player: e.target.checked})}
+                        />
+                        <span className="slider round"></span>
+                      </label>
+                    )}
+                  </div>
+                )}
+
+               {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !formData.use_native_player)) && (
+                 <div className="form-group" style={{ marginTop: '1rem', opacity: isLocked(1) ? 0.5 : 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label>Embed Color</label>
+                      {isLocked(1) && (
+                        <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                          <Info size={12} /> Starter Tier+
+                        </div>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <input 
                         type="color" 
                         ref={colorInputRef}
                         value={formData.embed_color}
-                        onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
+                        onChange={(e) => !isLocked(1) && setFormData({...formData, embed_color: e.target.value})}
                         style={{ display: 'none' }}
+                        disabled={isLocked(1)}
                       />
                       <div 
                         className="color-trigger"
-                        onClick={() => colorInputRef.current.click()}
-                        style={{ background: formData.embed_color }}
+                        onClick={() => !isLocked(1) && colorInputRef.current.click()}
+                        style={{ background: formData.embed_color, cursor: isLocked(1) ? 'not-allowed' : 'pointer' }}
                       ></div>
                       <input 
                         type="text" 
                         value={formData.embed_color} 
-                        onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
+                        onChange={(e) => !isLocked(1) && setFormData({...formData, embed_color: e.target.value})}
                         placeholder="#3d3f45"
                         className="styled-input-main"
                         style={{ flex: 1 }}
+                        disabled={isLocked(1)}
                       />
                     </div>
                  </div>
