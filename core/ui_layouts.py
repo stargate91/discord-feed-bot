@@ -96,16 +96,10 @@ def generate_news_layout(
     """
     content = f"{alert_text}\n{url}"
     
-    lines = []
-    if published_ts:
-        lines.append(f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:** <t:{published_ts}:f> (<t:{published_ts}:R>)")
-        
-    desc_text = "\n".join(lines)
-    
     if author:
-        section_text = f"### {title}\n**{author}**\n\n{desc_text}" if desc_text else f"### {title}\n**{author}**"
+        title_text = f"### {title}\n**{author}**"
     else:
-        section_text = f"### {title}\n{desc_text}" if desc_text else f"### {title}"
+        title_text = f"### {title}"
         
     layout = discord.ui.LayoutView()
     container_items = []
@@ -115,12 +109,23 @@ def generate_news_layout(
             discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
         )
         
+    # Main Title and Author (Full width)
+    container_items.append(discord.ui.TextDisplay(title_text))
+        
     btn_label = bot.get_feedback("btn_read_more", guild_id=guild_id)
-    section = discord.ui.Section(
-        discord.ui.TextDisplay(section_text),
-        accessory=discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
-    )
-    container_items.append(section)
+    button = discord.ui.Button(label=btn_label, url=url, style=discord.ButtonStyle.link)
+    
+    # Published date and Link Button section
+    if published_ts:
+        published_text = f"**{bot.get_feedback('field_published_at', guild_id=guild_id)}:**\n<t:{published_ts}:f> (<t:{published_ts}:R>)"
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(published_text), accessory=button)
+        )
+    else:
+        # Fallback if no published date
+        container_items.append(
+            discord.ui.Section(discord.ui.TextDisplay(f"🔗 **{btn_label}**"), accessory=button)
+        )
     
     settings = bot.guild_settings_cache.get(guild_id, {})
     custom_branding = settings.get("custom_branding")
