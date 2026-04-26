@@ -36,10 +36,6 @@ def generate_free_game_layout(
     # Initialize Layout
     layout = discord.ui.LayoutView()
     
-    # 1. Alert Message (Outside the container, directly in LayoutView)
-    # This is required because LayoutView cannot be sent with 'content' keyword
-    layout.add_item(discord.ui.TextDisplay(alert_text))
-    
     # Construct Container Items
     container_items = []
     
@@ -62,4 +58,4 @@ def generate_free_game_layout(
     
     layout.add_item(container)
     
-    return layout
+    return content, layout

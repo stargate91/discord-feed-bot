@@ -126,7 +126,7 @@ class EpicGamesMonitor(BaseMonitor):
             "url": game_url
         })
         
-        layout = generate_free_game_layout(
+        content, layout = generate_free_game_layout(
             bot=self.bot,
             guild_id=self.guild_id,
             alert_text=alert_text,
@@ -139,7 +139,7 @@ class EpicGamesMonitor(BaseMonitor):
             accent_color=self.get_color(0x3d3f45)
         )
         
-        await self.send_update(view=layout)
+        await self.send_update(content=content, view=layout)
 
     def get_item_id(self, item):
         return item.get("db_id")
@@ -226,7 +226,7 @@ class EpicGamesMonitor(BaseMonitor):
 
             alert_text = self.get_alert_message({"name": "Epic Games", "title": title, "url": game_url})
             
-            layout = generate_free_game_layout(
+            content, layout = generate_free_game_layout(
                 bot=self.bot,
                 guild_id=self.guild_id,
                 alert_text=alert_text,
@@ -239,7 +239,7 @@ class EpicGamesMonitor(BaseMonitor):
                 accent_color=self.get_color(0x3d3f45)
             )
             
-            results.append({"view": layout})
+            results.append({"content": content, "view": layout})
             
         # Reverse to get Oldest -> Newest (sequential reposting)
         results.reverse()

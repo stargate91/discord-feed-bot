@@ -154,7 +154,12 @@ class BaseMonitor(ABC):
 
             if channel:
                 try:
-                    await channel.send(content=content, embed=embed, view=view)
+                    if view and type(view).__name__ == "LayoutView" and content:
+                        await channel.send(content=content)
+                        await channel.send(view=view)
+                    else:
+                        await channel.send(content=content, embed=embed, view=view)
+                        
                     log.info(f"Published update for {self.name} on channel {channel.name}", extra={'guild_id': self.guild_id})
                     await db.increment_post_stat(self.guild_id, self.platform)
                     await db.update_last_post_at(self.id)
