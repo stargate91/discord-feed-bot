@@ -5,6 +5,7 @@ import asyncio
 from core.base_monitor import BaseMonitor
 from logger import log
 import calendar
+from core.ui_layouts import generate_news_layout
 
 # Standard User-Agent to avoid being blocked by WordPress/Cloudflare
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -49,16 +50,9 @@ class RSSMonitor(BaseMonitor):
         entry_title = entry.get("title", self.bot.get_feedback("monitor_rss_fallback_title", guild_id=self.guild_id))
         author_name = entry.get("author") or self.name
         
-        embed = discord.Embed(
-            title=entry_title[:256],
-            url=entry_link,
-            color=self.get_color(0x3d3f45)
-        )
-        embed.set_author(name=author_name)
-        
+        published_ts = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
-            ts = calendar.timegm(entry.published_parsed)
-            embed.add_field(name=self.bot.get_feedback("field_published_at", guild_id=self.guild_id), value=f"<t:{ts}:f> (<t:{ts}:R>)", inline=False)
+            published_ts = calendar.timegm(entry.published_parsed)
         
         img_url = None
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
@@ -76,9 +70,6 @@ class RSSMonitor(BaseMonitor):
                 if img_match:
                     img_url = img_match.group(1)
 
-        if img_url:
-            embed.set_image(url=img_url)
-
         alert_text = self.get_alert_message({
             "name": author_name,
             "title": entry_title,
@@ -86,11 +77,19 @@ class RSSMonitor(BaseMonitor):
             "author": author_name
         })
 
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=entry_link, style=discord.ButtonStyle.link))
+        content, layout = generate_news_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=entry_title[:256],
+            url=entry_link,
+            image_url=img_url,
+            author=author_name,
+            published_ts=published_ts,
+            accent_color=self.get_color(0x3d3f45)
+        )
 
-        await self.send_update(content=f"{alert_text}\n{entry_link}", embed=embed, view=view)
+        await self.send_update(content=content, view=layout)
 
     def get_item_id(self, entry):
         return entry.get("id") or entry.get("link")
@@ -145,12 +144,9 @@ class RSSMonitor(BaseMonitor):
         entry_title = entry.get("title", self.bot.get_feedback("monitor_rss_fallback_title", guild_id=self.guild_id))
         author_name = entry.get("author") or self.name
         
-        embed = discord.Embed(
-            title=entry_title[:256],
-            url=entry_link,
-            color=self.get_color(0x3d3f45)
-        )
-        embed.set_author(name=author_name)
+        published_ts = None
+        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+            published_ts = calendar.timegm(entry.published_parsed)
         
         img_url = None
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
@@ -168,9 +164,6 @@ class RSSMonitor(BaseMonitor):
                 if img_match:
                     img_url = img_match.group(1)
 
-        if img_url:
-            embed.set_image(url=img_url)
-
         alert_text = self.get_alert_message({
             "name": author_name,
             "title": entry_title,
@@ -178,12 +171,19 @@ class RSSMonitor(BaseMonitor):
             "author": author_name
         })
         
-        view = discord.ui.View()
-        btn_label = self.bot.get_feedback("btn_read_more", guild_id=self.guild_id)
-        view.add_item(discord.ui.Button(label=btn_label, url=entry_link, style=discord.ButtonStyle.link))
+        content, layout = generate_news_layout(
+            bot=self.bot,
+            guild_id=self.guild_id,
+            alert_text=alert_text,
+            title=entry_title[:256],
+            url=entry_link,
+            image_url=img_url,
+            author=author_name,
+            published_ts=published_ts,
+            accent_color=self.get_color(0x3d3f45)
+        )
         
         return {
-            "content": f"{alert_text}\n{entry_link}",
-            "embed": embed,
-            "view": view
+            "content": content,
+            "view": layout
         }
