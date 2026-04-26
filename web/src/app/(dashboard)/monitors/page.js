@@ -107,7 +107,7 @@ function MonitorsContent() {
     if (!guildId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/monitors?guildId=${guildId}`);
+      const res = await fetch(`/api/monitors?guild=${guildId}`);
       if (res.ok) {
         const data = await res.json();
         setMonitors(data);
@@ -415,12 +415,6 @@ function MonitorsContent() {
           </button>
         </div>
       </div>
-
-      {guildId && !isPremium && (
-        <Link href={`/premium?guild=${guildId}`}>
-          <div className="premium-badge" style={{ cursor: 'pointer' }}>PREMIUM FEATURE</div>
-        </Link>
-      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem' }}>Loading monitors...</div>
