@@ -55,6 +55,9 @@ export async function POST(request, { params }) {
 
     const res = await fetch(`${BOT_WEBHOOK_URL}${endpoint}`, {
       method: "POST",
+      headers: {
+        "x-webhook-secret": process.env.WEBHOOK_SECRET || ""
+      }
     });
 
     if (!res.ok) {

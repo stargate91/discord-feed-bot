@@ -187,7 +187,7 @@ async def sync_monitors():
         raise HTTPException(status_code=500, detail="Failed to synchronize monitors")
 
 @app.post("/monitors/{monitor_id}/check")
-async def manual_check(monitor_id: int):
+async def manual_check(monitor_id: int, authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
@@ -198,7 +198,7 @@ async def manual_check(monitor_id: int):
         raise HTTPException(status_code=400, detail=message)
 
 @app.post("/monitors/{monitor_id}/repost")
-async def repost_recent(monitor_id: int, count: int = 1):
+async def repost_recent(monitor_id: int, count: int = 1, authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
@@ -209,7 +209,7 @@ async def repost_recent(monitor_id: int, count: int = 1):
         raise HTTPException(status_code=400, detail="No history found or repost failed")
 
 @app.post("/monitors/{monitor_id}/purge")
-async def purge_channel(monitor_id: int, amount: int = 50):
+async def purge_channel(monitor_id: int, amount: int = 50, authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
@@ -220,7 +220,7 @@ async def purge_channel(monitor_id: int, amount: int = 50):
         raise HTTPException(status_code=400, detail="Purge failed")
 
 @app.post("/monitors/{monitor_id}/reset")
-async def reset_history(monitor_id: int):
+async def reset_history(monitor_id: int, authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
