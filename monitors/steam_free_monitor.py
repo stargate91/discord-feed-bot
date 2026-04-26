@@ -48,7 +48,7 @@ class SteamFreeMonitor(BaseMonitor):
             title = game.get("title", "Unknown")
             giveaway_type = game.get("type", "").lower()
 
-            if not self.include_dlc and giveaway_type == "dlc":
+            if giveaway_type != "game":
                 continue
 
             all_candidates.append(game)
@@ -125,10 +125,10 @@ class SteamFreeMonitor(BaseMonitor):
         if not isinstance(data, list) or not data:
             return [{"empty": True}]
 
-        # Filter DLCs if necessary, and get newest 'count' items
+        # Filter ONLY "Game" type giveaways, and get newest 'count' items
         filtered_data = []
         for game in data:
-            if not self.include_dlc and game.get("type", "").lower() == "dlc":
+            if game.get("type", "").lower() != "game":
                 continue
             filtered_data.append(game)
             if len(filtered_data) >= count:
