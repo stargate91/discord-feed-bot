@@ -7,7 +7,6 @@ from core.base_monitor import BaseMonitor
 from logger import log
 from core.ui_layouts import generate_youtube_layout
 import calendar
-import textwrap
 
 import database as db
 
@@ -144,27 +143,24 @@ class YouTubeMonitor(BaseMonitor):
         # Return all entries. MonitorManager will filter via is_published per-guild.
         return list(reversed(feed.entries))
 
-    async def _resolve_thumbnail_and_title(self, video_id, entry_title, fallback_thumbnail):
+    async def _resolve_thumbnail(self, video_id, fallback_thumbnail):
+        """Try maxresdefault first, fall back to hqdefault/media_thumbnail."""
         maxres_url = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.head(maxres_url, timeout=3) as resp:
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.head(maxres_url) as resp:
                     if resp.status == 200:
-                        # Maxres exists! No wrapping needed.
-                        return maxres_url, entry_title
+                        return maxres_url
         except Exception:
             pass
-            
-        # Fallback to hqdefault/media_thumbnail and wrap title intelligently
-        wrapped_title = "\n".join(textwrap.wrap(entry_title, width=58))
-        return fallback_thumbnail, wrapped_title
+        return fallback_thumbnail
 
     async def process_item(self, entry):
         video_id = self.get_item_id(entry)
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
-        entry_title = "\n".join(textwrap.wrap(entry_title, width=58))
         
         published_ts = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
@@ -174,7 +170,7 @@ class YouTubeMonitor(BaseMonitor):
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
             fallback_thumb = entry.media_thumbnail[0]["url"]
             
-        thumbnail, entry_title = await self._resolve_thumbnail_and_title(video_id, entry_title, fallback_thumb)
+        thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
         
         alert_text = self.get_alert_message({
             "name": author_name,
@@ -262,7 +258,6 @@ class YouTubeMonitor(BaseMonitor):
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
-        entry_title = "\n".join(textwrap.wrap(entry_title, width=58))
         
         published_ts = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
@@ -272,7 +267,7 @@ class YouTubeMonitor(BaseMonitor):
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
             fallback_thumb = entry.media_thumbnail[0]["url"]
             
-        thumbnail, entry_title = await self._resolve_thumbnail_and_title(video_id, entry_title, fallback_thumb)
+        thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
         
         # Format localized alert message
         alert_text = self.get_alert_message({
