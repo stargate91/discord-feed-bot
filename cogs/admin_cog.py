@@ -186,22 +186,10 @@ class AdminCog(commands.Cog):
         """Sends a link to the web dashboard and support server."""
         await interaction.response.defer(ephemeral=True)
         
-        embed = discord.Embed(
-            title=self.bot.get_feedback("dashboard_cmd_title", guild_id=interaction.guild_id),
-            description=self.bot.get_feedback("dashboard_cmd_desc", guild_id=interaction.guild_id),
-            color=0x2b2d31
-        )
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        from core.ui_layouts import generate_dashboard_layout
+        layout = generate_dashboard_layout(self.bot, interaction.guild_id)
         
-        view = discord.ui.View()
-        
-        db_label, db_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_web_dashboard", guild_id=interaction.guild_id))
-        sup_label, sup_emoji = self.bot.parse_emoji_text(self.bot.get_feedback("btn_support_server", guild_id=interaction.guild_id))
-        
-        view.add_item(discord.ui.Button(label=db_label, emoji=db_emoji, url="https://novafeeds.xyz", style=discord.ButtonStyle.link))
-        view.add_item(discord.ui.Button(label=sup_label, emoji=sup_emoji, url="https://discord.gg/novafeeds", style=discord.ButtonStyle.link))
-        
-        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+        await interaction.followup.send(view=layout, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(AdminCog(bot))

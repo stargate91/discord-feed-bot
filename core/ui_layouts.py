@@ -539,3 +539,51 @@ def generate_github_layout(
     layout.add_item(container)
     
     return content, layout
+
+def generate_dashboard_layout(bot, guild_id: int):
+    """
+    Generates a premium Discord Components V2 layout for the /dashboard command.
+    """
+    title = bot.get_feedback("dashboard_cmd_title", guild_id=guild_id)
+    desc = bot.get_feedback("dashboard_cmd_desc", guild_id=guild_id)
+    
+    db_text = bot.get_feedback("btn_web_dashboard", guild_id=guild_id)
+    sup_text = bot.get_feedback("btn_support_server", guild_id=guild_id)
+    
+    db_label, db_emoji = bot.parse_emoji_text(db_text)
+    sup_label, sup_emoji = bot.parse_emoji_text(sup_text)
+    
+    layout = discord.ui.LayoutView()
+    
+    container_items = []
+    
+    # 1. Header
+    container_items.append(discord.ui.TextDisplay(f"### <:web:1495835665802203176> {title}"))
+    container_items.append(discord.ui.Separator())
+    
+    # 2. Description
+    container_items.append(discord.ui.TextDisplay(desc))
+    
+    # 3. Action Buttons
+    btn_db = discord.ui.Button(label=db_label, emoji=db_emoji, url="https://novafeeds.xyz", style=discord.ButtonStyle.link)
+    btn_sup = discord.ui.Button(label=sup_label, emoji=sup_emoji, url="https://discord.gg/novafeeds", style=discord.ButtonStyle.link)
+    
+    container_items.append(discord.ui.Separator())
+    container_items.append(discord.ui.ActionRow(btn_db, btn_sup))
+    
+    # 4. Branding
+    settings = bot.guild_settings_cache.get(guild_id, {})
+    custom_branding = settings.get("custom_branding")
+    
+    if custom_branding != "":
+        container_items.append(discord.ui.Separator())
+        if custom_branding:
+            container_items.append(discord.ui.TextDisplay(custom_branding))
+        else:
+            branding_text = bot.get_feedback("branding_delivered_by", guild_id=guild_id)
+            container_items.append(discord.ui.TextDisplay(branding_text))
+            
+    container = discord.ui.Container(*container_items, accent_color=0x2b2d31)
+    layout.add_item(container)
+    
+    return layout
