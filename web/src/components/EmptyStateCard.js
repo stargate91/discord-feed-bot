@@ -9,18 +9,18 @@ export default function EmptyStateCard({ guildId }) {
       {/* Background decorative elements */}
       <div className="bg-blob blob-1"></div>
       <div className="bg-blob blob-2"></div>
-      
+
       <div className="card-inner">
         <div className="glow-icon">
           <Rocket size={32} />
           <div className="icon-pulse"></div>
         </div>
-        
+
         <div className="content">
           <div className="badge">First Steps</div>
           <h2>Welcome aboard!</h2>
           <p>
-            The server is still quiet... Let's bring it to life! Follow these two quick steps 
+            The server is still quiet... Let's bring it to life! Follow these two quick steps
             to get the first news delivered to your Discord channel.
           </p>
 
