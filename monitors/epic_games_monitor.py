@@ -103,6 +103,8 @@ class EpicGamesMonitor(BaseMonitor):
         game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
 
         image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
+        if image_url:
+            image_url += "&w=460&resize=1" if "?" in image_url else "?w=460&resize=1"
         original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", self.bot.get_feedback("default_na", guild_id=self.guild_id))
         
         end_date_str = None
@@ -209,6 +211,8 @@ class EpicGamesMonitor(BaseMonitor):
             product_slug = game.get("productSlug") or next((m.get("pageSlug") for m in game.get("catalogNs", {}).get("mappings", [])), None) or game.get("urlSlug")
             game_url = f"https://store.epicgames.com/{self.lang_code}/p/{product_slug}" if product_slug else "https://store.epicgames.com/free-games"
             image_url = next((img.get("url") for img in game.get("keyImages", []) if img.get("type") in ["OfferImageWide", "featuredMedia", "OfferImageTall"]), None)
+            if image_url:
+                image_url += "&w=460&resize=1" if "?" in image_url else "?w=460&resize=1"
             original_price = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", self.bot.get_feedback("default_na", guild_id=self.guild_id))
             
             end_date_str = None
