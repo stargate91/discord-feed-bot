@@ -164,6 +164,17 @@ async def create_checkout(guild_id: str, tier: int, interval: str = "mo"):
         log.error(f"[CHECKOUT] Error creating session: {e}")
         raise HTTPException(status_code=500, detail="Failed to create checkout session")
 
+from fastapi import Depends
+from fastapi.responses import RedirectResponse
+
+def verify_webhook_secret(x_webhook_secret: str = Header(None)):
+    expected_secret = os.getenv("WEBHOOK_SECRET")
+    if not expected_secret:
+        return True # If not configured, allow (for backwards compatibility/testing)
+    if x_webhook_secret != expected_secret:
+        raise HTTPException(status_code=401, detail="Invalid webhook secret")
+    return True
+
 @app.post("/monitors/sync")
 async def sync_monitors():
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
@@ -220,7 +231,7 @@ async def reset_history(monitor_id: int):
         raise HTTPException(status_code=400, detail="Monitor not found or reset failed")
 
 @app.post("/monitors/reset-all")
-async def reset_all_history():
+async def reset_all_history(authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
@@ -231,7 +242,7 @@ async def reset_all_history():
         raise HTTPException(status_code=500, detail="Global reset failed")
 
 @app.post("/admin/factory-reset")
-async def factory_reset():
+async def factory_reset(authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
