@@ -211,17 +211,19 @@ class CryptoMonitor(BaseMonitor):
             percent=percent_str
         )
 
-        accent_color = self.get_color(0xf7931a) # Default bitcoin orange if not set
+        accent_color = self.get_color() # Uses original fallback config default
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=symbol, guild_id=self.guild_id)
         
         view = discord.ui.LayoutView()
         container_items = []
         
-        # 1. Header with dynamic emoji
+        # 1. Header with chart increase/decrease emoji
         container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
+        container_items.append(discord.ui.Separator())
         
-        # 2. Main Alert Message
-        container_items.append(discord.ui.TextDisplay(msg))
+        # 2. Main Alert Message with user provided crypto icon
+        crypto_emoji = "<:crypto:1495846010197381160>"
+        container_items.append(discord.ui.TextDisplay(f"{crypto_emoji} {msg}"))
         
         # 3. Meta Data & Button
         meta_lines = [
@@ -282,6 +284,7 @@ class CryptoMonitor(BaseMonitor):
                     if resp.status == 200:
                         prices_data = await resp.json()
                         
+                        crypto_emoji = "<:crypto:1495846010197381160>"
                         title = self.bot.get_feedback("crypto_price_check", name=self.name, guild_id=self.guild_id)
                         accent_color = self.get_color()
                         
@@ -289,7 +292,7 @@ class CryptoMonitor(BaseMonitor):
                         valid_count = 0
                         
                         container_items = [
-                            discord.ui.TextDisplay(f"### {title}"),
+                            discord.ui.TextDisplay(f"### {crypto_emoji} {title}"),
                             discord.ui.Separator()
                         ]
 
@@ -298,12 +301,12 @@ class CryptoMonitor(BaseMonitor):
                             if cid and cid in prices_data:
                                 current_price = float(prices_data[cid]["usd"])
                                 diff = ((current_price - threshold) / threshold) * 100
-                                bullet = CRYPTO_BULLET_FILLED if diff >= 0 else CRYPTO_BULLET_EMPTY
+                                dir_emoji = CRYPTO_UP if diff >= 0 else CRYPTO_DOWN
                                 
                                 fmt_price = f"{current_price:,.2f}"
                                 fmt_diff = f"{diff:+.2f}"
                                 
-                                line = f"{bullet} **{sym}**: {fmt_price} USD ({fmt_diff}% a küszöbtől)"
+                                line = f"{dir_emoji} **{sym}**: {fmt_price} USD ({fmt_diff}% a küszöbtől)"
                                 summary_lines.append(line)
                                 valid_count += 1
                         
@@ -363,14 +366,17 @@ class CryptoMonitor(BaseMonitor):
             percent=percent_str
         )
 
-        accent_color = self.get_color(0xf7931a)
+        accent_color = self.get_color()
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=sym, guild_id=self.guild_id)
         
         view = discord.ui.LayoutView()
         container_items = []
         
         container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
-        container_items.append(discord.ui.TextDisplay(msg))
+        container_items.append(discord.ui.Separator())
+        
+        crypto_emoji = "<:crypto:1495846010197381160>"
+        container_items.append(discord.ui.TextDisplay(f"{crypto_emoji} {msg}"))
         
         meta_lines = [
             f"**{self.bot.get_feedback('ui_crypto_field_price', guild_id=self.guild_id)}:** {current_price:,.2f} USD",
