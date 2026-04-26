@@ -26,7 +26,7 @@ async def init_db():
             admin_role_id BIGINT DEFAULT 0,
             alert_templates TEXT,
             premium_until TIMESTAMP,
-            refresh_interval INTEGER DEFAULT 30,
+            refresh_interval INTEGER DEFAULT 20,
             tier INTEGER DEFAULT 0,
             stripe_subscription_id TEXT,
             is_master BOOLEAN DEFAULT false,
@@ -149,8 +149,8 @@ async def init_db():
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT false")
                 await conn.execute("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS custom_branding TEXT")
                 
-                # Migration: Update default refresh interval to 30 for free guilds
-                await conn.execute("UPDATE guild_settings SET refresh_interval = 30 WHERE refresh_interval IS NULL OR (refresh_interval = 15 AND tier = 0)")
+                # Migration: Update default refresh interval to 20 for free guilds
+                await conn.execute("UPDATE guild_settings SET refresh_interval = 20 WHERE refresh_interval IS NULL OR (refresh_interval = 30 AND tier = 0)")
                 
                 # Migration: Move existing premium users to Tier 3 (Architect)
                 await conn.execute("""
@@ -374,7 +374,7 @@ async def update_guild_settings(guild_id, lang=None, a_role=None, templates=None
         except: templates = {}
         
     p_until = p_until if p_until is not None else curr.get('premium_until', None)
-    r_int = r_int if r_int is not None else curr.get('refresh_interval', 30)
+    r_int = r_int if r_int is not None else curr.get('refresh_interval', 20)
     g_tier = g_tier if g_tier is not None else curr.get('tier', 0)
     sub_id = sub_id if sub_id is not None else curr.get('stripe_subscription_id', None)
     custom_branding = custom_branding if custom_branding is not None else curr.get('custom_branding', {})

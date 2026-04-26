@@ -186,7 +186,7 @@ function SettingsContent() {
   const [settings, setSettings] = useState({
     language: 'en',
     admin_role_id: '0',
-    refresh_interval: 30,
+    refresh_interval: 20,
     alert_templates: {},
     custom_branding: null,
     isMaster: false
@@ -326,7 +326,7 @@ function SettingsContent() {
   const minInterval = settings.isMaster ? 1 : 
                       (settings.tier >= 3) ? 2 : 
                       (settings.tier >= 2) ? 5 : 
-                      (settings.tier >= 1) ? 10 : 30;
+                      (settings.tier >= 1) ? 10 : 20;
 
   const currentPlatform = PLATFORMS.find(p => p.id === activePlatform);
 
@@ -403,7 +403,7 @@ function SettingsContent() {
 
               <div className="speed-tiers">
                 {[
-                  { label: '30m', tier: 'Free', min: 30 },
+                  { label: '20m', tier: 'Free', min: 20 },
                   { label: '10m', tier: 'Starter', min: 10 },
                   { label: '5m', tier: 'Pro', min: 5 },
                   { label: '2m', tier: 'Ultimate', min: 2 },

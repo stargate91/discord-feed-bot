@@ -44,49 +44,49 @@ export async function GET(req, { params }) {
     );
 
     let settings = {
-        language: "hu",
-        admin_role_id: "0",
-        premium_until: null,
-        refresh_interval: 30,
-        alert_templates: {},
-        tier: 0,
-        isMaster: isMaster,
-        hasStripeSubscription: false
+      language: "en",
+      admin_role_id: "0",
+      premium_until: null,
+      refresh_interval: 20,
+      alert_templates: {},
+      tier: 0,
+      isMaster: isMaster,
+      hasStripeSubscription: false
     };
 
     if (res.rows.length > 0) {
-        const row = res.rows[0];
-        let templates = {};
-        if (row.alert_templates) {
-            try {
-                templates = typeof row.alert_templates === 'string' 
-                    ? JSON.parse(row.alert_templates) 
-                    : row.alert_templates;
-            } catch (e) {
-                console.error("Failed to parse alert_templates:", e);
-            }
+      const row = res.rows[0];
+      let templates = {};
+      if (row.alert_templates) {
+        try {
+          templates = typeof row.alert_templates === 'string'
+            ? JSON.parse(row.alert_templates)
+            : row.alert_templates;
+        } catch (e) {
+          console.error("Failed to parse alert_templates:", e);
         }
+      }
 
-        let tier = row.tier || 0;
-        const now = new Date();
-        const premiumUntil = row.premium_until;
-        
-        // Legacy support: If tier is 0 but premium_until is valid, treat as Tier 3
-        if (tier === 0 && premiumUntil && new Date(premiumUntil) > now) {
-            tier = 3;
-        }
+      let tier = row.tier || 0;
+      const now = new Date();
+      const premiumUntil = row.premium_until;
 
-        settings = {
-            language: row.language || "hu",
-            admin_role_id: row.admin_role_id ? String(row.admin_role_id) : "0",
-            premium_until: row.premium_until,
-            refresh_interval: row.refresh_interval || 30,
-            alert_templates: templates,
-            tier: tier,
-            isMaster: isMaster,
-            hasStripeSubscription: !!row.stripe_subscription_id,
-            custom_branding: row.custom_branding !== null ? row.custom_branding : null
-        };
+      // Legacy support: If tier is 0 but premium_until is valid, treat as Tier 3
+      if (tier === 0 && premiumUntil && new Date(premiumUntil) > now) {
+        tier = 3;
+      }
+
+      settings = {
+        language: row.language || "en",
+        admin_role_id: row.admin_role_id ? String(row.admin_role_id) : "0",
+        premium_until: row.premium_until,
+        refresh_interval: row.refresh_interval || 20,
+        alert_templates: templates,
+        tier: tier,
+        isMaster: isMaster,
+        hasStripeSubscription: !!row.stripe_subscription_id,
+        custom_branding: row.custom_branding !== null ? row.custom_branding : null
+      };
     }
 
     return NextResponse.json(settings);
@@ -103,13 +103,13 @@ export async function PATCH(req, { params }) {
   // Next.js 15+ compatibility: params must be awaited
   const { id } = await params;
   const guildId = String(id).trim();
-  
+
   // Security check:
   const allowed = await canManageGuild(session, guildId);
   if (!allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  
+
   const body = await req.json();
   const { language, admin_role_id, refresh_interval, alert_templates, custom_branding } = body;
 
@@ -129,7 +129,7 @@ export async function PATCH(req, { params }) {
   let guildTier = tierRes.rows[0]?.tier || 0;
   const premiumUntil = tierRes.rows[0]?.premium_until;
   const dbIsMaster = tierRes.rows[0]?.is_master || false;
-  
+
   if (guildTier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
     guildTier = 3;
   }
@@ -143,26 +143,26 @@ export async function PATCH(req, { params }) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8').replace(/:\s*([0-9]{15,})/g, ': "$1"'));
         if (config.master_guilds?.hasOwnProperty(guildId)) isMaster = true;
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
-  let minInterval = 30; // Default: Free Tier
+  let minInterval = 20; // Default: Free Tier
   if (isMaster) minInterval = 1;
   else if (guildTier >= 3) minInterval = 2; // Ultimate
   else if (guildTier >= 2) minInterval = 5; // Professional
   else if (guildTier >= 1) minInterval = 10; // Starter
 
   if (interval < minInterval) {
-    return NextResponse.json({ 
-      error: `Access Denied: Refresh interval too low for your tier. Minimum for your level is ${minInterval} minutes.` 
+    return NextResponse.json({
+      error: `Access Denied: Refresh interval too low for your tier. Minimum for your level is ${minInterval} minutes.`
     }, { status: 400 });
   }
 
   // Validate Alert Templates based on Tier (Requires Tier 2 / Professional)
   const hasTemplates = alert_templates && Object.values(alert_templates).some(t => t && t.trim().length > 0);
   if (hasTemplates && !isMaster && guildTier < 2) {
-    return NextResponse.json({ 
-      error: "Access Denied: Custom Alert Templates are only available for Tier 2 (Professional) servers and above." 
+    return NextResponse.json({
+      error: "Access Denied: Custom Alert Templates are only available for Tier 2 (Professional) servers and above."
     }, { status: 400 });
   }
 
@@ -185,20 +185,20 @@ export async function PATCH(req, { params }) {
         custom_branding = EXCLUDED.custom_branding
     `;
     await pool.query(q, [
-        guildId, 
-        language, 
-        admin_role_id, 
-        refresh_interval, 
-        JSON.stringify(alert_templates || {}),
-        finalCustomBranding !== undefined ? finalCustomBranding : null
+      guildId,
+      language,
+      admin_role_id,
+      refresh_interval,
+      JSON.stringify(alert_templates || {}),
+      finalCustomBranding !== undefined ? finalCustomBranding : null
     ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Settings API PATCH] Error:", error);
-    return NextResponse.json({ 
-        error: "Internal Server Error", 
-        details: error.message 
+    return NextResponse.json({
+      error: "Internal Server Error",
+      details: error.message
     }, { status: 500 });
   }
 }
