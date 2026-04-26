@@ -6,19 +6,25 @@ import { X, ChevronRight, ChevronLeft, Info, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/context/ToastContext";
 
 const PLATFORMS = [
+  // Content & Streaming
   { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: '@handle, Link or Name', hint: 'Format: @handle, channel link, name or UCID.' },
-
-  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#ee802f', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Format: Full URL (e.g. https://site.com/feed.xml).' },
-  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'Format: App ID (e.g. 730) or Store URL.' },
   { id: 'twitch', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'Format: Username or Channel Link.' },
   { id: 'kick', name: 'Kick', logo: '/emojis/kick.png', color: '#53fc18', description: 'Go live alerts for Kick streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'kick_user', hint: 'Format: Username or Channel Link.' },
-  { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "owner/repo" or Repository URL.' },
-  { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', isCrypto: true },
+  
+  // Gaming
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
   { id: 'steam_free', name: 'Steam Free', logo: '/emojis/steam.png', color: '#66c0f4', description: 'New free games discovered on Steam.', isGlobal: true },
+  { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'App ID', inputKey: 'app_id', placeholder: '730', hint: 'Format: App ID (e.g. 730) or Store URL.' },
   { id: 'gog_free', name: 'GOG Free', logo: '/emojis/gog.png', color: '#b237c1', description: 'Limited time free offers on GOG.com.', isGlobal: true },
+  
+  // Entertainment
   { id: 'movie', name: 'Movies', logo: '/emojis/tmdb.png', color: '#00d1b2', description: 'Trending and new popular movies.', isGlobal: true },
-  { id: 'tv_series', name: 'TV Series', logo: '/emojis/tmdb.png', color: '#3273dc', description: 'Daily trending and new TV shows.', isGlobal: true }
+  { id: 'tv_series', name: 'TV Series', logo: '/emojis/tmdb.png', color: '#3273dc', description: 'Daily trending and new TV shows.', isGlobal: true },
+
+  // Tech & General
+  { id: 'github', name: 'GitHub', logo: '/emojis/github.png', color: '#ffffff', description: 'New releases or commits from a repo.', inputLabel: 'Repository', inputKey: 'repo', placeholder: 'owner/repo', hint: 'Format: "owner/repo" or Repository URL.' },
+  { id: 'crypto', name: 'Crypto', logo: '/emojis/crypto.png', color: '#F7931A', description: 'Price alerts and coin news.', isCrypto: true },
+  { id: 'rss', name: 'RSS Feed', logo: '/emojis/rss.png', color: '#ee802f', description: 'Generic RSS/Atom feed monitoring.', inputLabel: 'Feed URL', inputKey: 'rss_url', placeholder: 'https://example.com/feed', hint: 'Format: Full URL (e.g. https://site.com/feed.xml).' }
 ];
 
 const MOVIE_GENRES = [
@@ -199,6 +205,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       include_upcoming: formData.include_upcoming,
       target_genres: formData.target_genres,
       target_languages: formData.target_languages,
+      send_initial_alert: ['twitch', 'kick'].includes(selectedPlatform.id) ? formData.send_initial_alert : false,
     };
 
     if (!selectedPlatform.isGlobal) {
@@ -495,33 +502,35 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
                </div>
 
-                <div className="form-group alert-toggle-container" style={{ 
-                  marginTop: '1rem', 
-                  background: 'rgba(255,255,255,0.03)', 
-                  padding: '0.75rem 1.25rem', 
-                  borderRadius: '16px', 
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  display: 'flex !important',
-                  flexDirection: 'row !important',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  width: '100%'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
-                      Post an update immediately if the source is already live or has new items.
-                    </p>
+                {['twitch', 'kick'].includes(selectedPlatform?.id) && (
+                  <div className="form-group alert-toggle-container" style={{ 
+                    marginTop: '1rem', 
+                    background: 'rgba(255,255,255,0.03)', 
+                    padding: '0.75rem 1.25rem', 
+                    borderRadius: '16px', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex !important',
+                    flexDirection: 'row !important',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                      <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                        Post an update immediately if the source is already live or has new items.
+                      </p>
+                    </div>
+                    <label className="switch" style={{ margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.send_initial_alert} 
+                        onChange={(e) => setFormData({...formData, send_initial_alert: e.target.checked})}
+                      />
+                      <span className="slider round"></span>
+                    </label>
                   </div>
-                  <label className="switch" style={{ margin: 0 }}>
-                    <input 
-                      type="checkbox" 
-                      checked={formData.send_initial_alert} 
-                      onChange={(e) => setFormData({...formData, send_initial_alert: e.target.checked})}
-                    />
-                    <span className="slider round"></span>
-                  </label>
-                </div>
+                )}
 
                {selectedPlatform?.id !== 'youtube' && (
                  <div className="form-group" style={{ marginTop: '1rem' }}>

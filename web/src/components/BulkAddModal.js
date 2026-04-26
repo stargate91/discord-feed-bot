@@ -88,7 +88,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           targetChannels,
           targetRoles,
           embedColor,
-          sendInitialAlert
+          sendInitialAlert: ['stream', 'kick'].includes(selectedPlatform.id) ? sendInitialAlert : false
         })
       });
 
@@ -234,33 +234,35 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                     )}
                   </div>
 
-                  <div className="form-group alert-toggle-container" style={{
-                    marginTop: '0.75rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    padding: '0.6rem 1.1rem',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex !important',
-                    flexDirection: 'row !important',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
-                      <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
-                        Post updates immediately for any source that is already live.
-                      </p>
+                  {['stream', 'kick'].includes(selectedPlatform?.id) && (
+                    <div className="form-group alert-toggle-container" style={{
+                      marginTop: '0.75rem',
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '0.6rem 1.1rem',
+                      borderRadius: '14px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex !important',
+                      flexDirection: 'row !important',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                        <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
+                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                          Post updates immediately for any source that is already live.
+                        </p>
+                      </div>
+                      <label className="switch" style={{ margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={sendInitialAlert}
+                          onChange={(e) => setSendInitialAlert(e.target.checked)}
+                        />
+                        <span className="slider round"></span>
+                      </label>
                     </div>
-                    <label className="switch" style={{ margin: 0 }}>
-                      <input
-                        type="checkbox"
-                        checked={sendInitialAlert}
-                        onChange={(e) => setSendInitialAlert(e.target.checked)}
-                      />
-                      <span className="slider round"></span>
-                    </label>
-                  </div>
+                  )}
                 </div>
               )}
 

@@ -125,8 +125,16 @@ class SteamFreeMonitor(BaseMonitor):
         if not isinstance(data, list) or not data:
             return [{"empty": True}]
 
-        # Get newest 'count' items from API
-        latest_data = data[:count]
+        # Filter DLCs if necessary, and get newest 'count' items
+        filtered_data = []
+        for game in data:
+            if not self.include_dlc and game.get("type", "").lower() == "dlc":
+                continue
+            filtered_data.append(game)
+            if len(filtered_data) >= count:
+                break
+        
+        latest_data = filtered_data
         
         results = []
         # Reverse the slice to process Oldest -> Newest (sequential reposting)
