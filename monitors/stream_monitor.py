@@ -52,14 +52,15 @@ class BaseStreamMonitor(BaseMonitor):
         current_live = stream_data.get("is_live", False) if stream_data else False
 
         if current_live and not self.is_live:
-            # Notify only if NOT in silent start mode (e.g. newly added during runtime)
-            if not getattr(self, 'is_silent_start', False):
+            # Notify only if NOT in silent start mode and NOT the very first poll after bot boot
+            if not getattr(self, 'is_silent_start', False) and not self.is_first_run:
                 await self.process_item(stream_data)
             self.is_live = True
         elif not current_live and self.is_live:
             self.is_live = False
             
         self.is_silent_start = False
+        self.is_first_run = False
         return items
 
     async def _fetch_platform_data(self):
