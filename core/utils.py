@@ -14,6 +14,11 @@ def slugify(text: str) -> str:
 def clean_html(text: str) -> str:
     """Removes HTML tags and cleans up content."""
     if not text: return ""
+    
+    # Remove raw Steam image placeholders that leak into text
+    text = re.sub(r'\{STEAM_CLAN_IMAGE\}[^\s"\'\[\]<>]+', '', text)
+    text = re.sub(r'\{STEAM_CLAN_LOC_IMAGE\}[^\s"\'\[\]<>]+', '', text)
+    
     # Remove HTML tags
     clean = re.compile('<.*?>')
     text = re.sub(clean, '', text)
@@ -38,6 +43,17 @@ def extract_image_url(text: str) -> str | None:
         bb_match = re.search(r'\[img\](.*?)\[/img\]', text, re.IGNORECASE)
         if bb_match:
             url = bb_match.group(1)
+            
+    # Try raw Steam Clan Image placeholder anywhere in the text
+    if not url:
+        steam_match = re.search(r'(\{STEAM_CLAN_IMAGE\}[^\s"\'\[\]<>]+)', text)
+        if steam_match:
+            url = steam_match.group(1)
+            
+    if not url:
+        steam_match = re.search(r'(\{STEAM_CLAN_LOC_IMAGE\}[^\s"\'\[\]<>]+)', text)
+        if steam_match:
+            url = steam_match.group(1)
             
     if url:
         # Steam uses placeholders for clan images
