@@ -171,7 +171,7 @@ def generate_youtube_layout(
     container_items = []
     
     # 1. Main Title (Full width)
-    container_items.append(discord.ui.TextDisplay(f"### <:youtube:1490131427503636511> {title}"))
+    container_items.append(discord.ui.TextDisplay(f"### <:youtube:1495845103447576807> {title}"))
     
     # 2. Image (Thumbnail)
     if image_url:
