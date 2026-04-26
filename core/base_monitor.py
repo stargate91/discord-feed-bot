@@ -154,9 +154,12 @@ class BaseMonitor(ABC):
 
             if channel:
                 try:
+                    if content is None and embed is None and view is None:
+                        continue # Skip empty updates to prevent 50006 errors
+                        
                     if view and type(view).__name__ == "LayoutView" and content:
                         await channel.send(content=content, suppress_embeds=True)
-                        await channel.send(content="\u200b", view=view)
+                        await channel.send(view=view)
                     else:
                         await channel.send(content=content, embed=embed, view=view)
                         

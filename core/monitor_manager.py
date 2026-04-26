@@ -345,6 +345,9 @@ class MonitorManager:
             
             # 3. Process each item (post to Discord)
             for item_data in items_to_post:
+                if item_data.get("empty"):
+                    log.warning(f"Item is marked as empty, skipping post for {monitor.name}")
+                    continue
                 await monitor.send_update(content=item_data.get("content"), embed=item_data.get("embed"), view=item_data.get("view"))
                 await asyncio.sleep(1) # Safety delay
             
