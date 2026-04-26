@@ -132,8 +132,10 @@ class SteamNewsMonitor(BaseMonitor):
         image_url = extract_image_url(raw_contents)
         
         # Fallback to official Steam game header if no image in the news post
+        used_fallback = False
         if not image_url:
             image_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{self.appid}/header.jpg"
+            used_fallback = True
         
         # Formulate message
         alert_text = self.get_alert_message({
@@ -146,13 +148,27 @@ class SteamNewsMonitor(BaseMonitor):
         # Truncate description for the layout
         truncated_desc = description[:300] + "..." if len(description) > 300 else description
         
+        if used_fallback:
+            import textwrap
+            wrapped_lines = []
+            for line in truncated_desc.split('\n'):
+                if line.strip():
+                    wrapped_lines.extend(textwrap.wrap(line, width=75, break_long_words=False))
+                else:
+                    wrapped_lines.append("")
+            final_desc = "\n".join(wrapped_lines)
+            final_title = "\n".join(textwrap.wrap(title, width=55, break_long_words=False))
+        else:
+            final_desc = truncated_desc
+            final_title = title[:256]
+        
         content, layout = generate_steam_news_layout(
             bot=self.bot,
             guild_id=self.guild_id,
             alert_text=alert_text,
-            title=title[:256],
+            title=final_title,
             url=url if is_valid_url else "",
-            description=truncated_desc,
+            description=final_desc,
             image_url=image_url,
             author=author,
             published_ts=item.get("date"),
