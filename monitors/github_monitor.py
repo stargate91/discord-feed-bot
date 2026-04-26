@@ -9,7 +9,18 @@ from datetime import datetime, timezone
 class GitHubMonitor(BaseMonitor):
     def __init__(self, bot, config):
         super().__init__(bot, config)
-        self.repo_path = config.get("repo_path") or config.get("repo")  # owner/repo
+        raw_path = config.get("repo_path") or config.get("repo")  # owner/repo or url
+        
+        # Handle full URL input
+        if isinstance(raw_path, str) and "github.com/" in raw_path:
+            try:
+                parts = raw_path.split("github.com/")[-1].strip("/").split("/")
+                self.repo_path = f"{parts[0]}/{parts[1]}"
+            except Exception:
+                self.repo_path = raw_path
+        else:
+            self.repo_path = raw_path
+            
         self.api_url = f"https://api.github.com/repos/{self.repo_path}/releases"
 
     def get_shared_key(self):

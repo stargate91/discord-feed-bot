@@ -156,7 +156,7 @@ class BaseMonitor(ABC):
                 try:
                     if view and type(view).__name__ == "LayoutView" and content:
                         await channel.send(content=content, suppress_embeds=True)
-                        await channel.send(view=view)
+                        await channel.send(content="\u200b", view=view)
                     else:
                         await channel.send(content=content, embed=embed, view=view)
                         
