@@ -7,6 +7,7 @@ from core.base_monitor import BaseMonitor
 from logger import log
 from core.ui_layouts import generate_youtube_layout
 import calendar
+import textwrap
 
 import database as db
 
@@ -143,19 +144,37 @@ class YouTubeMonitor(BaseMonitor):
         # Return all entries. MonitorManager will filter via is_published per-guild.
         return list(reversed(feed.entries))
 
+    async def _resolve_thumbnail_and_title(self, video_id, entry_title, fallback_thumbnail):
+        maxres_url = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.head(maxres_url, timeout=3) as resp:
+                    if resp.status == 200:
+                        # Maxres exists! No wrapping needed.
+                        return maxres_url, entry_title
+        except Exception:
+            pass
+            
+        # Fallback to hqdefault/media_thumbnail and wrap title intelligently
+        wrapped_title = "\n".join(textwrap.wrap(entry_title, width=58))
+        return fallback_thumbnail, wrapped_title
+
     async def process_item(self, entry):
         video_id = self.get_item_id(entry)
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
+        entry_title = "\n".join(textwrap.wrap(entry_title, width=58))
         
         published_ts = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
             
-        thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+        fallback_thumb = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-            thumbnail = entry.media_thumbnail[0]["url"]
+            fallback_thumb = entry.media_thumbnail[0]["url"]
+            
+        thumbnail, entry_title = await self._resolve_thumbnail_and_title(video_id, entry_title, fallback_thumb)
         
         alert_text = self.get_alert_message({
             "name": author_name,
@@ -231,10 +250,10 @@ class YouTubeMonitor(BaseMonitor):
 
         results = []
         for entry in entries:
-            results.append(self._format_entry(entry))
+            results.append(await self._format_entry(entry))
         return results
 
-    def _format_entry(self, entry):
+    async def _format_entry(self, entry):
         """Helper to format a YouTube feed entry into standard output mapping."""
         # Extract video ID
         video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
@@ -243,14 +262,17 @@ class YouTubeMonitor(BaseMonitor):
         author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
         short_link = f"https://youtu.be/{video_id}"
         entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
+        entry_title = "\n".join(textwrap.wrap(entry_title, width=58))
         
         published_ts = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
             
-        thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+        fallback_thumb = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-            thumbnail = entry.media_thumbnail[0]["url"]
+            fallback_thumb = entry.media_thumbnail[0]["url"]
+            
+        thumbnail, entry_title = await self._resolve_thumbnail_and_title(video_id, entry_title, fallback_thumb)
         
         # Format localized alert message
         alert_text = self.get_alert_message({
