@@ -202,15 +202,6 @@ class CryptoMonitor(BaseMonitor):
         # Placeholders for alert message
         dir_emoji = CRYPTO_UP if direction == "up" else CRYPTO_DOWN
         
-        # Format the system message via variables
-        alert_msg = self.get_alert_message({
-            "name": symbol,
-            "price": f"{current_price:,.2f}",
-            "threshold": f"{threshold:,.2f}",
-            "direction": dir_emoji,
-            "percent": percent_str
-        })
-
         # Internal message for description
         msg = self.bot.get_feedback("new_crypto_alert", guild_id=self.guild_id).format(
             name=symbol,
@@ -220,33 +211,51 @@ class CryptoMonitor(BaseMonitor):
             percent=percent_str
         )
 
-        accent_color = self.get_color()
+        accent_color = self.get_color(0xf7931a) # Default bitcoin orange if not set
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=symbol, guild_id=self.guild_id)
         
         view = discord.ui.LayoutView()
+        container_items = []
         
-        container_items = [
-            discord.ui.TextDisplay(f"### {title}"),
-            discord.ui.Separator(),
-            discord.ui.TextDisplay(msg),
-            discord.ui.Separator()
+        # 1. Header with dynamic emoji
+        container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
+        
+        # 2. Main Alert Message
+        container_items.append(discord.ui.TextDisplay(msg))
+        
+        # 3. Meta Data & Button
+        meta_lines = [
+            f"**{self.bot.get_feedback('ui_crypto_field_price', guild_id=self.guild_id)}:** {current_price:,.2f} USD",
+            f"**{self.bot.get_feedback('ui_crypto_field_target', guild_id=self.guild_id)}:** {threshold:,.2f} USD",
+            f"**{self.bot.get_feedback('ui_crypto_field_diff', guild_id=self.guild_id)}:** {percent_str}"
         ]
+        meta_text = "\n".join(meta_lines)
         
         if cid:
             c_label = self.bot.get_feedback("btn_view_coingecko", guild_id=self.guild_id)
             cg_url = f"https://www.coingecko.com/en/coins/{cid}"
             btn = discord.ui.Button(label=c_label, url=cg_url, style=discord.ButtonStyle.link)
-            container_items.append(discord.ui.ActionRow(btn))
+            container_items.append(discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=btn))
+        else:
+            container_items.append(discord.ui.TextDisplay(meta_text))
             
+        # 4. Branding
+        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+        custom_branding = settings.get("custom_branding")
+        if custom_branding != "":
+            container_items.append(discord.ui.Separator())
+            if custom_branding:
+                container_items.append(discord.ui.TextDisplay(custom_branding))
+            else:
+                container_items.append(discord.ui.TextDisplay(self.bot.get_feedback("branding_delivered_by", guild_id=self.guild_id)))
+
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
-        # Send Pings and Layout separately to avoid API errors with IS_COMPONENTS_V2
-        # Message 1: Pings Only
+        # Send Pings and Layout separately
         pings = self.ping_role
         if pings:
             await self.send_update(content=pings)
             
-        # Message 2: Graphical Layout with content
         await self.send_update(view=view)
         log.info(f"Crypto Alert sent for {symbol} ({direction})")
 
@@ -354,23 +363,39 @@ class CryptoMonitor(BaseMonitor):
             percent=percent_str
         )
 
-        accent_color = self.get_color()
+        accent_color = self.get_color(0xf7931a)
         title = self.bot.get_feedback("ui_crypto_alert_title", sym=sym, guild_id=self.guild_id)
         
         view = discord.ui.LayoutView()
-        container_items = [
-            discord.ui.TextDisplay(f"### {title}"),
-            discord.ui.Separator(),
-            discord.ui.TextDisplay(msg),
-            discord.ui.Separator()
+        container_items = []
+        
+        container_items.append(discord.ui.TextDisplay(f"### {dir_emoji} {title}"))
+        container_items.append(discord.ui.TextDisplay(msg))
+        
+        meta_lines = [
+            f"**{self.bot.get_feedback('ui_crypto_field_price', guild_id=self.guild_id)}:** {current_price:,.2f} USD",
+            f"**{self.bot.get_feedback('ui_crypto_field_target', guild_id=self.guild_id)}:** {threshold:,.2f} USD",
+            f"**{self.bot.get_feedback('ui_crypto_field_diff', guild_id=self.guild_id)}:** {percent_str}"
         ]
+        meta_text = "\n".join(meta_lines)
         
         if cid:
             c_label = self.bot.get_feedback("btn_view_coingecko", guild_id=self.guild_id)
             cg_url = f"https://www.coingecko.com/en/coins/{cid}"
             btn = discord.ui.Button(label=c_label, url=cg_url, style=discord.ButtonStyle.link)
-            container_items.append(discord.ui.ActionRow(btn))
+            container_items.append(discord.ui.Section(discord.ui.TextDisplay(meta_text), accessory=btn))
+        else:
+            container_items.append(discord.ui.TextDisplay(meta_text))
             
+        settings = self.bot.guild_settings_cache.get(self.guild_id, {})
+        custom_branding = settings.get("custom_branding")
+        if custom_branding != "":
+            container_items.append(discord.ui.Separator())
+            if custom_branding:
+                container_items.append(discord.ui.TextDisplay(custom_branding))
+            else:
+                container_items.append(discord.ui.TextDisplay(self.bot.get_feedback("branding_delivered_by", guild_id=self.guild_id)))
+
         view.add_item(discord.ui.Container(*container_items, accent_color=accent_color))
         
         # Message 1: Simulation Header and Pings (if set)
