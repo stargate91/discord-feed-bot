@@ -146,13 +146,22 @@ class SteamNewsMonitor(BaseMonitor):
         # Truncate description for the layout
         truncated_desc = description[:300] + "..." if len(description) > 300 else description
         
+        import textwrap
+        wrapped_lines = []
+        for line in truncated_desc.split('\n'):
+            if line.strip():
+                wrapped_lines.extend(textwrap.wrap(line, width=75, break_long_words=False))
+            else:
+                wrapped_lines.append("")
+        wrapped_desc = "\n".join(wrapped_lines)
+        
         content, layout = generate_steam_news_layout(
             bot=self.bot,
             guild_id=self.guild_id,
             alert_text=alert_text,
             title=title[:256],
             url=url if is_valid_url else "",
-            description=truncated_desc,
+            description=wrapped_desc,
             image_url=image_url,
             author=author,
             published_ts=item.get("date"),
