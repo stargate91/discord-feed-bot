@@ -103,7 +103,7 @@ def generate_news_layout(
     desc_text = "\n".join(lines)
     
     if author:
-        section_text = f"### {title}\n**✍️ {author}**\n\n{desc_text}" if desc_text else f"### {title}\n**✍️ {author}**"
+        section_text = f"### {title}\n**{author}**\n\n{desc_text}" if desc_text else f"### {title}\n**{author}**"
     else:
         section_text = f"### {title}\n{desc_text}" if desc_text else f"### {title}"
         
