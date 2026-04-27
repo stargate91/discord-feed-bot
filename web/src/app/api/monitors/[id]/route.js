@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
 import { canManageGuild } from "@/lib/permissions";
+import { getTierConfig } from "@/lib/config";
 
 export async function PATCH(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -36,15 +37,21 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: true });
     }
 
-    // --- Tier enforcement for premium fields ---
-    const isMaster = session.user?.role === "master";
-    let tier = 0;
-    if (!isMaster) {
-      const guildRes = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1', [guildId]);
-      tier = guildRes.rows[0]?.tier || 0;
-    } else {
-      tier = 99; // Master bypasses all
+    // --- UNIFIED TIER & LIMIT ENFORCEMENT ---
+    const guildRes = await pool.query('SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+    const row = guildRes.rows[0];
+    let tier = row?.tier || 0;
+    const premiumUntil = row?.premium_until;
+
+    // Legacy fallback: if tier 0 but premium_until is active, treat as Tier 3
+    if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
+      tier = 3;
     }
+
+    const isMaster = session.user?.role === "master";
+    const tierConfig = getTierConfig(tier);
+    const maxChannelsRoles = isMaster ? 20 : (tierConfig.max_channels || 1);
+    const features = tierConfig.features || [];
 
     // Full update logic
     const { name, target_channels, target_roles, embed_color, custom_alert, target_genres, target_languages, ...extra } = body;
@@ -67,19 +74,6 @@ export async function PATCH(request, { params }) {
       await pool.query('UPDATE monitors SET name = $1 WHERE id = $2', [name, id]);
     }
 
-    // Merge extra settings with tier checks
-    let maxChannelsRoles = 1;
-    if (isMaster) {
-      maxChannelsRoles = 20;
-    } else {
-      switch (tier) {
-        case 1: maxChannelsRoles = 5; break;
-        case 2: maxChannelsRoles = 10; break;
-        case 3: maxChannelsRoles = 20; break;
-        default: maxChannelsRoles = 1;
-      }
-    }
-
     if (target_channels !== undefined) {
       if (Array.isArray(target_channels) && target_channels.length > maxChannelsRoles) {
         return NextResponse.json({ error: `Limit reached! Your tier allows a maximum of ${maxChannelsRoles} target channels per monitor.` }, { status: 402 });
@@ -94,41 +88,35 @@ export async function PATCH(request, { params }) {
       extraSettings.target_roles = target_roles;
     }
 
-    // Custom Embed Color — Tier 1+ (Starter)
+    // Feature Gating based on config features
     if (embed_color !== undefined) {
-      if (tier >= 1) {
-        extraSettings.embed_color = embed_color;
-      } else {
-        // Free tier: silently enforce default color
-        extraSettings.embed_color = "#3d3f45";
-      }
+      if (isMaster || features.includes("custom_color")) extraSettings.embed_color = embed_color;
+      else extraSettings.embed_color = "#3d3f45";
     }
 
-    // Custom Alert Template — Tier 2+ (Professional)
     if (custom_alert !== undefined) {
-      if (tier < 2) {
+      if (!isMaster && !features.includes("alert_template")) {
         return NextResponse.json({ error: "Custom templates require Professional tier or higher" }, { status: 403 });
       }
       extraSettings.custom_alert = custom_alert;
     }
 
-    // Advanced Filters (Genre/Language) — Tier 1+ (Starter)
     if (target_genres !== undefined) {
-      if (tier < 1) {
+      if (!isMaster && !features.includes("genre_filter")) {
         return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
       }
       extraSettings.target_genres = target_genres;
     }
+
     if (target_languages !== undefined) {
-      if (tier < 1) {
+      if (!isMaster && !features.includes("tmdb_language_filter")) {
         return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
       }
       extraSettings.target_languages = target_languages;
     }
     
-    // Native Player Mode (YouTube) — Tier 1+ (Starter)
     if (body.use_native_player !== undefined) {
-      if (tier < 1) {
+      if (!isMaster && !features.includes("basic")) { // Basic feature for YouTube
         return NextResponse.json({ error: "Native player mode requires Starter tier or higher" }, { status: 403 });
       }
       extraSettings.use_native_player = body.use_native_player;

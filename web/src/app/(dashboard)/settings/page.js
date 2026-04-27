@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import SettingCard from '@/components/SettingCard';
+import { useConfig } from '@/hooks/useConfig';
 
 // --- PLATFORM CONFIG ---
 const PLATFORMS = [
@@ -179,6 +180,7 @@ function CustomRoleSelect({ roles, value, onChange }) {
 
 // --- Main Settings Page Component ---
 function SettingsContent() {
+  const { config, getTierConfig, hasFeature } = useConfig();
   const searchParams = useSearchParams();
   const router = useRouter();
   const guildId = searchParams.get('guild');
@@ -189,7 +191,10 @@ function SettingsContent() {
     refresh_interval: 20,
     alert_templates: {},
     custom_branding: null,
-    isMaster: false
+    isMaster: false,
+    tier: 0,
+    premium_until: null,
+    hasStripeSubscription: false
   });
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -320,13 +325,11 @@ function SettingsContent() {
     });
   };
 
-  if (loading) return <div className="loading-container"><div className="loader"></div></div>;
+  if (loading || !config) return <div className="loading-container"><div className="loader"></div></div>;
 
   const isPremiumActive = settings.isMaster || (settings.premium_until && new Date(settings.premium_until) > new Date());
-  const minInterval = settings.isMaster ? 1 : 
-                      (settings.tier >= 3) ? 2 : 
-                      (settings.tier >= 2) ? 5 : 
-                      (settings.tier >= 1) ? 10 : 20;
+  const currentTierConfig = getTierConfig(settings.tier, settings.isMaster);
+  const minInterval = currentTierConfig.min_refresh_interval || 20;
 
   const currentPlatform = PLATFORMS.find(p => p.id === activePlatform);
 
@@ -402,24 +405,19 @@ function SettingsContent() {
               </div>
 
               <div className="speed-tiers">
-                {[
-                  { label: '20m', tier: 'Free', min: 20 },
-                  { label: '10m', tier: 'Starter', min: 10 },
-                  { label: '5m', tier: 'Pro', min: 5 },
-                  { label: '2m', tier: 'Ultimate', min: 2 },
-                ].map(s => (
+                {Object.entries(config.tier_config || {}).map(([tId, tCfg]) => (
                   <button 
-                    key={s.min}
-                    className={`speed-chip ${settings.refresh_interval === s.min ? 'active' : ''} ${s.min < minInterval ? 'locked' : ''}`}
+                    key={tId}
+                    className={`speed-chip ${settings.refresh_interval === tCfg.min_refresh_interval ? 'active' : ''} ${tCfg.min_refresh_interval < minInterval ? 'locked' : ''}`}
                     onClick={() => {
-                      if (s.min >= minInterval) {
-                        setSettings({ ...settings, refresh_interval: s.min });
+                      if (tCfg.min_refresh_interval >= minInterval) {
+                        setSettings({ ...settings, refresh_interval: tCfg.min_refresh_interval });
                       }
                     }}
-                    title={s.min < minInterval ? `Requires ${s.tier} tier or higher` : `Set to ${s.label}`}
+                    title={tCfg.min_refresh_interval < minInterval ? `Requires ${tCfg.name} tier or higher` : `Set to ${tCfg.min_refresh_interval}m`}
                   >
-                    {s.min < minInterval && <Lock size={10} />}
-                    {s.label}
+                    {tCfg.min_refresh_interval < minInterval && <Lock size={10} />}
+                    {tCfg.min_refresh_interval}m
                   </button>
                 ))}
               </div>
@@ -427,7 +425,7 @@ function SettingsContent() {
               {settings.refresh_interval < minInterval && (
                 <div className="upgrade-nudge">
                   <Zap size={14} />
-                  <span>Your <strong>{settings.tier >= 1 ? ['','Starter','Professional','Ultimate'][settings.tier] : 'Free'}</strong> plan allows a minimum of <strong>{minInterval}m</strong>.</span>
+                  <span>Your <strong>{currentTierConfig.name}</strong> plan allows a minimum of <strong>{minInterval}m</strong>.</span>
                   <Link href={`/premium?guild=${guildId}`}>
                     <button className="nudge-upgrade-btn">Go Faster</button>
                   </Link>
@@ -436,9 +434,9 @@ function SettingsContent() {
             </div>
           </SettingCard>
 
-          {/* 4. Alert Templates (Professional Tier+) */}
-          <SettingCard title="Alert Templates" description="Craft unique message formats for each platform using dynamic tags. Define exactly how your automated alerts appear to your community." icon={MessageSquare}>
-            {(settings.tier < 2 && !settings.isMaster) ? (
+          {/* 4. Alert Templates */}
+          <SettingCard title="Alert Templates" description="Craft unique message formats for each platform using dynamic tags." icon={MessageSquare}>
+            {!hasFeature(settings.tier, settings.isMaster, "alert_template") ? (
               <div className="premium-lock-overlay">
                 <Lock size={32} />
                 <p>Available for Professional Tier & above</p>
@@ -461,9 +459,7 @@ function SettingsContent() {
                             src={p.icon} 
                             alt="" 
                             className="tab-icon-img"
-                            style={{ 
-                              filter: activePlatform === p.id ? 'none' : 'grayscale(1) opacity(0.6)' 
-                            }} 
+                            style={{ filter: activePlatform === p.id ? 'none' : 'grayscale(1) opacity(0.6)' }} 
                           />
                         )}
                         {p.name}
@@ -497,23 +493,14 @@ function SettingsContent() {
                     value={settings.alert_templates[activePlatform] || ""}
                     onChange={(e) => updateTemplate(e.target.value)}
                   />
-
-                  <p className="template-tip">
-                    <Info size={14} />
-                    Leave empty to use the system default template.
-                  </p>
                 </div>
               </div>
             )}
           </SettingCard>
 
-          {/* 5. Custom Branding (Starter Tier+) */}
-          <SettingCard 
-            title="Custom Branding (Footer)" 
-            description="Override or completely remove the 'Delivered by Nova' footer at the bottom of the feed cards. Leave empty to hide it entirely." 
-            icon={Crown}
-          >
-            {(settings.tier < 1 && !settings.isMaster) ? (
+          {/* 5. Custom Branding */}
+          <SettingCard title="Custom Branding (Footer)" description="Override or remove the 'Delivered by Nova' footer." icon={Crown}>
+            {!hasFeature(settings.tier, settings.isMaster, "remove_branding") ? (
               <div className="premium-lock-overlay">
                 <Lock size={32} />
                 <p>Available for Starter Tier & above</p>
@@ -527,17 +514,9 @@ function SettingsContent() {
                   type="text"
                   className="branding-input"
                   placeholder="Leave empty to hide footer..."
-                  value={
-                    settings.custom_branding !== null 
-                      ? settings.custom_branding 
-                      : (settings.language === 'hu' ? "-# *Küldte [**Nova**](https://novafeeds.xyz)*" : "-# *Delivered by [**Nova**](https://novafeeds.xyz)*")
-                  }
+                  value={settings.custom_branding !== null ? settings.custom_branding : ""}
                   onChange={(e) => setSettings({ ...settings, custom_branding: e.target.value })}
                 />
-                <p className="branding-tip">
-                  <Info size={14} />
-                  Type exactly what you want to appear in the footer. If you want to completely hide the footer and the separator line, leave this box empty.
-                </p>
               </div>
             )}
           </SettingCard>
@@ -560,11 +539,7 @@ function SettingsContent() {
                     <p className="expiry-date">{settings.isMaster ? 'LIFETIME' : new Date(settings.premium_until).toLocaleDateString()}</p>
                   </div>
                   {!settings.isMaster && settings.hasStripeSubscription && (
-                    <button 
-                      className="manage-sub-btn" 
-                      onClick={handleManageSubscription}
-                      disabled={portalLoading}
-                    >
+                    <button className="manage-sub-btn" onClick={handleManageSubscription} disabled={portalLoading}>
                       {portalLoading ? '...' : 'Manage'}
                     </button>
                   )}
@@ -576,41 +551,6 @@ function SettingsContent() {
               </Link>
             )}
           </div>
-
-          {!settings.isMaster && (
-            <div className="card redeem-card">
-              <div className="card-header-compact">
-                <Zap size={18} className="zap-icon" />
-                <h4>Redeem Code</h4>
-              </div>
-              <p className="card-hint">Have a premium key? Enter it below to activate features.</p>
-
-              <div className="redeem-form">
-                <input
-                  type="text"
-                  className="redeem-input"
-                  placeholder="PREM-XXXX-XXXX-XXXX"
-                  value={redeemCode}
-                  onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-                  disabled={redeemLoading}
-                />
-                <button
-                  className="redeem-btn"
-                  onClick={handleRedeem}
-                  disabled={redeemLoading || !redeemCode.trim()}
-                >
-                  {redeemLoading ? <div className="btn-loader-small"></div> : 'Redeem'}
-                </button>
-              </div>
-
-              {redeemStatus && (
-                <div className={`redeem-status ${redeemStatus.type}`}>
-                  {redeemStatus.type === 'success' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
-                  <span>{redeemStatus.message}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -628,7 +568,6 @@ function SettingsContent() {
         .number-input-container { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 0.75rem 1rem; width: fit-content; }
         .interval-number-input { background: none; border: none; color: white; font-size: 1.1rem; font-weight: 600; width: 80px; outline: none; }
         .unit-label { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
-
         .interval-input-wrapper { display: flex; flex-direction: column; gap: 1.25rem; }
         .speed-tiers { display: flex; flex-wrap: wrap; gap: 8px; }
         .speed-chip { 
@@ -636,226 +575,18 @@ function SettingsContent() {
           background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
           color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-size: 0.8rem; font-weight: 700;
         }
-        .speed-chip:hover:not(.locked) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
         .speed-chip.active { background: var(--accent-color); border-color: transparent; color: white; box-shadow: 0 4px 12px var(--accent-glow); }
         .speed-chip.locked { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
-        .upgrade-nudge { 
-          display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; 
-          background: rgba(123, 44, 191, 0.1); border: 1px solid rgba(123, 44, 191, 0.2); 
-          font-size: 0.85rem; color: white; animation: fadeIn 0.3s ease-out;
-        }
-        .nudge-upgrade-btn { 
-          background: #ffb703; color: #3c096c; border: none; padding: 4px 12px; border-radius: 8px; 
-          font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s; margin-left: auto;
-        }
-        .nudge-upgrade-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
         .premium-lock-overlay { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1); color: var(--text-secondary); }
         .upgrade-btn-small { background: var(--accent-color); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        
         .template-editor-wrapper { display: flex; flex-direction: column; gap: 1.5rem; }
-        .platform-tabs-container { 
-          width: 100%; 
-          padding: 10px 0;
-        }
-        .platform-tabs { 
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 10px; 
-          padding: 5px;
-          width: 100%;
-        }
-        .platform-tab { 
-          width: 100%;
-          justify-content: center;
-          white-space: nowrap; 
-          padding: 8px 16px; 
-          border-radius: 10px; 
-          background: rgba(255,255,255,0.03); 
-          border: 1px solid rgba(255,255,255,0.08); 
-          color: var(--text-secondary); 
-          cursor: pointer; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-          font-size: 0.85rem;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .tab-icon-img {
-          width: 18px;
-          height: 18px;
-          object-fit: contain;
-        }
-        .platform-tab:hover { 
-          background: rgba(255,255,255,0.08); 
-          color: white; 
-          border-color: rgba(255,255,255,0.2); 
-          transform: translateY(-3px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .platform-tab.active { 
-          background: var(--accent-color); 
-          color: white; 
-          border-color: transparent; 
-          box-shadow: 0 8px 20px var(--accent-glow); 
-          transform: translateY(-2px);
-        }
-        .editor-container { display: flex; flex-direction: column; gap: 12px; }
-        .tags-hint { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.85rem; }
-        .tags-list { display: flex; gap: 6px; flex-wrap: wrap; }
-        .tag-wrapper { position: relative; }
-        .tag-pill { background: rgba(123, 44, 191, 0.15); border: 1px solid rgba(123, 44, 191, 0.3); color: #c8b3ff; padding: 2px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; font-family: monospace; position: relative; }
-        .tag-pill:hover { background: rgba(123, 44, 191, 0.3); transform: scale(1.05); }
-        
-        .tag-pill::after {
-          content: attr(data-tooltip);
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%) translateY(-8px);
-          background: rgba(15, 15, 20, 0.95);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-          padding: 6px 10px;
-          border-radius: 8px;
-          font-size: 0.75rem;
-          white-space: nowrap;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.2s;
-          pointer-events: none;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-          z-index: 100;
-        }
-
-        .tag-pill:hover::after {
-          opacity: 1;
-          visibility: visible;
-          transform: translateX(-50%) translateY(-12px);
-        }
-
-        .template-textarea { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; min-height: 120px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; transition: border-color 0.2s; }
-        .template-textarea:focus { border-color: var(--accent-color); }
-        .template-tip { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); }
-
-        .branding-input-wrapper { display: flex; flex-direction: column; gap: 12px; }
-        .branding-input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
-        .branding-input:focus { border-color: var(--accent-color); }
-        .branding-tip { display: flex; align-items: flex-start; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
-
-        .save-button { display: flex; align-items: center; gap: 0.75rem; background: var(--accent-color); border: none; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 20px var(--accent-glow); }
-        .save-button:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 15px 30px var(--accent-glow); }
-        .save-button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .premium-status-card { 
-          background: linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(60, 9, 108, 0.05) 100%); 
-          border: 1px solid rgba(123, 44, 191, 0.2); 
-          border-radius: 24px; 
-          padding: 2rem; 
-          display: flex; 
-          flex-direction: column; 
-          gap: 1.5rem;
-          position: relative;
-          overflow: hidden;
-        }
-        .premium-status-card::before {
-          content: ''; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px;
-          background: var(--accent-color); opacity: 0.05; filter: blur(40px); border-radius: 50%;
-        }
-        .premium-header { display: flex; gap: 1.25rem; align-items: center; }
-        .premium-icon { 
-          width: 48px; height: 48px; background: rgba(255, 183, 3, 0.1); 
-          border-radius: 14px; display: flex; align-items: center; justify-content: center;
-          color: #ffb703; 
-        }
-        .premium-header h4 { margin: 0; font-size: 1.1rem; font-weight: 800; }
-        .premium-header p { margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
-        .expiry-date { font-size: 1.4rem; font-weight: 900; margin: 0; color: white; letter-spacing: -0.5px; }
-        .upgrade-btn { 
-          width: 100%; background: #ffb703; color: #3c096c; border: none; 
-          padding: 1rem; border-radius: 14px; font-weight: 800; font-size: 1rem;
-          cursor: pointer; transition: all 0.3s; 
-          box-shadow: 0 10px 20px rgba(255, 183, 3, 0.2);
-        }
-        .upgrade-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255, 183, 3, 0.3); }
-
-        .manage-sub-btn {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-          padding: 6px 14px;
-          border-radius: 10px;
-          font-size: 0.8rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .manage-sub-btn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.15);
-          border-color: rgba(255, 255, 255, 0.3);
-          transform: translateY(-2px);
-        }
-        .manage-sub-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Redeem Card Styling */
-        .redeem-card {
-          margin-top: 1rem;
-          padding: 1.5rem;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .card-header-compact { display: flex; align-items: center; gap: 10px; }
-        .card-header-compact h4 { margin: 0; font-size: 1rem; font-weight: 800; }
-        .zap-icon { color: var(--accent-color); }
-        .card-hint { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
-        .redeem-form { display: flex; flex-direction: column; gap: 10px; }
-        .redeem-input {
-          background: rgba(0,0,0,0.2);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          padding: 0.6rem 0.8rem;
-          color: white;
-          font-family: monospace;
-          font-size: 0.9rem;
-          outline: none;
-          text-align: center;
-        }
-        .redeem-input:focus { border-color: var(--accent-color); }
-        .redeem-btn {
-          background: var(--accent-color);
-          border: none;
-          color: white;
-          padding: 0.6rem;
-          border-radius: 8px;
-          font-weight: 700;
-          font-size: 0.9rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .redeem-btn:hover:not(:disabled) { filter: brightness(1.1); transform: scale(1.02); }
-        .redeem-status {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 0.8rem;
-          padding: 8px;
-          border-radius: 8px;
-        }
-        .redeem-status.success { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
-        .redeem-status.error { background: rgba(239, 68, 68, 0.1); color: #f87171; }
-        .btn-loader-small {
-          width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: white; border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          margin: 0 auto;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 968px) { .settings-grid { grid-template-columns: 1fr; } }
+        .platform-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .platform-tab { padding: 8px 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text-secondary); cursor: pointer; transition: all 0.3s; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .platform-tab.active { background: var(--accent-color); color: white; box-shadow: 0 8px 20px var(--accent-glow); }
+        .template-textarea { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; min-height: 120px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; }
+        .premium-status-card { background: linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(60, 9, 108, 0.05) 100%); border: 1px solid rgba(123, 44, 191, 0.2); border-radius: 24px; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        .premium-icon { width: 48px; height: 48px; background: rgba(255, 183, 3, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #ffb703; }
+        .upgrade-btn { width: 100%; background: #ffb703; color: #3c096c; border: none; padding: 1rem; border-radius: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(255, 183, 3, 0.2); }
       `}</style>
     </div>
   );
@@ -863,7 +594,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div className="loading-container"><div className="loader"></div></div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <SettingsContent />
     </Suspense>
   );

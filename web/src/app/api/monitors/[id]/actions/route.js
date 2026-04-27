@@ -17,46 +17,32 @@ export async function POST(request, { params }) {
   const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8080";
   const isMaster = session.user?.role === "master";
 
-  // --- Server-side tier enforcement ---
-  let tier = 0;
-  if (!isMaster) {
-    try {
-      // 1. Get guild_id from the monitor
-      const monitorRes = await pool.query('SELECT guild_id FROM monitors WHERE id = $1', [id]);
-      if (!monitorRes.rows[0]) {
-        return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
-      }
-      const guildId = monitorRes.rows[0].guild_id;
-      
-      // 3. Security check:
-      const allowed = await canManageGuild(session, guildId);
-      if (!allowed) {
-        return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
-      }
+  // --- Unified Bot Check (Permissions + Tier + Features) ---
+  const monitorRes = await pool.query('SELECT guild_id FROM monitors WHERE id = $1', [id]);
+  if (!monitorRes.rows[0]) {
+    return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
+  }
+  const guildId = monitorRes.rows[0].guild_id;
 
-      // 4. Get tier and premium status from guild_settings
-      const guildRes = await pool.query('SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
-      const row = guildRes.rows[0];
-      tier = row?.tier || 0;
-      const premiumUntil = row?.premium_until;
-
-      // Legacy fallback: if tier 0 but premium_until is active, treat as Tier 3
-      if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
-        tier = 3;
-      }
-    } catch (e) {
-      console.error("[API Action] Tier lookup failed:", e);
-      return NextResponse.json({ error: "Database error" }, { status: 500 });
-    }
-
-    // Block repost for tier < 2
-    if (action === "repost" && tier < 2) {
-      return NextResponse.json({ error: "Repost requires Professional tier or higher" }, { status: 403 });
-    }
+  const botInfo = await getBotPermissions(guildId, session.user.id);
+  
+  if (!botInfo) {
+    return NextResponse.json({ error: "Could not verify permissions with bot" }, { status: 503 });
   }
 
-  // Cap purge amount based on tier (master = unlimited)
-  const maxPurge = isMaster ? 100 : (TIER_PURGE_LIMITS[tier] || 10);
+  // 1. Security check:
+  if (!botInfo.is_admin && session.user.role !== "master") {
+    return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
+  }
+
+  // 2. Feature check:
+  if (action === "repost" && !botInfo.features.includes("repost") && session.user.role !== "master") {
+    return NextResponse.json({ error: `Repost requires ${botInfo.tier === 0 ? 'Professional' : 'higher'} tier` }, { status: 403 });
+  }
+
+  // 3. Limits enforcement:
+  const limits = botInfo.limits || {};
+  const maxPurge = session.user.role === "master" ? 100 : (limits.max_purge || 10);
   const safePurgeAmount = Math.min(amount || 10, maxPurge);
 
   try {

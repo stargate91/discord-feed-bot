@@ -1,8 +1,9 @@
 import os
 import stripe
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI, Request, Header, HTTPException, Depends
 from logger import log
 import database
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 
@@ -255,3 +256,44 @@ async def factory_reset(authorized: bool = Depends(verify_webhook_secret)):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+async def verify_webhook_secret(x_webhook_secret: str = Header(None)):
+    if x_webhook_secret != os.getenv("WEBHOOK_SECRET"):
+        raise HTTPException(status_code=403, detail="Invalid webhook secret")
+    return True
+
+@app.get("/guilds/{guild_id}/permissions/{user_id}")
+async def get_permissions(guild_id: int, user_id: int, authorized: bool = Depends(verify_webhook_secret)):
+    bot = app.state.bot
+    guild = bot.get_guild(guild_id)
+    
+    # 1. Base Tier Info (Always available from DB cache)
+    settings = bot.guild_settings_cache.get(guild_id, {})
+    tier = settings.get("tier", 0)
+    if tier == 0 and bot.is_premium(guild_id): tier = 3
+    
+    tier_config_all = bot.config.get("tier_config", {})
+    tier_info = tier_config_all.get(str(tier), tier_config_all.get("0", {}))
+
+    # 2. Member Permissions (Requires bot in guild)
+    is_admin = False
+    bot_in_guild = False
+    
+    if guild:
+        bot_in_guild = True
+        member = guild.get_member(user_id)
+        if not member:
+            try: member = await guild.fetch_member(user_id)
+            except: member = None
+        
+        if member:
+            is_admin = bot.is_bot_admin(member)
+
+    return {
+        "is_admin": is_admin,
+        "tier": tier,
+        "tier_name": tier_info.get("name", "Unknown"),
+        "features": tier_info.get("features", []),
+        "limits": tier_info,
+        "bot_in_guild": bot_in_guild
+    }

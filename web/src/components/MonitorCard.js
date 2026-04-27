@@ -20,14 +20,12 @@ const platformNames = {
   github: "GitHub"
 };
 
-const TIER_CONFIG = {
-  0: { name: 'Free', speed: '30m', speedLabel: 'Basic', speedColor: '#94a3b8', canRepost: false, maxPurge: 10, maxMonitors: 3 },
-  1: { name: 'Tier 1', speed: '10m', speedLabel: 'Standard', speedColor: '#4ade80', canRepost: false, maxPurge: 25, maxMonitors: 10 },
-  2: { name: 'Tier 2', speed: '5m', speedLabel: 'Fast', speedColor: '#60a5fa', canRepost: true, maxPurge: 50, maxMonitors: 30 },
-  3: { name: 'Tier 3', speed: '2m', speedLabel: 'Turbo', speedColor: '#f472b6', canRepost: true, maxPurge: 100, maxMonitors: 100 },
-};
+
+
+import { useConfig } from '@/hooks/useConfig';
 
 export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPremium, tier = 0, isSelected, onSelect, selectionMode }) {
+  const { getTierConfig, hasFeature } = useConfig();
   const [loading, setLoading] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // 'check', 'repost', 'purge', 'reset'
@@ -35,10 +33,9 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   const [repostCount, setRepostCount] = useState(1);
   const [purgeAmount, setPurgeAmount] = useState(50);
 
-  const effectiveTier = (isPremium && tier === 0) ? 3 : tier;
-  const currentTier = TIER_CONFIG[effectiveTier] || TIER_CONFIG[0];
-  const canRepost = currentTier.canRepost;
-  const maxPurge = currentTier.maxPurge;
+  const currentTier = getTierConfig(tier, isPremium);
+  const canRepost = hasFeature(tier, isPremium, "repost");
+  const maxPurge = currentTier.max_purge || 10;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Never';
@@ -185,7 +182,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
             <span>Check</span>
           </button>
 
-          <div className={`tool-group ${!canRepost ? 'locked' : ''}`} title={!canRepost ? `Available on ${TIER_CONFIG[2].name}+` : ""}>
+          <div className={`tool-group ${!canRepost ? 'locked' : ''}`} title={!canRepost ? "Requires Professional Tier" : ""}>
             <button
               className={`tool-btn wide ${!canRepost ? 'is-locked' : ''}`}
               onClick={() => canRepost && runAction('repost')}

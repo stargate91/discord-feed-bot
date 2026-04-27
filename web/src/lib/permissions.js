@@ -85,8 +85,17 @@ export async function canManageGuild(session, guildId) {
 
   if (!guildId) return false;
   const cleanGuildId = String(guildId).trim();
+  const userId = session.user?.id;
 
-  // 2. Fetch Guild Settings from DB to get admin_role_id
+  // 2. Try Authoritative Check via Bot first
+  if (userId) {
+    const botPerms = await getBotPermissions(cleanGuildId, userId);
+    if (botPerms && botPerms.bot_in_guild) {
+      return botPerms.is_admin;
+    }
+  }
+
+  // 3. Fallback to local logic (for when bot is NOT in guild)
   let adminRoleId = null;
   try {
     const settingsRes = await pool.query('SELECT admin_role_id FROM guild_settings WHERE guild_id = $1::bigint', [cleanGuildId]);
@@ -157,4 +166,25 @@ export async function canManageGuild(session, guildId) {
 
   console.warn(`[Permissions] Access DENIED for guild ${cleanGuildId} (User: ${effectiveUserId || 'unknown'})`);
   return false;
+}
+
+/**
+ * Authoritative permission check via the Bot.
+ */
+export async function getBotPermissions(guildId, userId) {
+  const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8080";
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
+
+  try {
+    const res = await fetch(`${BOT_WEBHOOK_URL}/guilds/${guildId}/permissions/${userId}`, {
+      headers: { "x-webhook-secret": WEBHOOK_SECRET },
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.error("[Permissions] Bot permission fetch failed:", e);
+  }
+  return null;
 }

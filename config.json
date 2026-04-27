@@ -9,6 +9,48 @@
         321300698245365761,
         495596107473223700
     ],
+    "permission_config": {
+        "admin_permissions": ["administrator", "manage_guild"],
+        "admin_role_enabled": true
+    },
+    "tier_config": {
+        "0": {
+            "name": "Free",
+            "min_interval": 20,
+            "max_monitors": 2,
+            "max_purge": 10,
+            "max_channels": 1,
+            "max_pings": 1,
+            "features": []
+        },
+        "1": {
+            "name": "Starter",
+            "min_interval": 10,
+            "max_monitors": 10,
+            "max_purge": 25,
+            "max_channels": 5,
+            "max_pings": 5,
+            "features": ["custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter", "remove_branding"]
+        },
+        "2": {
+            "name": "Professional",
+            "min_interval": 5,
+            "max_monitors": 30,
+            "max_purge": 50,
+            "max_channels": 10,
+            "max_pings": 10,
+            "features": ["repost", "custom_template", "custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter", "remove_branding"]
+        },
+        "3": {
+            "name": "Ultimate",
+            "min_interval": 2,
+            "max_monitors": 100,
+            "max_purge": 100,
+            "max_channels": 20,
+            "max_pings": 20,
+            "features": ["repost", "custom_template", "custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter", "remove_branding"]
+        }
+    },
     "stripe_config": {
         "success_url": "https://novafeeds.xyz/dashboard?payment=success",
         "cancel_url": "https://novafeeds.xyz/premium",

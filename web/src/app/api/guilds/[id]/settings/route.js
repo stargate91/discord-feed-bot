@@ -147,11 +147,9 @@ export async function PATCH(req, { params }) {
     } catch (e) { }
   }
 
-  let minInterval = 20; // Default: Free Tier
-  if (isMaster) minInterval = 1;
-  else if (guildTier >= 3) minInterval = 2; // Ultimate
-  else if (guildTier >= 2) minInterval = 5; // Professional
-  else if (guildTier >= 1) minInterval = 10; // Starter
+  const { getGuildTierLimits, hasFeature } = require("@/lib/config");
+  const limits = getGuildTierLimits(guildTier, isMaster);
+  const minInterval = limits.min_refresh_interval || 20;
 
   if (interval < minInterval) {
     return NextResponse.json({
@@ -159,17 +157,17 @@ export async function PATCH(req, { params }) {
     }, { status: 400 });
   }
 
-  // Validate Alert Templates based on Tier (Requires Tier 2 / Professional)
+  // Validate Alert Templates based on Tier
   const hasTemplates = alert_templates && Object.values(alert_templates).some(t => t && t.trim().length > 0);
-  if (hasTemplates && !isMaster && guildTier < 2) {
+  if (hasTemplates && !hasFeature(guildTier, isMaster, "alert_template")) {
     return NextResponse.json({
-      error: "Access Denied: Custom Alert Templates are only available for Tier 2 (Professional) servers and above."
+      error: "Access Denied: Custom Alert Templates are only available for higher tier servers."
     }, { status: 400 });
   }
 
   // Validate Custom Branding based on Tier
   let finalCustomBranding = custom_branding;
-  if (!isMaster && guildTier < 1) {
+  if (!hasFeature(guildTier, isMaster, "remove_branding")) {
     // If they don't have permission, just ignore the field and keep it null
     finalCustomBranding = null;
   }

@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { canManageGuild } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
+import { getTierConfig } from "@/lib/config";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -101,29 +102,30 @@ export async function POST(request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // --- MONITOR LIMIT ENFORCEMENT ---
-    const guildInfo = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1', [guildId]);
-    const tier = guildInfo.rows[0]?.tier || 0;
+    // --- UNIFIED TIER & LIMIT ENFORCEMENT ---
+    const guildRes = await pool.query('SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+    const row = guildRes.rows[0];
+    let tier = row?.tier || 0;
+    const premiumUntil = row?.premium_until;
+
+    // Legacy fallback: if tier 0 but premium_until is active, treat as Tier 3
+    if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
+      tier = 3;
+    }
+
+    const isMaster = session.user.role === "master";
+    const { getGuildTierLimits, hasFeature } = require("@/lib/config");
+    const tierConfig = getGuildTierLimits(tier, isMaster);
     
+    const maxAllowed = tierConfig.max_monitors || 2;
+    const maxChannelsRoles = tierConfig.max_channels || 1;
+    const features = tierConfig.features || [];
+
     const countRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1', [guildId]);
     const currentCount = parseInt(countRes.rows[0].count);
 
-    let maxAllowed = 3;
-    let maxChannelsRoles = 1;
-    if (session.user.role === "master") {
-      maxAllowed = 1000;
-      maxChannelsRoles = 20;
-    } else {
-      switch (tier) {
-        case 1: maxAllowed = 10; maxChannelsRoles = 5; break;
-        case 2: maxAllowed = 30; maxChannelsRoles = 10; break;
-        case 3: maxAllowed = 100; maxChannelsRoles = 20; break;
-        default: maxAllowed = 3; maxChannelsRoles = 1;
-      }
-    }
-
-    if (currentCount >= maxAllowed) {
-      return NextResponse.json({ error: `Limit reached! Your ${tier === 0 ? 'Free' : 'Premium'} plan only allows ${maxAllowed} monitors.` }, { status: 402 });
+    if (currentCount >= maxAllowed && session.user.role !== "master") {
+      return NextResponse.json({ error: `Limit reached! Your ${tierConfig.name || 'Free'} plan only allows ${maxAllowed} monitors.` }, { status: 402 });
     }
     // ---------------------------------
 
@@ -153,21 +155,20 @@ export async function POST(request) {
       ...rest
     };
 
-    // Premium field filtering on creation
-    if (session.user.role !== "master") {
-      if (embed_color && tier >= 1) extra_settings.embed_color = embed_color;
-      else extra_settings.embed_color = "#3d3f45"; // default for free tier or missing
+    // Feature gating based on config
 
-      if (rest.custom_alert && tier < 2) delete extra_settings.custom_alert;
-      if (rest.target_genres && tier < 1) delete extra_settings.target_genres;
-      if (rest.target_languages && tier < 1) delete extra_settings.target_languages;
-      if (rest.use_native_player !== undefined) {
-        if (tier < 1) delete extra_settings.use_native_player;
-        else extra_settings.use_native_player = rest.use_native_player;
-      }
-    } else {
-      extra_settings.embed_color = embed_color || "#3d3f45";
-      if (rest.use_native_player !== undefined) extra_settings.use_native_player = rest.use_native_player;
+    
+    if (embed_color !== undefined) {
+      if (isMaster || features.includes("custom_color")) extra_settings.embed_color = embed_color;
+      else extra_settings.embed_color = "#3d3f45";
+    }
+
+    if (rest.custom_alert && !features.includes("alert_template") && !isMaster) delete extra_settings.custom_alert;
+    if (rest.target_genres && !features.includes("genre_filter") && !isMaster) delete extra_settings.target_genres;
+    if (rest.target_languages && !features.includes("tmdb_language_filter") && !isMaster) delete extra_settings.target_languages;
+    
+    if (rest.use_native_player !== undefined && !isMaster) {
+      if (!features.includes("basic")) delete extra_settings.use_native_player; // YouTube basic feature
     }
 
     const query = `

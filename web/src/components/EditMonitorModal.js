@@ -61,12 +61,13 @@ const getAvailableVars = (platformId) => {
   return ['name'];
 };
 
+import { useConfig } from '@/hooks/useConfig';
+
 export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, onSave, tier = 0, isPremium = false }) {
-  const isMaster = isPremium && tier === 0; // Or check specifically if it's master
+  const { hasFeature } = useConfig();
   
-  const isLocked = (requiredTier) => {
-    if (isMaster) return false;
-    return tier < requiredTier;
+  const isLocked = (featureName) => {
+    return !hasFeature(tier, isPremium, featureName);
   };
 
   const [formData, setFormData] = useState({
@@ -286,7 +287,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label>Custom Alert Message</label>
-              {isLocked(2) ? (
+              {isLocked("alert_template") ? (
                 <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
                   <Info size={12} /> Professional Tier Required
                 </div>
@@ -302,18 +303,18 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 value={formData.custom_alert}
                 onChange={handleChange}
                 className="styled-input-main"
-                placeholder={isLocked(2) ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
+                placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
                 rows={3}
                 style={{ 
                   resize: 'vertical', 
                   fontFamily: 'monospace', 
                   fontSize: '0.9rem',
                   width: '100%',
-                  opacity: isLocked(2) ? 0.5 : 1
+                  opacity: isLocked("alert_template") ? 0.5 : 1
                 }}
-                disabled={isLocked(2)}
+                disabled={isLocked("alert_template")}
               />
-              {isLocked(2) && (
+              {isLocked("alert_template") && (
                 <div className="premium-field-overlay">
                   <span className="lock-tag">Professional Tier+</span>
                 </div>
@@ -368,7 +369,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
               justifyContent: 'space-between',
               alignItems: 'center',
               width: '100%',
-              opacity: isLocked(1) ? 0.5 : 1
+              opacity: isLocked("custom_color") ? 0.5 : 1
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
                 <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
@@ -376,7 +377,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                   Bypass the custom layout and let Discord embed the video directly.
                 </p>
               </div>
-              {isLocked(1) ? (
+              {isLocked("custom_color") ? (
                 <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
                   <Info size={12} /> Starter Tier+
                 </div>
@@ -397,33 +398,33 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           {(!['youtube'].includes(monitor.type) || (monitor.type === 'youtube' && !formData.use_native_player)) && (
             <div className="form-group" style={{ position: 'relative', marginTop: '1rem' }}>
               <label>Embed Accent Color</label>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', opacity: isLocked(1) ? 0.5 : 1 }}>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', opacity: isLocked("custom_color") ? 0.5 : 1 }}>
                 <input
                   type="color"
                   ref={colorInputRef}
                   value={formData.embed_color || '#3d3f45'}
-                  onChange={(e) => !isLocked(1) && handleMultiChange('embed_color', e.target.value)}
+                  onChange={(e) => !isLocked("custom_color") && handleMultiChange('embed_color', e.target.value)}
                   style={{ display: 'none' }}
-                  disabled={isLocked(1)}
+                  disabled={isLocked("custom_color")}
                 />
                 <div
                   className="color-trigger"
-                  onClick={() => !isLocked(1) && colorInputRef.current.click()}
-                  style={{ background: formData.embed_color || '#3d3f45', cursor: isLocked(1) ? 'not-allowed' : 'pointer' }}
-                  title={isLocked(1) ? "Requires Starter Tier" : "Open color picker"}
+                  onClick={() => !isLocked("custom_color") && colorInputRef.current.click()}
+                  style={{ background: formData.embed_color || '#3d3f45', cursor: isLocked("custom_color") ? 'not-allowed' : 'pointer' }}
+                  title={isLocked("custom_color") ? "Requires Starter Tier" : "Open color picker"}
                 ></div>
                 <input
                   type="text"
                   name="embed_color"
                   value={formData.embed_color}
-                  onChange={(e) => !isLocked(1) && handleChange(e)}
+                  onChange={(e) => !isLocked("custom_color") && handleChange(e)}
                   placeholder="#3d3f45"
                   className="styled-input-main"
                   style={{ flex: 1 }}
-                  disabled={isLocked(1)}
+                  disabled={isLocked("custom_color")}
                 />
               </div>
-              {isLocked(1) && (
+              {isLocked("custom_color") && (
                 <div className="premium-field-overlay-small">
                   <span className="lock-tag">Starter Tier+</span>
                 </div>
@@ -452,27 +453,27 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
 
           {(monitor.type === 'movie' || monitor.type === 'tv_series') && (
             <div className="grid-responsive" style={{ position: 'relative' }}>
-              <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+              <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
                 <label>Target Genres</label>
                 <MultiSelect
                   options={MOVIE_GENRES}
                   value={formData.target_genres}
                   onChange={(val) => handleMultiChange('target_genres', val)}
-                  placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select genres"}
-                  disabled={isLocked(1)}
+                  placeholder={isLocked("genre_filter") ? "Unlock Starter Tier" : "Select genres"}
+                  disabled={isLocked("genre_filter")}
                 />
               </div>
-              <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+              <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
                 <label>Languages</label>
                 <MultiSelect
                   options={LANGUAGES}
                   value={formData.target_languages}
                   onChange={(val) => handleMultiChange('target_languages', val)}
-                  placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select languages"}
-                  disabled={isLocked(1)}
+                  placeholder={isLocked("tmdb_language_filter") ? "Unlock Starter Tier" : "Select languages"}
+                  disabled={isLocked("tmdb_language_filter")}
                 />
               </div>
-              {isLocked(1) && (
+              {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
                 <div className="premium-field-overlay">
                   <span className="lock-tag">Starter Tier+</span>
                 </div>

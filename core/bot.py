@@ -241,27 +241,31 @@ class FeedBot(commands.Bot):
         await self.process_commands(message)
 
     def is_bot_admin(self, member):
-        """Check if a member is a bot admin (Owner OR Discord Admin OR Admin Role)."""
+        """Check if a member is a bot admin based on shared config."""
         if not member or not hasattr(member, 'guild'):
             return False
             
-        # 1. Global Owner
-        if member.id in [self.owner_id] or (self.application and member.id == self.application.owner.id):
+        # 1. Global Master/Staff
+        if self.is_master_admin(member):
             return True
 
-        # 2. Discord Admin or Manage Guild
+        # 2. Discord Permissions from Config
         perms = member.guild_permissions
-        if perms.administrator or perms.manage_guild:
-            return True
+        perm_config = self.config.get("permission_config", {})
+        allowed_perms = perm_config.get("admin_permissions", ["administrator", "manage_guild"])
+        
+        for perm in allowed_perms:
+            if getattr(perms, perm, False):
+                return True
             
         # 3. Check for configured Admin Role
-        settings = self.guild_settings_cache.get(member.guild.id, {})
-        admin_role_id = settings.get("admin_role_id", 0)
-        
-        if admin_role_id != 0:
-            role = member.get_role(admin_role_id)
-            if role in member.roles:
-                return True
+        if perm_config.get("admin_role_enabled", True):
+            settings = self.guild_settings_cache.get(member.guild.id, {})
+            admin_role_id = settings.get("admin_role_id", 0)
+            if admin_role_id != 0:
+                role = member.get_role(admin_role_id)
+                if role and role in member.roles:
+                    return True
                 
         return False
 
@@ -290,48 +294,42 @@ class FeedBot(commands.Bot):
         return False
 
     def get_guild_tier_limits(self, guild_id):
-        """Returns (min_refresh_min, max_refresh_min, default_refresh_min, max_monitors, max_channels, max_roles) based on tier."""
-        if self.is_master(guild_id):
-            return (1, 1440, 5, 1000, 20, 20)
-            
+        """Returns (min_interval, max_monitors, default_interval, max_channels, max_pings, max_purge) from config."""
         settings = self.guild_settings_cache.get(guild_id, {})
         tier = settings.get("tier", 0)
         
         # Legacy fallback if tier is 0 but premium_until is valid
         if tier == 0 and self.is_premium(guild_id):
-            tier = 3 # Assume top tier for legacy premium users
+            tier = 3 
 
-        if tier == 3: # Ultimate
-            return (2, 1440, 2, 100, 20, 20)
-        if tier == 2: # Professional
-            return (5, 1440, 5, 30, 10, 10)
-        if tier == 1: # Starter
-            return (10, 1440, 10, 10, 5, 5)
-            
-        return (20, 1440, 20, 2, 1, 1) # Free Tier
+        tier_config = self.config.get("tier_config", {})
+        config = tier_config.get(str(tier), tier_config.get("0", {}))
+        
+        return (
+            config.get("min_interval", 20),
+            1440, # max interval
+            config.get("min_interval", 20), # default interval
+            config.get("max_monitors", 2),
+            config.get("max_channels", 1),
+            config.get("max_pings", 1),
+            config.get("max_purge", 10)
+        )
 
     def has_feature(self, guild_id, feature_name):
-        """Check if a guild has access to a specific premium feature based on tier."""
-        # Masters have everything
+        """Check if a guild has access to a specific premium feature based on config."""
         if self.is_master(guild_id):
             return True
             
         settings = self.guild_settings_cache.get(guild_id, {})
         tier = settings.get("tier", 0)
-        
-        # Legacy: if tier is 0 but premium_until is valid, treat as tier 3
         if tier == 0 and self.is_premium(guild_id):
             tier = 3
         
-        # Tier 2+ features (Professional)
-        tier2_features = ["repost", "custom_template"]
-        if feature_name in tier2_features:
-            return tier >= 2
+        tier_config = self.config.get("tier_config", {})
+        config = tier_config.get(str(tier), tier_config.get("0", {}))
+        features = config.get("features", [])
         
-        # Tier 1+ features (Starter)
-        tier1_features = ["custom_color", "alert_template", "genre_filter", "bulk_delete", "tmdb_language_filter", "remove_branding"]
-        if feature_name in tier1_features:
-            return tier >= 1
+        return feature_name in features or feature_name == "basic"
             
         # Crypto is available to all (no longer premium-gated)
         return True

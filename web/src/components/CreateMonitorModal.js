@@ -83,12 +83,13 @@ const getAvailableVars = (platformId) => {
   return ['name'];
 };
 
+import { useConfig } from '@/hooks/useConfig';
+
 export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess, tier = 0, isPremium = false }) {
-  const isMaster = isPremium && tier === 0;
+  const { hasFeature } = useConfig();
   
-  const isLocked = (requiredTier) => {
-    if (isMaster) return false;
-    return tier < requiredTier;
+  const isLocked = (featureName) => {
+    return !hasFeature(tier, isPremium, featureName);
   };
 
   const { addToast, showSuccess } = useToast();
@@ -397,27 +398,27 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
               <div className="form-section">
                 <h4 className="section-title">Advanced Filters</h4>
                 <div className="grid-responsive" style={{ position: 'relative' }}>
-                  <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+                  <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
                     <label>Target Genres</label>
                     <MultiSelect 
                       options={MOVIE_GENRES}
                       value={formData.target_genres}
                       onChange={(val) => setFormData({...formData, target_genres: val})}
-                      placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select genres"}
-                      disabled={isLocked(1)}
+                      placeholder={isLocked("genre_filter") ? "Unlock Starter Tier" : "Select genres"}
+                      disabled={isLocked("genre_filter")}
                     />
                   </div>
-                  <div className="form-group" style={{ opacity: isLocked(1) ? 0.5 : 1 }}>
+                  <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
                     <label>Languages</label>
                     <MultiSelect 
                       options={LANGUAGES}
                       value={formData.target_languages}
                       onChange={(val) => setFormData({...formData, target_languages: val})}
-                      placeholder={isLocked(1) ? "Unlock Starter Tier" : "Select languages"}
-                      disabled={isLocked(1)}
+                      placeholder={isLocked("tmdb_language_filter") ? "Unlock Starter Tier" : "Select languages"}
+                      disabled={isLocked("tmdb_language_filter")}
                     />
                   </div>
-                  {isLocked(1) && (
+                  {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
                     <div className="premium-field-overlay">
                       <span className="lock-tag">Starter Tier+</span>
                     </div>
@@ -469,33 +470,33 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                      value={formData.custom_alert}
                      onChange={(e) => setFormData({...formData, custom_alert: e.target.value})}
                      className="styled-input-main"
-                     placeholder={isLocked(2) ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
+                     placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
                      rows={3}
                      style={{ 
                        resize: 'vertical', 
                        fontFamily: 'monospace', 
                        fontSize: '0.9rem',
                        width: '100%',
-                       opacity: isLocked(2) ? 0.5 : 1
+                       opacity: isLocked("alert_template") ? 0.5 : 1
                      }}
-                     disabled={isLocked(2)}
+                     disabled={isLocked("alert_template")}
                    />
-                   {isLocked(2) && (
+                   {isLocked("alert_template") && (
                      <div className="premium-field-overlay">
                        <span className="lock-tag">Professional Tier+</span>
                      </div>
                    )}
                  </div>
 
-                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked(2) ? 0.3 : 1 }}>
+                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked("alert_template") ? 0.3 : 1 }}>
                    {getAvailableVars(selectedPlatform?.id).map(v => (
                      <button
                        key={v}
                        type="button"
                        className="var-btn"
-                       onClick={() => !isLocked(2) && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
+                       onClick={() => !isLocked("alert_template") && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
                        title={`Insert {${v}}`}
-                       disabled={isLocked(2)}
+                       disabled={isLocked("alert_template")}
                      >
                        {`{${v}}`}
                      </button>
@@ -554,7 +555,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                         Bypass the custom layout and let Discord embed the video directly.
                       </p>
                     </div>
-                    {isLocked(1) ? (
+                    {isLocked("custom_color") ? (
                       <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
                         <Info size={12} /> Starter Tier+
                       </div>
@@ -572,10 +573,10 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                 )}
 
                {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !formData.use_native_player)) && (
-                 <div className="form-group" style={{ marginTop: '1rem', opacity: isLocked(1) ? 0.5 : 1 }}>
+                 <div className="form-group" style={{ marginTop: '1rem', opacity: isLocked("custom_color") ? 0.5 : 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label>Embed Color</label>
-                      {isLocked(1) && (
+                      {isLocked("custom_color") && (
                         <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
                           <Info size={12} /> Starter Tier+
                         </div>
@@ -586,23 +587,23 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                         type="color" 
                         ref={colorInputRef}
                         value={formData.embed_color}
-                        onChange={(e) => !isLocked(1) && setFormData({...formData, embed_color: e.target.value})}
+                        onChange={(e) => !isLocked("custom_color") && setFormData({...formData, embed_color: e.target.value})}
                         style={{ display: 'none' }}
-                        disabled={isLocked(1)}
+                        disabled={isLocked("custom_color")}
                       />
                       <div 
                         className="color-trigger"
-                        onClick={() => !isLocked(1) && colorInputRef.current.click()}
-                        style={{ background: formData.embed_color, cursor: isLocked(1) ? 'not-allowed' : 'pointer' }}
+                        onClick={() => !isLocked("custom_color") && colorInputRef.current.click()}
+                        style={{ background: formData.embed_color, cursor: isLocked("custom_color") ? 'not-allowed' : 'pointer' }}
                       ></div>
                       <input 
                         type="text" 
                         value={formData.embed_color} 
-                        onChange={(e) => !isLocked(1) && setFormData({...formData, embed_color: e.target.value})}
+                        onChange={(e) => !isLocked("custom_color") && setFormData({...formData, embed_color: e.target.value})}
                         placeholder="#3d3f45"
                         className="styled-input-main"
                         style={{ flex: 1 }}
-                        disabled={isLocked(1)}
+                        disabled={isLocked("custom_color")}
                       />
                     </div>
                  </div>
