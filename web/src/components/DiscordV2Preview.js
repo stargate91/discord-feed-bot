@@ -9,7 +9,7 @@ export default function DiscordV2Preview() {
         {/* Discord Header Mockup */}
         <div className="discord-header">
           <div className="channel-icon">#</div>
-          <span className="channel-name">example-channel</span>
+          <span className="channel-name">neural-transmission</span>
         </div>
 
         {/* Message Content */}
@@ -31,19 +31,19 @@ export default function DiscordV2Preview() {
               <div className="embed-inner">
                 {/* Header with YouTube Icon */}
                 <div className="embed-header">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png" className="platform-icon" alt="YouTube" />
-                  <span className="embed-title-text">Basement #009: Eric Wargo | Time Travel Physics...</span>
+                  <img src="https://cdn.discordapp.com/emojis/1495845103447576807.png" className="platform-icon" alt="YouTube" />
+                  <span className="embed-title-text">Project Awakening: First Neural Sync with a Class-4 Android</span>
                 </div>
                 
                 {/* Large Main Image */}
                 <div className="embed-image">
-                  <img src="https://i.ytimg.com/vi/uYIovZ5V5pE/maxresdefault.jpg" alt="Video Thumbnail" />
+                  <img src="/nova_thumbnail.jpg" alt="Video Thumbnail" />
                 </div>
 
                 {/* Info & Button Row - Aligned */}
                 <div className="embed-footer-info">
                   <div className="info-top-row">
-                    <div className="author-name">The Why Files</div>
+                    <div className="author-name">Nova Cybernetics</div>
                     <button className="discord-btn-v2">
                       <span>Watch on YouTube</span>
                       <ExternalLink size={14} />
@@ -52,7 +52,7 @@ export default function DiscordV2Preview() {
                   
                   <div className="info-bottom-row">
                     <div className="publish-label">Published:</div>
-                    <div className="publish-date">March 30, 2026 21:00 <span className="relative-time">(a month ago)</span></div>
+                    <div className="publish-date">April 27, 2026 02:10 <span className="relative-time">(just now)</span></div>
                   </div>
                 </div>
 
