@@ -28,6 +28,30 @@ class FeedBot(commands.Bot):
         from core.crypto_manager import CryptoManager
         self.crypto_manager = CryptoManager(self)
 
+    async def reload_guild_settings_cache(self):
+        """Reload all guild settings from DB into the local memory cache."""
+        try:
+            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, alert_templates, premium_until, tier, stripe_subscription_id FROM guild_settings")
+            
+            # Clear old cache to remove potentially deleted guilds (or just overwrite)
+            new_cache = {}
+            for row in settings_rows:
+                g_id = row[0]
+                new_cache[g_id] = {
+                    "language": row[1] or "en",
+                    "admin_role_id": row[2] or 0,
+                    "alert_templates": json.loads(row[3]) if row[3] else {},
+                    "premium_until": row[4],
+                    "tier": row[5] or 0,
+                    "stripe_subscription_id": row[6]
+                }
+            self.guild_settings_cache = new_cache
+            log.info(f"Guild settings cache reloaded. ({len(self.guild_settings_cache)} guilds)")
+            return True
+        except Exception as e:
+            log.error(f"Error loading guild settings cache: {e}")
+            return False
+
     async def setup_hook(self):
         """Perform initialization tasks before the bot connects."""
         # Load localization files
@@ -45,21 +69,7 @@ class FeedBot(commands.Bot):
         log.info(f"Loaded {len(self.locales)} language packs (Default: EN).")
 
         # Load all guild settings into memory
-        try:
-            settings_rows = await database._fetch("SELECT guild_id, language, admin_role_id, alert_templates, premium_until, tier, stripe_subscription_id FROM guild_settings")
-            
-            for row in settings_rows:
-                g_id = row[0]
-                self.guild_settings_cache[g_id] = {
-                    "language": row[1] or "en",
-                    "admin_role_id": row[2] or 0,
-                    "alert_templates": json.loads(row[3]) if row[3] else {},
-                    "premium_until": row[4],
-                    "tier": row[5] or 0,
-                    "stripe_subscription_id": row[6]
-                }
-        except Exception as e:
-            log.error(f"Error loading guild settings cache: {e}")
+        await self.reload_guild_settings_cache()
 
         # Initialize Monitor Manager (Lazy import to avoid circular dependency)
         from core.monitor_manager import MonitorManager

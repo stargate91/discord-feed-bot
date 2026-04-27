@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import fs from "fs";
 import path from "path";
 import pool from "@/lib/db";
+import { notifyBotOfChange } from "@/lib/bot-sync";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -47,6 +48,7 @@ export async function POST(req) {
          SET tier = $2, premium_until = $3, stripe_subscription_id = $4`,
         [guildId, tier, expiresAt, session.subscription]
       );
+      await notifyBotOfChange();
     } catch (dbErr) {
       console.error("[Stripe Webhook] DB Update Error:", dbErr);
       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
@@ -54,9 +56,9 @@ export async function POST(req) {
   }
 
   if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
-    const guildId = session.metadata?.guildId;
+    const guildId = session.metadata?.guild_id || session.metadata?.guildId || session.client_reference_id;
     if (guildId) {
-      const tier = session.status === "active" ? (PRICE_TO_TIER[session.items.data[0].price.id] || 0) : 0;
+      const tier = session.status === "active" ? (products[session.items?.data?.[0]?.price?.id]?.tier || 0) : 0;
       const expiresAt = new Date(session.current_period_end * 1000);
       
       console.log(`[Stripe Webhook] Updating Subscription for Guild: ${guildId}, Status: ${session.status}`);
@@ -65,6 +67,7 @@ export async function POST(req) {
         `UPDATE guild_settings SET tier = $2, premium_until = $3 WHERE guild_id = $1::bigint`,
         [guildId, session.status === "active" ? tier : 0, expiresAt]
       );
+      await notifyBotOfChange();
     }
   }
 

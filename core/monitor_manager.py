@@ -33,8 +33,9 @@ class MonitorManager:
         log.info(f"Added monitor: {monitor_instance.name} ({monitor_instance.platform}) | Enabled: {monitor_instance.enabled}")
 
     async def sync_with_db(self, is_startup=False):
-        """Reload all monitors from database and sync with local memory."""
-        log.info("Synchronizing monitors with database...")
+        """Reload all monitors and guild settings from database."""
+        log.info("Synchronizing monitors and guild settings with database...")
+        await self.bot.reload_guild_settings_cache()
         from core.monitor_factory import create_monitor_instance
         
         try:
