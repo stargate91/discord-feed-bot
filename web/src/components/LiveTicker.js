@@ -44,19 +44,37 @@ export default function LiveTicker() {
     'kick': '#53FC18',
     'rss': '#FFA500',
     'github': '#ffffff',
+    'steam': '#00ADEE',
     'steam_news': '#00ADEE',
+    'steam_free': '#00ADEE',
+    'epic_games': '#ffffff',
+    'gog_free': '#9f00ff',
     'crypto': '#F7931A',
     'movie': '#01b4e4',
-    'tv': '#01b4e4'
+    'tv': '#01b4e4',
+    'tv_series': '#01b4e4'
   };
 
   const getIconSrc = (platform) => {
-    if (platform === 'tmdb_tv' || platform === 'tv_series' || platform === 'tv') return '/emojis/tmdb.png';
-    if (platform.startsWith('movie')) return '/emojis/tmdb.png';
+    // 1. Strip language suffix (e.g. movie:hu -> movie)
+    const baseType = platform.split(':')[0].toLowerCase();
     
-    let base = platform.replace('_news', '').replace('_free', '').replace('_', '-');
-    if (base === 'stream') return '/emojis/twitch.png';
+    // 2. Handle specific mappings
+    if (baseType === 'tmdb_tv' || baseType === 'tv_series' || baseType === 'tv') return '/emojis/tmdb.png';
+    if (baseType.startsWith('movie')) return '/emojis/tmdb.png';
+    if (baseType === 'stream') return '/emojis/twitch.png';
+    if (baseType === 'epic_games') return '/emojis/epic-games.png';
+    if (baseType === 'gog_free') return '/emojis/gog.png';
+    if (baseType === 'steam_free' || baseType === 'steam_news') return '/emojis/steam.png';
+    
+    // 3. General underscore to hyphen mapping for simple platforms
+    let base = baseType.replace('_', '-');
     return `/emojis/${base}.png`;
+  };
+
+  const getPlatformColor = (platform) => {
+    const baseType = platform.split(':')[0].toLowerCase();
+    return platformColors[baseType] || 'var(--accent-color)';
   };
 
   return (
@@ -72,9 +90,9 @@ export default function LiveTicker() {
               />
               <span 
                 className="ticker-platform" 
-                style={{ color: platformColors[item.platform] || 'var(--accent-color)' }}
+                style={{ color: getPlatformColor(item.platform) }}
               >
-                {item.platform.toUpperCase()}
+                {item.platform.split(':')[0].toUpperCase()}
               </span>
               <span className="ticker-title">{item.title}</span>
               <Zap size={10} className="ticker-sep" />
