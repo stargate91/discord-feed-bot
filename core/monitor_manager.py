@@ -428,10 +428,16 @@ class MonitorManager:
                         continue
 
                     # Use bulk delete for messages younger than 14 days
-                    deleted = await channel.purge(limit=amount)
-                    log.info(f"Purged {len(deleted)} messages in channel {channel_id}")
+                    try:
+                        deleted = await channel.purge(limit=amount)
+                        log.info(f"Purged {len(deleted)} messages in channel {channel_id}")
+                    except discord.NotFound:
+                        log.warning(f"Purge in channel {channel_id} encountered Unknown Message (404), continuing...")
+                    except Exception as e:
+                        log.error(f"Error during purge in channel {channel_id}: {e}")
+                        success = False
             except Exception as e:
-                log.error(f"Failed to purge channel {channel_id}: {e}")
+                log.error(f"Failed to access channel {channel_id} for purge: {e}")
                 success = False
         
         return success
