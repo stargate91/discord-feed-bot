@@ -143,7 +143,7 @@ export default function GuidePage() {
           </div>
           <div className="cta-text">
             <h3>Want the full experience?</h3>
-            <p>Upgrade to <strong>Nova Premium</strong> for 1-minute updates, custom branding, and 100+ monitors.</p>
+            <p>Upgrade to <strong>Nova Premium</strong> for 2-minute updates, custom branding, and 100 monitors.</p>
           </div>
           <Link href={`/premium?guild=${guildId}`} style={{ textDecoration: 'none' }}>
             <div className="cta-btn premium">
