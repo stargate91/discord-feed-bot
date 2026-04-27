@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { canManageGuild } from "@/lib/permissions";
 
 const TIER_PURGE_LIMITS = { 0: 10, 1: 25, 2: 50, 3: 100 };
 
@@ -26,10 +27,23 @@ export async function POST(request, { params }) {
         return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
       }
       const guildId = monitorRes.rows[0].guild_id;
+      
+      // 3. Security check:
+      const allowed = await canManageGuild(session, guildId);
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden: You don't have permission for this server" }, { status: 403 });
+      }
 
-      // 2. Get tier from guild_settings
-      const guildRes = await pool.query('SELECT tier FROM guild_settings WHERE guild_id = $1', [guildId]);
-      tier = guildRes.rows[0]?.tier || 0;
+      // 4. Get tier and premium status from guild_settings
+      const guildRes = await pool.query('SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1::bigint', [guildId]);
+      const row = guildRes.rows[0];
+      tier = row?.tier || 0;
+      const premiumUntil = row?.premium_until;
+
+      // Legacy fallback: if tier 0 but premium_until is active, treat as Tier 3
+      if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) {
+        tier = 3;
+      }
     } catch (e) {
       console.error("[API Action] Tier lookup failed:", e);
       return NextResponse.json({ error: "Database error" }, { status: 500 });

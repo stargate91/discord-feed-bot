@@ -119,12 +119,16 @@ class AdminCog(commands.Cog):
 
         await interaction.response.defer(ephemeral=True)
         
+        # 0. Bot Permission Check
+        bot_member = interaction.guild.me
+        if not target_channel.permissions_for(bot_member).manage_messages:
+            err_msg = self.bot.get_feedback("purge_error", error="Bot Missing 'Manage Messages' Permission", guild_id=interaction.guild_id)
+            await interaction.followup.send(err_msg, ephemeral=True)
+            return
+
         try:
             # Send immediate response as it might take time
-            try:
-                await interaction.response.send_message(self.bot.get_feedback("purge_started", channel=target_channel.name, guild_id=interaction.guild_id), ephemeral=True)
-            except:
-                pass
+            await interaction.followup.send(self.bot.get_feedback("purge_started", channel=target_channel.name, guild_id=interaction.guild_id), ephemeral=True)
 
             total_deleted = 0
             chunk_size = 100

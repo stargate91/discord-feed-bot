@@ -420,6 +420,13 @@ class MonitorManager:
                     channel = await self.bot.fetch_channel(int(channel_id))
                 
                 if channel:
+                    # Permission check for the bot
+                    bot_member = channel.guild.me
+                    if not channel.permissions_for(bot_member).manage_messages:
+                        log.warning(f"Skipping purge in channel {channel_id}: Bot lacks 'Manage Messages' permission.")
+                        success = False
+                        continue
+
                     # Use bulk delete for messages younger than 14 days
                     deleted = await channel.purge(limit=amount)
                     log.info(f"Purged {len(deleted)} messages in channel {channel_id}")

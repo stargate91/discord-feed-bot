@@ -249,8 +249,9 @@ class FeedBot(commands.Bot):
         if member.id in [self.owner_id] or (self.application and member.id == self.application.owner.id):
             return True
 
-        # 2. Discord Admin
-        if member.guild_permissions.administrator:
+        # 2. Discord Admin or Manage Guild
+        perms = member.guild_permissions
+        if perms.administrator or perms.manage_guild:
             return True
             
         # 3. Check for configured Admin Role
