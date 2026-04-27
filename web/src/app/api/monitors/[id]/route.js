@@ -4,7 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
 import { canManageGuild } from "@/lib/permissions";
-import { getTierConfig } from "@/lib/config";
+import { getGuildTierLimits, hasFeature } from "@/lib/config";
 
 export async function PATCH(request, { params }) {
   const session = await getServerSession(authOptions);
@@ -49,9 +49,9 @@ export async function PATCH(request, { params }) {
     }
 
     const isMaster = session.user?.role === "master";
-    const tierConfig = getTierConfig(tier);
-    const maxChannelsRoles = isMaster ? 20 : (tierConfig.max_channels || 1);
-    const features = tierConfig.features || [];
+    const tierInfo = getGuildTierLimits(tier, guildId, premiumUntil);
+    const maxChannelsRoles = isMaster ? 20 : (tierInfo.max_channels || 1);
+    const features = tierInfo.features || [];
 
     // Full update logic
     const { name, target_channels, target_roles, embed_color, custom_alert, target_genres, target_languages, ...extra } = body;
@@ -90,36 +90,41 @@ export async function PATCH(request, { params }) {
 
     // Feature Gating based on config features
     if (embed_color !== undefined) {
-      if (isMaster || features.includes("custom_color")) extraSettings.embed_color = embed_color;
+      if (isMaster || hasFeature(tier, guildId, "custom_color", premiumUntil)) extraSettings.embed_color = embed_color;
       else extraSettings.embed_color = "#3d3f45";
     }
 
     if (custom_alert !== undefined) {
-      if (!isMaster && !features.includes("alert_template")) {
+      if (isMaster || hasFeature(tier, guildId, "alert_template", premiumUntil)) {
+        extraSettings.custom_alert = custom_alert;
+      } else {
         return NextResponse.json({ error: "Custom templates require Professional tier or higher" }, { status: 403 });
       }
-      extraSettings.custom_alert = custom_alert;
     }
 
     if (target_genres !== undefined) {
-      if (!isMaster && !features.includes("genre_filter")) {
+      if (isMaster || hasFeature(tier, guildId, "genre_filter", premiumUntil)) {
+        extraSettings.target_genres = target_genres;
+      } else {
         return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
       }
-      extraSettings.target_genres = target_genres;
     }
 
     if (target_languages !== undefined) {
-      if (!isMaster && !features.includes("tmdb_language_filter")) {
+      if (isMaster || hasFeature(tier, guildId, "tmdb_language_filter", premiumUntil)) {
+        extraSettings.target_languages = target_languages;
+      } else {
         return NextResponse.json({ error: "Advanced filters require Starter tier or higher" }, { status: 403 });
       }
-      extraSettings.target_languages = target_languages;
     }
     
     if (body.use_native_player !== undefined) {
-      if (!isMaster && !features.includes("basic")) { // Basic feature for YouTube
+      // Basic feature check
+      if (isMaster || hasFeature(tier, guildId, "basic", premiumUntil)) {
+        extraSettings.use_native_player = body.use_native_player;
+      } else {
         return NextResponse.json({ error: "Native player mode requires Starter tier or higher" }, { status: 403 });
       }
-      extraSettings.use_native_player = body.use_native_player;
     }
     
     // Merge any other platform-specific settings
