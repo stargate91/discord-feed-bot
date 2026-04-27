@@ -102,14 +102,28 @@ class MonitorCog(commands.GroupCog, name="monitor"):
         count = max(1, min(count, 10))
         target_monitor = None
         if self.bot.monitor_manager:
+            # 1. Exact Match
             for m in self.bot.monitor_manager.monitors:
                 if m.name == monitor_name:
                     m_guild_id = getattr(m, 'guild_id', 0)
-                    if m_guild_id == interaction.guild_id:
+                    if m_guild_id == interaction.guild_id or m_guild_id == 0:
                         target_monitor = m
                         break
-                    elif m_guild_id == 0:
-                        target_monitor = m
+            
+            # 2. Case-Insensitive/Stripped Match (Fallback)
+            if not target_monitor:
+                clean_target = monitor_name.strip().lower()
+                for m in self.bot.monitor_manager.monitors:
+                    if m.name.strip().lower() == clean_target:
+                        m_guild_id = getattr(m, 'guild_id', 0)
+                        if m_guild_id == interaction.guild_id or m_guild_id == 0:
+                            target_monitor = m
+                            break
+            
+            # Debug: If still not found, log all names we HAVE for this guild
+            if not target_monitor:
+                all_names = [m.name for m in self.bot.monitor_manager.monitors if getattr(m, 'guild_id', 0) in (interaction.guild_id, 0)]
+                log.warning(f"[Repost] Monitor '{monitor_name}' NOT FOUND. Available names in memory: {all_names}")
         
         if not target_monitor:
             await interaction.response.send_message(self.bot.get_feedback("error_monitor_not_found", guild_id=interaction.guild_id), ephemeral=True)
