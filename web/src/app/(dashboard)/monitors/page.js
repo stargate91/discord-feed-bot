@@ -269,9 +269,16 @@ function MonitorsContent() {
         showSuccess();
         fetchMonitors();
         setIsModalOpen(false);
+        return true;
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        addToast(errData.error || `Update failed (${res.status})`, 'error', 'Update Failed');
+        return false;
       }
     } catch (err) {
       console.error(err);
+      addToast('Failed to update monitor', 'error', 'Error');
+      return false;
     }
   };
 

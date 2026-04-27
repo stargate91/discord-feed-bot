@@ -194,9 +194,9 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
       updateData.target_languages = formData.target_languages;
     }
 
-    await onSave(monitor.id, updateData);
+    const success = await onSave(monitor.id, updateData);
     setSaving(false);
-    onClose();
+    if (success !== false) onClose();
   };
 
   return (

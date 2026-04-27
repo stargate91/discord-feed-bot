@@ -96,10 +96,12 @@ export async function PATCH(request, { params }) {
 
     // Custom Embed Color — Tier 1+ (Starter)
     if (embed_color !== undefined) {
-      if (tier < 1) {
-        return NextResponse.json({ error: "Custom embed color requires Starter tier or higher" }, { status: 403 });
+      if (tier >= 1) {
+        extraSettings.embed_color = embed_color;
+      } else {
+        // Free tier: silently enforce default color
+        extraSettings.embed_color = "#3d3f45";
       }
-      extraSettings.embed_color = embed_color;
     }
 
     // Custom Alert Template — Tier 2+ (Professional)

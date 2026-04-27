@@ -156,7 +156,7 @@ export async function POST(request) {
     // Premium field filtering on creation
     if (session.user.role !== "master") {
       if (embed_color && tier >= 1) extra_settings.embed_color = embed_color;
-      else if (!embed_color) extra_settings.embed_color = "#3d3f45"; // default
+      else extra_settings.embed_color = "#3d3f45"; // default for free tier or missing
 
       if (rest.custom_alert && tier < 2) delete extra_settings.custom_alert;
       if (rest.target_genres && tier < 1) delete extra_settings.target_genres;
