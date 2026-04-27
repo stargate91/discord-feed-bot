@@ -3,6 +3,7 @@ import discord
 from core.base_monitor import BaseMonitor
 from logger import log
 import database as db
+import os
 from core.ui_layouts import generate_steam_news_layout
 
 # Standard User-Agent
@@ -26,8 +27,16 @@ class SteamNewsMonitor(BaseMonitor):
             except Exception as e:
                 log.error(f"[SteamNews] Failed to extract AppID from URL {raw_id}: {e}")
 
-        # Increased count to 20 to ensure we catch official updates even if mixed with spam
+        # Initial API URL construction (key will be added in fetch/get methods if available)
         self.api_url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=20&maxlength=400"
+        
+    def _get_api_url(self, count=20):
+        """Helper to get API URL with API key if available."""
+        url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count={count}&maxlength=400"
+        api_key = os.getenv("STEAM_API_KEY")
+        if api_key:
+            url += f"&key={api_key}"
+        return url
 
     def get_shared_key(self):
         return f"steam_news:{self.appid}"
@@ -86,7 +95,8 @@ class SteamNewsMonitor(BaseMonitor):
         if not feed:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(self.api_url, headers={"User-Agent": USER_AGENT}) as response:
+                    url = self._get_api_url(20)
+                    async with session.get(url, headers={"User-Agent": USER_AGENT}) as response:
                         if response.status != 200:
                             log.error(f"Failed to fetch Steam News for {self.name}: {response.status}")
                             return []
@@ -140,7 +150,7 @@ class SteamNewsMonitor(BaseMonitor):
             
         try:
             # Fetch up to 20 items to have a good pool of official news
-            url = f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={self.appid}&count=20&maxlength=400"
+            url = self._get_api_url(20)
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers={"User-Agent": USER_AGENT}) as response:
                     if response.status != 200: return []
