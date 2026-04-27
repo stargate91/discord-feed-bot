@@ -46,8 +46,25 @@ export default function DiscordV2Preview() {
                 <div className="embed-footer-info">
                   <div className="info-top-row">
                     <div className="author-name">Nova Cybernetics</div>
-                    <button className="discord-btn-v2">
-                      <span>Watch on YouTube</span>
+                    <button 
+                      className="discord-btn-v2"
+                      style={{
+                        background: '#4e5058',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '2px 16px',
+                        borderRadius: '3px',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        height: '32px',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <span style={{ marginTop: '-1px' }}>View on YouTube</span>
                       <ExternalLink size={14} />
                     </button>
                   </div>
