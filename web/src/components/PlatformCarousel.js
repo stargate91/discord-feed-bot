@@ -22,7 +22,7 @@ export default function PlatformCarousel() {
         {displayPlatforms.map((platform, index) => (
           <div key={index} className="carousel-item">
             <div className="icon-container" style={{ '--platform-color': platform.color }}>
-              <img src={platform.icon} alt={platform.name} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+              <img src={platform.icon} alt={platform.name} />
             </div>
             <span className="platform-name">{platform.name}</span>
           </div>
@@ -80,6 +80,12 @@ export default function PlatformCarousel() {
           color: white;
           transition: all 0.4s;
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-container img {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
         }
 
         .carousel-item:hover .icon-container {

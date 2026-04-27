@@ -19,7 +19,7 @@ export default function DiscordV2Preview() {
           <div className="avatar">
             <img src="/nova_v2.jpg" alt="Nova" onError={(e) => e.target.src = 'https://cdn.discordapp.com/embed/avatars/0.png'} />
           </div>
-          
+
           <div className="message-content">
             <div className="message-header">
               <span className="bot-name">Nova</span>
@@ -36,7 +36,7 @@ export default function DiscordV2Preview() {
                   <img src="https://cdn.discordapp.com/emojis/1495845103447576807.png" className="platform-icon" alt="YouTube" />
                   <span className="embed-title-text">Project Awakening: First Neural Sync with a Class-4 Android</span>
                 </div>
-                
+
                 {/* Large Main Image */}
                 <div className="embed-image">
                   <img src="/nova_thumbnail.jpg" alt="Video Thumbnail" />
@@ -46,29 +46,12 @@ export default function DiscordV2Preview() {
                 <div className="embed-footer-info">
                   <div className="info-top-row">
                     <div className="author-name">Nova Cybernetics</div>
-                    <button 
-                      className="discord-btn-v2"
-                      style={{
-                        background: '#4e5058',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '2px 16px',
-                        borderRadius: '3px',
-                        fontSize: '0.85rem',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        height: '32px',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      <span style={{ marginTop: '-1px' }}>View on YouTube</span>
+                    <button className="discord-btn-v2">
+                      <span>View on YouTube</span>
                       <ExternalLink size={14} />
                     </button>
                   </div>
-                  
+
                   <div className="info-bottom-row">
                     <div className="publish-label">Published:</div>
                     <div className="publish-date">April 27, 2026 02:10 <span className="relative-time">(just now)</span></div>
@@ -104,7 +87,7 @@ export default function DiscordV2Preview() {
             0 0 60px rgba(123, 44, 191, 0.15);
           transform: rotateX(2deg) rotateY(-5deg);
           transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(123, 44, 191, 0.4);
           position: relative;
         }
 
@@ -180,7 +163,7 @@ export default function DiscordV2Preview() {
 
         .bot-name { color: #ffffff; font-weight: 700; font-size: 1rem; }
         .bot-badge {
-          background: #5865f2;
+          background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
           color: white;
           font-size: 0.65rem;
           font-weight: 800;
@@ -190,7 +173,8 @@ export default function DiscordV2Preview() {
           align-items: center;
           justify-content: center;
           min-width: 32px;
-          box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);
+          box-shadow: 0 0 15px var(--accent-glow);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .timestamp { color: rgba(148, 155, 164, 0.7); font-size: 0.75rem; }
 
@@ -285,24 +269,28 @@ export default function DiscordV2Preview() {
         .relative-time { color: #949ba4; }
 
         .discord-btn-v2 {
-          background: #4e5058;
+          background: #2b2d31;
           color: #ffffff;
-          border: none;
+          border: 1px solid rgba(255, 255, 255, 0.08);
           padding: 2px 16px;
-          border-radius: 3px;
-          font-size: 0.85rem;
+          border-radius: 8px;
+          font-size: 0.9rem;
           font-weight: 500;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
           cursor: pointer;
-          transition: background 0.2s;
-          height: 32px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          height: 34px;
           white-space: nowrap;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .discord-btn-v2:hover {
-          background: #6d6f78;
+          background: #313338;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          border-color: rgba(255, 255, 255, 0.2);
         }
 
         .discord-btn-v2 span {
