@@ -220,6 +220,11 @@ async def purge_channel(monitor_id: int, amount: int = 50, authorized: bool = De
     else:
         raise HTTPException(status_code=400, detail="Purge failed")
 
+async def verify_webhook_secret(x_webhook_secret: str = Header(None)):
+    if x_webhook_secret != os.getenv("WEBHOOK_SECRET"):
+        raise HTTPException(status_code=403, detail="Invalid webhook secret")
+    return True
+
 @app.post("/monitors/{monitor_id}/reset")
 async def reset_history(monitor_id: int, authorized: bool = Depends(verify_webhook_secret)):
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
@@ -257,10 +262,7 @@ async def factory_reset(authorized: bool = Depends(verify_webhook_secret)):
 async def health():
     return {"status": "ok"}
 
-async def verify_webhook_secret(x_webhook_secret: str = Header(None)):
-    if x_webhook_secret != os.getenv("WEBHOOK_SECRET"):
-        raise HTTPException(status_code=403, detail="Invalid webhook secret")
-    return True
+
 
 @app.get("/guilds/{guild_id}/permissions/{user_id}")
 async def get_permissions(guild_id: int, user_id: int, authorized: bool = Depends(verify_webhook_secret)):

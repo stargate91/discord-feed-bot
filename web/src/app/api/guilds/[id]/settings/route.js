@@ -6,6 +6,7 @@ import { notifyBotOfChange } from "@/lib/bot-sync";
 import fs from "fs";
 import path from "path";
 import { canManageGuild } from "@/lib/permissions";
+import { getGuildTierLimits, hasFeature } from "@/lib/config";
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions);
@@ -147,7 +148,7 @@ export async function PATCH(req, { params }) {
     } catch (e) { }
   }
 
-  const { getGuildTierLimits, hasFeature } = require("@/lib/config");
+
   const limits = getGuildTierLimits(guildTier, isMaster);
   const minInterval = limits.min_refresh_interval || 20;
 

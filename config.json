@@ -16,7 +16,7 @@
     "tier_config": {
         "0": {
             "name": "Free",
-            "min_interval": 20,
+            "min_refresh_interval": 20,
             "max_monitors": 2,
             "max_purge": 10,
             "max_channels": 1,
@@ -25,7 +25,7 @@
         },
         "1": {
             "name": "Starter",
-            "min_interval": 10,
+            "min_refresh_interval": 10,
             "max_monitors": 10,
             "max_purge": 25,
             "max_channels": 5,
@@ -34,7 +34,7 @@
         },
         "2": {
             "name": "Professional",
-            "min_interval": 5,
+            "min_refresh_interval": 5,
             "max_monitors": 30,
             "max_purge": 50,
             "max_channels": 10,
@@ -43,7 +43,7 @@
         },
         "3": {
             "name": "Ultimate",
-            "min_interval": 2,
+            "min_refresh_interval": 2,
             "max_monitors": 100,
             "max_purge": 100,
             "max_channels": 20,

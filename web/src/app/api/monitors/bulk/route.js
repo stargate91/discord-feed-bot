@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
 import { canManageGuild } from "@/lib/permissions";
+import { getGuildTierLimits, hasFeature } from "@/lib/config";
 
 export async function POST(request) {
   const session = await getServerSession(authOptions);
@@ -20,7 +21,7 @@ export async function POST(request) {
   // Non-masters must have a paid tier on the specific guild.
   const isMaster = session.user.role === "master";
   
-  const { getGuildTierLimits, hasFeature } = require("@/lib/config");
+
   
   if (!isMaster) {
     if (!guildId) return NextResponse.json({ error: "Guild ID required for non-masters" }, { status: 400 });

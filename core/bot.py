@@ -294,7 +294,7 @@ class FeedBot(commands.Bot):
         return False
 
     def get_guild_tier_limits(self, guild_id):
-        """Returns (min_interval, max_monitors, default_interval, max_channels, max_pings, max_purge) from config."""
+        """Returns (min_refresh_interval, max_monitors, max_channels, max_pings, max_purge) from config."""
         settings = self.guild_settings_cache.get(guild_id, {})
         tier = settings.get("tier", 0)
         
@@ -306,9 +306,7 @@ class FeedBot(commands.Bot):
         config = tier_config.get(str(tier), tier_config.get("0", {}))
         
         return (
-            config.get("min_interval", 20),
-            1440, # max interval
-            config.get("min_interval", 20), # default interval
+            config.get("min_refresh_interval", 20),
             config.get("max_monitors", 2),
             config.get("max_channels", 1),
             config.get("max_pings", 1),
@@ -336,15 +334,15 @@ class FeedBot(commands.Bot):
 
     def get_guild_refresh_interval(self, guild_id):
         """Returns the configured refresh interval in minutes, validated against tier limits."""
-        min_m, max_m, def_m, _, _, _ = self.get_guild_tier_limits(guild_id)
+        min_m, max_m, _, _, _ = self.get_guild_tier_limits(guild_id)
         settings = self.guild_settings_cache.get(guild_id, {})
         
         ri = settings.get("refresh_interval")
-        if ri is not None and isinstance(ri, int):
+        if ri is not None and isinstance(ri, (int, float)):
             # Clamp value strictly to limits
-            clamped = max(min_m, min(max_m, ri))
+            clamped = max(min_m, min(max_m, int(ri)))
             return clamped
-        return def_m
+        return min_m
 
 
 

@@ -2,9 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { canManageGuild } from "@/lib/permissions";
-
-const TIER_PURGE_LIMITS = { 0: 10, 1: 25, 2: 50, 3: 100 };
+import { canManageGuild, getBotPermissions } from "@/lib/permissions";
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions);

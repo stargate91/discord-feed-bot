@@ -4,7 +4,7 @@ import pool from "@/lib/db";
 import { canManageGuild } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 import { notifyBotOfChange } from "@/lib/bot-sync";
-import { getTierConfig } from "@/lib/config";
+import { getGuildTierLimits, hasFeature } from "@/lib/config";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -114,7 +114,7 @@ export async function POST(request) {
     }
 
     const isMaster = session.user.role === "master";
-    const { getGuildTierLimits, hasFeature } = require("@/lib/config");
+
     const tierConfig = getGuildTierLimits(tier, isMaster);
     
     const maxAllowed = tierConfig.max_monitors || 2;
