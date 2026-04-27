@@ -8,6 +8,7 @@ import PlatformCarousel from "@/components/PlatformCarousel";
 import Footer from "@/components/Footer";
 import AuthErrorNotification from "@/components/AuthErrorNotification";
 import MarketingNavbar from "@/components/MarketingNavbar";
+import DiscordV2Preview from "@/components/DiscordV2Preview";
 
 export const metadata = {
 
@@ -96,6 +97,38 @@ export default async function LandingPage() {
           <div className="lp-stat">
             <span className="lp-stat-num"><Zap size={24} /></span>
             <span className="lp-stat-text">Fully Customizable</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Discord Preview Showcase ── */}
+      <section className="lp-preview-section">
+        <div className="lp-preview-container">
+          <div className="lp-preview-text">
+            <span className="lp-section-label">Stunning Layouts</span>
+            <h2 className="lp-section-title">The most beautiful alerts in Discord.</h2>
+            <p className="lp-section-desc">
+              Nova v2 introduces high-fidelity message layouts. With rich embeds, 
+              interactive buttons, and smart media handling, your server updates 
+              will look more professional than ever.
+            </p>
+            <div className="lp-preview-features">
+              <div className="lp-p-feat">
+                <Zap size={18} />
+                <span>Rich Media Previews</span>
+              </div>
+              <div className="lp-p-feat">
+                <Layout size={18} />
+                <span>Smart Embed V2</span>
+              </div>
+              <div className="lp-p-feat">
+                <Rocket size={18} />
+                <span>Interactive Buttons</span>
+              </div>
+            </div>
+          </div>
+          <div className="lp-preview-visual">
+            <DiscordV2Preview />
           </div>
         </div>
       </section>
