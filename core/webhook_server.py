@@ -181,9 +181,12 @@ async def sync_monitors():
     if not hasattr(app.state, 'bot') or not app.state.bot.monitor_manager:
         raise HTTPException(status_code=500, detail="Bot or Monitor Manager not initialized")
     
+    # Also reload guild settings cache (Premium tiers, language, etc.)
+    await app.state.bot.reload_guild_settings_cache()
+    
     success = await app.state.bot.monitor_manager.sync_with_db()
     if success:
-        return {"status": "success", "message": "Monitors synchronized with database"}
+        return {"status": "success", "message": "Monitors and settings synchronized with database"}
     else:
         raise HTTPException(status_code=500, detail="Failed to synchronize monitors")
 

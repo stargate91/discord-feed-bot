@@ -91,18 +91,23 @@ class BaseMonitor(ABC):
         
     def get_color(self, default_hex=0x3d3f45):
         """Get the localized/custom embed color, falling back to global default (0x3d3f45)."""
-        # Config uses extra_settings which contains embed_color if configured
-        extra = self.config.get("extra_settings", {})
-        if extra and isinstance(extra, dict):
-            c = extra.get("embed_color")
-            if c:
-                try:
-                    if isinstance(c, str):
-                        c = c.replace("#", "").replace("0x", "")
-                        return int(c, 16)
-                    return int(c)
-                except (ValueError, TypeError):
-                    pass
+        # The config is often flattened, so check top level first
+        c = self.config.get("embed_color")
+        
+        # Fallback to nested extra_settings if not at top level
+        if not c:
+            extra = self.config.get("extra_settings", {})
+            if isinstance(extra, dict):
+                c = extra.get("embed_color")
+
+        if c:
+            try:
+                if isinstance(c, str):
+                    c = c.replace("#", "").replace("0x", "")
+                    return int(c, 16)
+                return int(c)
+            except (ValueError, TypeError):
+                pass
         return default_hex
 
     async def check_for_updates(self):

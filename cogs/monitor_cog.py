@@ -80,7 +80,9 @@ class MonitorCog(commands.GroupCog, name="monitor"):
             return
             
         guild_id = interaction.guild_id or 0
-        if not self.bot.has_feature(guild_id, "repost"):
+        is_staff = self.bot.is_master_admin(interaction.user)
+        
+        if not is_staff and not self.bot.has_feature(guild_id, "repost"):
             embed = discord.Embed(
                 title="✨ Nova Premium",
                 description=self.bot.get_feedback("error_premium_only_repost", guild_id=guild_id),
