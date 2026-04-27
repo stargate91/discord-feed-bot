@@ -19,11 +19,9 @@ export async function POST(request) {
 
   // 1. Authorization: Master users can do anything. 
   // Non-masters must have a paid tier on the specific guild.
-  const isMaster = session.user.role === "master";
+  const isStaff = session.user.role === "master";
   
-
-  
-  if (!isMaster) {
+  if (!isStaff) {
     if (!guildId) return NextResponse.json({ error: "Guild ID required for non-masters" }, { status: 400 });
 
     // 2. Security check: user must be admin of the guild
@@ -42,7 +40,7 @@ export async function POST(request) {
       const tier = row?.tier || 0;
       const premiumUntil = row?.premium_until;
       
-      const canBulkDelete = hasFeature(tier, isMaster, "bulk_delete", premiumUntil);
+      const canBulkDelete = isStaff || hasFeature(tier, guildId, "bulk_delete", premiumUntil);
       
       if (action === "delete" && !canBulkDelete) {
         return NextResponse.json({ error: "Premium Tier required for bulk deletion" }, { status: 403 });
@@ -97,7 +95,7 @@ export async function POST(request) {
     } else if (action === "update") {
       let guildTier = 0;
       let premiumUntil = null;
-      if (!isMaster) {
+      if (!isStaff) {
         const guildCheck = await pool.query(
           'SELECT tier, premium_until FROM guild_settings WHERE guild_id = $1',
           [cleanId]
@@ -105,7 +103,7 @@ export async function POST(request) {
         guildTier = guildCheck.rows[0]?.tier || 0;
         premiumUntil = guildCheck.rows[0]?.premium_until;
         
-        if (!hasFeature(guildTier, isMaster, "bulk_settings_edit", premiumUntil)) {
+        if (!hasFeature(guildTier, guildId, "bulk_settings_edit", premiumUntil)) {
           return NextResponse.json({ error: "Bulk editing requires Professional Tier (Tier 2) or higher" }, { status: 403 });
         }
       } else {
@@ -134,10 +132,10 @@ export async function POST(request) {
 
         if (target_channels) extra.target_channels = target_channels;
         if (target_roles) extra.target_roles = target_roles;
-        if (embed_color && hasFeature(guildTier, isMaster, "custom_color", premiumUntil)) {
+        if (embed_color && (isStaff || hasFeature(guildTier, guildId, "custom_color", premiumUntil))) {
            extra.embed_color = embed_color;
         }
-        if (use_native_player !== undefined && row?.type === 'youtube' && hasFeature(guildTier, isMaster, "basic", premiumUntil)) {
+        if (use_native_player !== undefined && row?.type === 'youtube' && (isStaff || hasFeature(guildTier, guildId, "basic", premiumUntil))) {
           extra.use_native_player = use_native_player;
         }
 

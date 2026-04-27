@@ -24,11 +24,17 @@ export function getConfig() {
   }
 }
 
+export function isMasterGuild(guildId) {
+  const config = getConfig();
+  const masterGuilds = config.master_guilds || {};
+  return masterGuilds.hasOwnProperty(String(guildId));
+}
+
 /**
  * Normalizes the tier level considering premium expiration and master status.
  */
-export function getEffectiveTier(tier, isMaster = false, premiumUntil = null) {
-  if (isMaster) return 3; // Master is always Ultimate
+export function getEffectiveTier(tier, guildId = null, premiumUntil = null) {
+  if (guildId && isMasterGuild(guildId)) return 3; // Master is always Ultimate
   
   let effectiveTier = parseInt(tier) || 0;
   
@@ -40,15 +46,20 @@ export function getEffectiveTier(tier, isMaster = false, premiumUntil = null) {
   return effectiveTier;
 }
 
-export function getGuildTierLimits(tier, isMaster = false, premiumUntil = null) {
+export function getGuildTierLimits(tier, guildId = null, premiumUntil = null) {
   const config = getConfig();
-  const effectiveTier = getEffectiveTier(tier, isMaster, premiumUntil);
+  const effectiveTier = getEffectiveTier(tier, guildId, premiumUntil);
   const tierConfig = config.tier_config || {};
   return tierConfig[String(effectiveTier)] || tierConfig["0"] || {};
 }
 
-export function hasFeature(tier, isMaster = false, featureName, premiumUntil = null) {
-  const tierInfo = getGuildTierLimits(tier, isMaster, premiumUntil);
+export function hasFeature(tier, guildId = null, featureName, premiumUntil = null) {
+  const tierInfo = getGuildTierLimits(tier, guildId, premiumUntil);
   const features = tierInfo.features || [];
-  return isMaster || features.includes(featureName) || featureName === "basic";
+  
+  // Master Guilds bypass all feature locks
+  if (guildId && isMasterGuild(guildId)) return true;
+  
+  return features.includes(featureName) || featureName === "basic";
 }
+

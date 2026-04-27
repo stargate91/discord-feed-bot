@@ -113,18 +113,17 @@ export async function POST(request) {
       tier = 3;
     }
 
-    const isMaster = session.user.role === "master";
-
-    const tierConfig = getGuildTierLimits(tier, isMaster);
+    const isStaff = session.user.role === "master";
+    const tierConfig = getGuildTierLimits(tier, guildId);
     
-    const maxAllowed = tierConfig.max_monitors || 2;
-    const maxChannelsRoles = tierConfig.max_channels || 1;
+    const maxAllowed = isStaff ? 1000 : (tierConfig.max_monitors || 2);
+    const maxChannelsRoles = isStaff ? 20 : (tierConfig.max_channels || 1);
     const features = tierConfig.features || [];
 
     const countRes = await pool.query('SELECT COUNT(*) FROM monitors WHERE guild_id = $1', [guildId]);
     const currentCount = parseInt(countRes.rows[0].count);
 
-    if (currentCount >= maxAllowed && session.user.role !== "master") {
+    if (currentCount >= maxAllowed && !isStaff) {
       return NextResponse.json({ error: `Limit reached! Your ${tierConfig.name || 'Free'} plan only allows ${maxAllowed} monitors.` }, { status: 402 });
     }
     // ---------------------------------
@@ -159,16 +158,16 @@ export async function POST(request) {
 
     
     if (embed_color !== undefined) {
-      if (isMaster || features.includes("custom_color")) extra_settings.embed_color = embed_color;
+      if (isStaff || hasFeature(tier, guildId, "custom_color", premiumUntil)) extra_settings.embed_color = embed_color;
       else extra_settings.embed_color = "#3d3f45";
     }
 
-    if (rest.custom_alert && !features.includes("alert_template") && !isMaster) delete extra_settings.custom_alert;
-    if (rest.target_genres && !features.includes("genre_filter") && !isMaster) delete extra_settings.target_genres;
-    if (rest.target_languages && !features.includes("tmdb_language_filter") && !isMaster) delete extra_settings.target_languages;
+    if (rest.custom_alert && !isStaff && !hasFeature(tier, guildId, "alert_template", premiumUntil)) delete extra_settings.custom_alert;
+    if (rest.target_genres && !isStaff && !hasFeature(tier, guildId, "genre_filter", premiumUntil)) delete extra_settings.target_genres;
+    if (rest.target_languages && !isStaff && !hasFeature(tier, guildId, "tmdb_language_filter", premiumUntil)) delete extra_settings.target_languages;
     
-    if (rest.use_native_player !== undefined && !isMaster) {
-      if (!features.includes("basic")) delete extra_settings.use_native_player; // YouTube basic feature
+    if (rest.use_native_player !== undefined && !isStaff) {
+      if (!hasFeature(tier, guildId, "basic", premiumUntil)) delete extra_settings.use_native_player;
     }
 
     const query = `
