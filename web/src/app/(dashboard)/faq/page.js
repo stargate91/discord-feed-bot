@@ -167,7 +167,7 @@ export default function FAQPage() {
               <h3>Still have questions?</h3>
               <p>Our dedicated support team and community are ready to help you 24/7. Join our Discord to get instant assistance.</p>
             </div>
-            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className={styles.ctaButtonWrapper}>
+            <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className={styles.ctaButtonWrapper} style={{ textDecoration: 'none' }}>
               <button className={styles.ctaButton}>
                 <div className={styles.ctaButtonPulse}></div>
                 <MessageSquare size={20} />

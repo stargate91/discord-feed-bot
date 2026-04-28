@@ -90,10 +90,64 @@
 
 .settingsSidebar { }
 
-.premiumStatusCard { background: linear-gradient(135deg, rgba(123, 44, 191, 0.12) 0%, rgba(60, 9, 108, 0.08) 100%); border: 1px solid rgba(123, 44, 191, 0.2); border-radius: 28px; padding: 2.25rem; display: flex; flex-direction: column; gap: 1.5rem; position: sticky; top: 2rem; }
-.premiumStatusCard.premiumActive { border-color: rgba(255, 183, 3, 0.3); background: linear-gradient(135deg, rgba(255, 183, 3, 0.08) 0%, rgba(60, 9, 108, 0.05) 100%); }
+.premiumStatusCard { 
+  background: linear-gradient(145deg, rgba(30, 30, 35, 0.6) 0%, rgba(15, 15, 20, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px; padding: 2.25rem; display: flex; flex-direction: column; gap: 1.5rem; position: sticky; top: 2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+}
+.premiumStatusCard.premiumActive { 
+  border-color: rgba(255, 183, 3, 0.4); 
+  background: linear-gradient(145deg, rgba(255, 183, 3, 0.08) 0%, rgba(10, 10, 15, 0.8) 100%);
+  box-shadow: 0 0 40px rgba(255, 183, 3, 0.15), inset 0 1px 0 rgba(255, 183, 3, 0.2);
+}
 .premiumHeader { display: flex; align-items: center; gap: 1rem; }
-.premiumIcon { width: 54px; height: 54px; background: rgba(255, 183, 3, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #ffb703; box-shadow: 0 0 20px rgba(255, 183, 3, 0.1); }
+.premiumIcon { 
+  width: 54px; height: 54px; 
+  background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), rgba(251, 133, 0, 0.1)); 
+  border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #ffb703; 
+  box-shadow: 0 0 30px rgba(255, 183, 3, 0.2), inset 0 0 10px rgba(255,183,3,0.1); 
+  border: 1px solid rgba(255, 183, 3, 0.3); 
+}
+
+/* Redeem Card Styles */
+.redeemCard {
+  background: linear-gradient(145deg, rgba(123, 44, 191, 0.08) 0%, rgba(10, 10, 15, 0.8) 100%);
+  border-color: rgba(123, 44, 191, 0.3);
+  box-shadow: 0 0 40px rgba(123, 44, 191, 0.1), inset 0 1px 0 rgba(123, 44, 191, 0.2);
+}
+.redeemIcon {
+  width: 54px; height: 54px; 
+  background: linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(60, 9, 108, 0.1)); 
+  border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #c77dff; 
+  box-shadow: 0 0 30px rgba(123, 44, 191, 0.2), inset 0 0 10px rgba(123, 44, 191, 0.1); 
+  border: 1px solid rgba(123, 44, 191, 0.3);
+}
+.redeemInputWrapper {
+  display: flex; gap: 0.75rem; align-items: stretch;
+}
+.redeemInput {
+  flex: 1; padding: 0.85rem 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); 
+  background: rgba(0,0,0,0.3); color: white; font-family: 'JetBrains Mono', monospace; font-size: 1rem; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); outline: none; letter-spacing: 1px;
+}
+.redeemInput:focus {
+  border-color: #9d4edd; background: rgba(0,0,0,0.5); box-shadow: 0 0 20px rgba(123, 44, 191, 0.2), inset 0 2px 5px rgba(0,0,0,0.3);
+}
+.redeemInput::placeholder { color: rgba(255,255,255,0.2); }
+
+.redeemBtn {
+  padding: 0 1.5rem; border-radius: 12px; background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%); 
+  color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 800; font-size: 1rem; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 5px 15px rgba(90, 24, 154, 0.3); 
+  display: flex; align-items: center; justify-content: center;
+}
+.redeemBtn:hover:not(:disabled) {
+  transform: translateY(-2px); box-shadow: 0 8px 25px rgba(90, 24, 154, 0.5); filter: brightness(1.2); border-color: rgba(255,255,255,0.3);
+}
+.redeemBtn:active:not(:disabled) { transform: translateY(0); }
+.redeemBtn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(50%); }
 .premiumHeader h4 { font-size: 1.25rem; font-weight: 800; color: white; margin: 0; }
 .premiumHeader p { font-size: 0.9rem; color: var(--text-secondary); margin: 0; }
 .expiryLabel { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 4px; }

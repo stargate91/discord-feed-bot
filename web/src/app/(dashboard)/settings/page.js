@@ -134,6 +134,8 @@ function SettingsContent() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [notification, setNotification] = useState(null);
   const [guildRoles, setGuildRoles] = useState([]);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
 
   const [settings, setSettings] = useState({
     language: "en",
@@ -203,6 +205,35 @@ function SettingsContent() {
       setNotification({ type: 'error', message: 'Failed to open billing portal.' });
     }
     setPortalLoading(false);
+  };
+
+  const handleRedeem = async () => {
+    if (!redeemCode.trim()) return;
+    setRedeeming(true);
+    try {
+      const res = await fetch('/api/premium/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: redeemCode, guildId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNotification({ type: 'success', message: 'Code redeemed successfully!' });
+        setRedeemCode('');
+        
+        // Refresh settings to reflect new premium status
+        const sData = await settingsService.getSettings(guildId);
+        if (guildId === "1083433370815582240") {
+          sData.isMaster = true;
+        }
+        setSettings(sData);
+      } else {
+        setNotification({ type: 'error', message: data.error || 'Failed to redeem code' });
+      }
+    } catch (err) {
+      setNotification({ type: 'error', message: 'Network error occurred.' });
+    }
+    setRedeeming(false);
   };
 
   const updateTemplate = (platform, val) => {
@@ -417,6 +448,32 @@ function SettingsContent() {
                 <button className={styles.upgradeBtn}>Upgrade to Premium</button>
               </Link>
             )}
+          </div>
+
+          <div className={`${styles.premiumStatusCard} ${styles.redeemCard}`} style={{ marginTop: '1.5rem' }}>
+            <div className={styles.premiumHeader} style={{ marginBottom: '1rem' }}>
+              <div className={styles.redeemIcon}><Zap size={24} /></div>
+              <div>
+                <h4>Redeem Code</h4>
+                <p>Activate a premium gift or promo code.</p>
+              </div>
+            </div>
+            <div className={styles.redeemInputWrapper}>
+              <input 
+                type="text" 
+                placeholder="NOVA-XXXX-XXXX" 
+                value={redeemCode}
+                onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                className={styles.redeemInput}
+              />
+              <button 
+                onClick={handleRedeem} 
+                disabled={redeeming || !redeemCode.trim()}
+                className={styles.redeemBtn}
+              >
+                {redeeming ? '...' : 'Redeem'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
