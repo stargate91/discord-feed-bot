@@ -118,6 +118,53 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
   const [resolving, setResolving] = useState(false);
   const [resolvedChannel, setResolvedChannel] = useState(null);
 
+  // Universal Autocomplete States (Steam, Twitch, GitHub)
+  const [autoQuery, setAutoQuery] = useState('');
+  const [autoResults, setAutoResults] = useState([]);
+  const [isAutoSearching, setIsAutoSearching] = useState(false);
+  const [showAutoDropdown, setShowAutoDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAutoDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced Universal Search
+  useEffect(() => {
+    const supportedPlatforms = ['steam_news', 'twitch', 'github'];
+    if (!selectedPlatform || !supportedPlatforms.includes(selectedPlatform.id)) return;
+    
+    const delayDebounceFn = setTimeout(async () => {
+      if (autoQuery.trim().length >= 3) {
+        setIsAutoSearching(true);
+        try {
+          const endpoint = `/api/${selectedPlatform.id === 'steam_news' ? 'steam' : selectedPlatform.id}/search?q=${encodeURIComponent(autoQuery)}`;
+          const res = await fetch(endpoint);
+          if (res.ok) {
+            const data = await res.json();
+            setAutoResults(data);
+            setShowAutoDropdown(true);
+          }
+        } catch (e) {
+          console.error(`${selectedPlatform.id} search failed:`, e);
+        }
+        setIsAutoSearching(false);
+      } else {
+        setAutoResults([]);
+        setShowAutoDropdown(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [autoQuery, selectedPlatform]);
+
   const handleYouTubeResolve = async () => {
     if (!formData.platform_input) return;
     setResolving(true);
@@ -154,6 +201,9 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       setSelectedPlatform(null);
       setFormData({ name: '', target_channels: [], target_roles: [], embed_color: '#3d3f45', platform_input: '', custom_alert: '', include_upcoming: false, target_genres: [], target_languages: [], send_initial_alert: true, use_native_player: false });
       setCryptoPairs([{ symbol: '', threshold: '' }]);
+      setAutoQuery('');
+      setAutoResults([]);
+      setResolvedChannel(null);
     }
   }, [isOpen, guildId]);
 
@@ -343,33 +393,84 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     <label>{selectedPlatform.inputLabel}</label>
                     <div className="hint-pill"><Info size={12} /> {selectedPlatform.hint}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input
-                      type="text"
-                      value={formData.platform_input}
-                      onChange={(e) => setFormData({ ...formData, platform_input: e.target.value })}
-                      required
-                      className="styled-input-main accent-border"
-                      style={{ flex: 1 }}
-                      placeholder={selectedPlatform.placeholder}
-                    />
+                  <div className="input-with-action">
+                    {['steam_news', 'twitch', 'github'].includes(selectedPlatform?.id) ? (
+                      <div className="autocomplete-wrapper" style={{ flex: 1 }} ref={dropdownRef}>
+                        <input
+                          type="text"
+                          value={autoQuery || formData.platform_input}
+                          onChange={(e) => {
+                            setAutoQuery(e.target.value);
+                            setFormData({ ...formData, platform_input: e.target.value });
+                          }}
+                          onFocus={() => autoResults.length > 0 && setShowAutoDropdown(true)}
+                          required
+                          className="styled-input-main"
+                          style={{ width: '100%' }}
+                          placeholder={selectedPlatform.placeholder}
+                        />
+                        {isAutoSearching && (
+                          <div className="search-loader"></div>
+                        )}
+                        {showAutoDropdown && autoResults.length > 0 && (
+                          <div className="autocomplete-dropdown">
+                            {autoResults.map(item => (
+                              <div 
+                                key={item.id} 
+                                className="autocomplete-item"
+                                onClick={() => {
+                                  setFormData({ ...formData, platform_input: item.id, name: item.name });
+                                  setAutoQuery(item.id); // For Twitch and GitHub, the handle/repo is usually best to show in input
+                                  setShowAutoDropdown(false);
+                                }}
+                              >
+                                <img src={item.thumbnail || "/nova_thumbnail.jpg"} alt={item.name} className={selectedPlatform.id === 'twitch' ? 'game-thumb circle' : 'game-thumb'} />
+                                <div className="game-info">
+                                  <span className="game-title">
+                                    {item.name} {item.is_live && <span className="live-badge">LIVE</span>}
+                                  </span>
+                                  <span className="game-id">
+                                    {selectedPlatform.id === 'github' ? `⭐ ${item.stars} - ${item.id}` : `ID: ${item.id}`}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.platform_input}
+                        onChange={(e) => setFormData({ ...formData, platform_input: e.target.value })}
+                        required
+                        className={`styled-input-main ${resolvedChannel ? 'valid' : ''}`}
+                        style={{ flex: 1 }}
+                        placeholder={selectedPlatform.placeholder}
+                      />
+                    )}
+
                     {selectedPlatform.id === 'youtube' && (
                       <button
                         type="button"
                         onClick={handleYouTubeResolve}
-                        className="resolve-btn"
+                        className={`action-link-btn ${resolving ? 'loading' : ''}`}
                         disabled={resolving || !formData.platform_input}
                       >
-                        {resolving ? '...' : 'Find'}
+                        {resolving ? 'Checking...' : (resolvedChannel ? 'Change' : 'Verify')}
                       </button>
                     )}
                   </div>
+                  
                   {selectedPlatform.id === 'youtube' && resolvedChannel && (
-                    <div className="channel-preview">
-                      <img src={resolvedChannel.thumbnail} alt="" />
-                      <div className="channel-info">
-                        <span className="channel-name">{resolvedChannel.title}</span>
-                        <span className="channel-id">{resolvedChannel.id}</span>
+                    <div className="validation-chip">
+                      <div className="chip-avatar">
+                        <img src={resolvedChannel.thumbnail} alt="" />
+                        <div className="check-mark">✓</div>
+                      </div>
+                      <div className="chip-content">
+                        <span className="chip-title">{resolvedChannel.title}</span>
+                        <span className="chip-subtitle">Channel Verified</span>
                       </div>
                     </div>
                   )}
@@ -901,6 +1002,206 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
           color: var(--text-secondary);
           font-family: monospace;
         }
+        .input-with-action {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          position: relative;
+        }
+
+        .action-link-btn {
+          background: rgba(123, 44, 191, 0.1);
+          color: var(--accent-color);
+          border: 1px solid rgba(123, 44, 191, 0.2);
+          padding: 8px 16px;
+          border-radius: 10px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .action-link-btn:hover:not(:disabled) {
+          background: var(--accent-color);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        .validation-chip {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(16, 185, 129, 0.05);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          padding: 10px 16px;
+          border-radius: 16px;
+          margin-top: 12px;
+          animation: chipIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes chipIn {
+          from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .chip-avatar {
+          position: relative;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 2px solid #10b981;
+          padding: 2px;
+        }
+
+        .chip-avatar img {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .check-mark {
+          position: absolute;
+          bottom: -2px;
+          right: -2px;
+          background: #10b981;
+          color: white;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          font-size: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #0f0f13;
+        }
+
+        .chip-content {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .chip-title {
+          font-weight: 700;
+          font-size: 0.9rem;
+          color: white;
+        }
+
+        .chip-subtitle {
+          font-size: 0.7rem;
+          color: #10b981;
+          text-transform: uppercase;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+
+        .styled-input-main.valid {
+          border-color: rgba(16, 185, 129, 0.3);
+          background: rgba(16, 185, 129, 0.02);
+        }
+
+        /* Autocomplete Styles */
+        .autocomplete-wrapper {
+          position: relative;
+        }
+
+        .search-loader {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.1);
+          border-top-color: var(--accent-color);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .autocomplete-dropdown {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          width: 100%;
+          background: rgba(15, 15, 20, 0.95);
+          backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          overflow: hidden;
+          z-index: 1000;
+          animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes dropIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .autocomplete-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 12px;
+          cursor: pointer;
+          transition: background 0.2s;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .autocomplete-item:last-child {
+          border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .game-thumb {
+          width: 46px;
+          height: 21px; /* 120x45 typical ratio for Steam */
+          border-radius: 2px;
+          object-fit: cover;
+        }
+
+        .game-thumb.circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+        }
+
+        .game-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .game-title {
+          font-weight: 700;
+          font-size: 0.85rem;
+          color: white;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .live-badge {
+          background: #ef4444;
+          color: white;
+          font-size: 0.55rem;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-weight: 900;
+        }
+
+        .game-id {
+          font-size: 0.65rem;
+          color: rgba(255,255,255,0.4);
+          font-family: monospace;
+        }
+
       `}</style>
     </div>
   );
