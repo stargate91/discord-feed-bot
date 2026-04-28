@@ -82,7 +82,8 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
     target_languages: [],
     custom_alert: '',
     include_upcoming: false,
-    use_native_player: false
+    use_native_player: false,
+    custom_image: ''
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -127,7 +128,8 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
         target_languages: monitor.target_languages || [],
         custom_alert: monitor.custom_alert || monitor.extra_settings?.custom_alert || '',
         include_upcoming: !!(monitor.include_upcoming || monitor.extra_settings?.include_upcoming),
-        use_native_player: !!(monitor.use_native_player || monitor.extra_settings?.use_native_player)
+        use_native_player: !!(monitor.use_native_player || monitor.extra_settings?.use_native_player),
+        custom_image: monitor.custom_image || monitor.extra_settings?.custom_image || ''
       });
 
       if (monitor.type === 'crypto') {
@@ -175,6 +177,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
       embed_color: formData.embed_color,
       custom_alert: formData.custom_alert,
       include_upcoming: formData.include_upcoming,
+      custom_image: formData.custom_image,
     };
     
     if (monitor.type === 'youtube') {
@@ -442,6 +445,46 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
             </div>
           )}
 
+          <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <label>Custom Image URL</label>
+              {isLocked("custom_color") ? (
+                <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                  <Info size={12} /> Starter Tier Required
+                </div>
+              ) : (
+                <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                  <Info size={12} /> Imgur, Discord, etc.
+                </div>
+              )}
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                name="custom_image"
+                value={formData.custom_image}
+                onChange={handleChange}
+                className="styled-input-main"
+                placeholder={isLocked("custom_color") ? "Unlock Starter Tier to use custom images" : "https://imgur.com/example.png"}
+                style={{ 
+                  width: '100%',
+                  opacity: isLocked("custom_color") ? 0.5 : 1
+                }}
+                disabled={isLocked("custom_color")}
+              />
+              {isLocked("custom_color") && (
+                <div className="premium-field-overlay">
+                  <span className="lock-tag">Starter Tier+</span>
+                </div>
+              )}
+            </div>
+            {!isLocked("custom_color") && formData.custom_image && (
+               <div style={{ marginTop: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', height: '100px', width: 'fit-content' }}>
+                 <img src={formData.custom_image} alt="Preview" style={{ height: '100%', objectFit: 'contain' }} onError={(e) => e.target.style.display = 'none'} />
+               </div>
+            )}
+          </div>
+
 
 
 
@@ -476,16 +519,17 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 1000; padding: 1.5rem;
+          display: flex; align-items: flex-start; justify-content: center;
+          z-index: 1000; padding: 2rem; overflow-y: auto;
         }
         .modal-content {
-          width: 100%; max-width: 700px;
-          background: rgba(15, 15, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 30px 60px rgba(0,0,0,0.6); padding: 2.5rem; border-radius: 24px;
-          animation: modalAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          width: 100%; max-width: 700px; margin-top: 2rem; margin-bottom: 2rem;
+          background: rgba(15, 15, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
+          animation: modalAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
         }
-        @keyframes modalAppear { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes modalAppear { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         
         .modal-header { display: flex; align-items: center; gap: 20px; margin-bottom: 2.5rem; }
         .header-platform-icon { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }

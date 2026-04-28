@@ -70,6 +70,8 @@ class RSSMonitor(BaseMonitor):
                 if img_match:
                     img_url = img_match.group(1)
 
+        img_url = self.get_image_url(img_url)
+
         alert_text = self.get_alert_message({
             "name": author_name,
             "title": entry_title,
@@ -163,6 +165,8 @@ class RSSMonitor(BaseMonitor):
                 img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.content[0].get('value', ''))
                 if img_match:
                     img_url = img_match.group(1)
+
+        img_url = self.get_image_url(img_url)
 
         alert_text = self.get_alert_message({
             "name": author_name,

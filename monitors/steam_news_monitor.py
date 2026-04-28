@@ -190,6 +190,8 @@ class SteamNewsMonitor(BaseMonitor):
         if not image_url:
             image_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{self.appid}/header.jpg"
             used_fallback = True
+            
+        image_url = self.get_image_url(image_url)
         
         # Formulate message
         alert_text = self.get_alert_message({

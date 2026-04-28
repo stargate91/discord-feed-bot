@@ -85,6 +85,8 @@ class BaseStreamMonitor(BaseMonitor):
         # Cache-bust thumbnail
         if thumbnail:
             thumbnail = f"{thumbnail}?t={int(time.time())}"
+            
+        thumbnail = self.get_image_url(thumbnail)
 
         alert_text = self.get_alert_message({
             "name": display_name,

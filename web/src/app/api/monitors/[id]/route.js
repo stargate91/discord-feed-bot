@@ -127,6 +127,15 @@ export async function PATCH(request, { params }) {
       }
     }
     
+    if (extra.custom_image !== undefined) {
+      if (isMaster || hasFeature(tier, guildId, "custom_color", premiumUntil)) {
+        extraSettings.custom_image = extra.custom_image;
+        delete extra.custom_image; // Remove from extra to avoid double-merging if needed
+      } else {
+        return NextResponse.json({ error: "Custom images require Starter tier or higher" }, { status: 403 });
+      }
+    }
+    
     // Merge any other platform-specific settings
     extraSettings = { ...extraSettings, ...extra };
 

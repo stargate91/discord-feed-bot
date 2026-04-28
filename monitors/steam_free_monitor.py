@@ -63,6 +63,7 @@ class SteamFreeMonitor(BaseMonitor):
         description = game.get("description", "")
         game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
         image_url = game.get("image") or game.get("thumbnail")
+        image_url = self.get_image_url(image_url)
         na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
         worth = game.get("worth", na_text)
         giveaway_type = game.get("type", "Game")
@@ -147,6 +148,7 @@ class SteamFreeMonitor(BaseMonitor):
             title = f"<:steam:1490131413956038656> {title}"
             game_url = game.get("open_giveaway_url") or game.get("gamerpower_url", "")
             image_url = game.get("image") or game.get("thumbnail")
+            image_url = self.get_image_url(image_url)
             worth = game.get("worth", na_text)
             giveaway_type = game.get("type", "Game")
             end_date = game.get("end_date", na_text)

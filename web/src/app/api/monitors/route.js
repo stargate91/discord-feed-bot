@@ -166,6 +166,8 @@ export async function POST(request) {
     if (rest.target_genres && !isStaff && !hasFeature(tier, guildId, "genre_filter", premiumUntil)) delete extra_settings.target_genres;
     if (rest.target_languages && !isStaff && !hasFeature(tier, guildId, "tmdb_language_filter", premiumUntil)) delete extra_settings.target_languages;
     
+    if (rest.custom_image && !isStaff && !hasFeature(tier, guildId, "custom_color", premiumUntil)) delete extra_settings.custom_image;
+
     if (rest.use_native_player !== undefined && !isStaff) {
       if (!hasFeature(tier, guildId, "basic", premiumUntil)) delete extra_settings.use_native_player;
     }

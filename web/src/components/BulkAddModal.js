@@ -32,6 +32,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
   const [results, setResults] = useState(null);
   const [sendInitialAlert, setSendInitialAlert] = useState(false);
   const [useNativePlayer, setUseNativePlayer] = useState(false);
+  const [customImage, setCustomImage] = useState('');
 
   useEffect(() => {
     if (isOpen && guildId) {
@@ -40,6 +41,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
       setSelectedPlatform(null);
       setInputList('');
       setResults(null);
+      setCustomImage('');
     }
   }, [isOpen, guildId]);
 
@@ -91,7 +93,8 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           targetRoles,
           embedColor,
           sendInitialAlert: ['stream', 'kick'].includes(selectedPlatform.id) ? sendInitialAlert : false,
-          use_native_player: selectedPlatform.id === 'youtube' ? useNativePlayer : undefined
+          use_native_player: selectedPlatform.id === 'youtube' ? useNativePlayer : undefined,
+          custom_image: customImage
         })
       });
 
@@ -125,7 +128,7 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
       background: 'rgba(0, 0, 0, 0.85)',
       backdropFilter: 'blur(12px)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'center',
       zIndex: 99999,
       padding: '2rem',
@@ -225,6 +228,36 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                         />
                       </div>
                     )}
+                  </div>
+
+                  <div className="form-group highlighted-group" style={{ 
+                    background: 'rgba(255, 255, 255, 0.02)', 
+                    padding: '1.25rem',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    marginTop: '0.75rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Custom Image URL</label>
+                      <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '10px' }}>
+                         Imgur, Discord, etc.
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={customImage}
+                      onChange={(e) => setCustomImage(e.target.value)}
+                      className="styled-input-main"
+                      placeholder="https://imgur.com/example.png"
+                      style={{ 
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '0.6rem 1rem',
+                        borderRadius: '10px',
+                        color: 'white'
+                      }}
+                    />
                   </div>
 
                   {['stream', 'kick'].includes(selectedPlatform?.id) && (
@@ -382,6 +415,8 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 28px;
             padding: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
             animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
           }
 

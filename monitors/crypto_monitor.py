@@ -222,6 +222,11 @@ class CryptoMonitor(BaseMonitor):
         crypto_emoji = "<:crypto:1495846010197381160>"
         # 1. Header with crypto emoji
         container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
+        
+        custom_img = self.get_image_url()
+        if custom_img:
+            container_items.append(discord.ui.MediaGallery(discord.MediaGalleryItem(custom_img)))
+            
         container_items.append(discord.ui.Separator())
         
         # 2. Main Alert Message (direction arrow is already in msg)
@@ -374,6 +379,11 @@ class CryptoMonitor(BaseMonitor):
         container_items = []
         
         container_items.append(discord.ui.TextDisplay(f"### {crypto_emoji} {title}"))
+        
+        custom_img = self.get_image_url()
+        if custom_img:
+            container_items.append(discord.ui.MediaGallery(discord.MediaGalleryItem(custom_img)))
+            
         container_items.append(discord.ui.Separator())
         
         container_items.append(discord.ui.TextDisplay(msg))

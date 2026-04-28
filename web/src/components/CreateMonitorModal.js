@@ -108,6 +108,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
     target_languages: [],
     send_initial_alert: true,
     use_native_player: false,
+    custom_image: '',
   });
 
   const [cryptoPairs, setCryptoPairs] = useState([{ symbol: '', threshold: '' }]);
@@ -259,6 +260,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
       target_languages: formData.target_languages,
       send_initial_alert: ['twitch', 'kick'].includes(selectedPlatform.id) ? formData.send_initial_alert : false,
       use_native_player: selectedPlatform.id === 'youtube' ? formData.use_native_player : undefined,
+      custom_image: formData.custom_image,
     };
 
     if (!selectedPlatform.isGlobal) {
@@ -690,6 +692,45 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                   />
                 </div>
               )}
+
+              <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label>Custom Image URL</label>
+                  {isLocked("custom_color") ? (
+                    <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                      <span style={{ fontSize: '10px' }}>⭐ Starter Tier Required</span>
+                    </div>
+                  ) : (
+                    <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                      <Info size={12} /> Imgur, Discord, etc.
+                    </div>
+                  )}
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={formData.custom_image}
+                    onChange={(e) => setFormData({ ...formData, custom_image: e.target.value })}
+                    className="styled-input-main"
+                    placeholder={isLocked("custom_color") ? "Unlock Starter Tier to use custom images" : "https://imgur.com/example.png"}
+                    style={{ 
+                      width: '100%',
+                      opacity: isLocked("custom_color") ? 0.5 : 1
+                    }}
+                    disabled={isLocked("custom_color")}
+                  />
+                  {isLocked("custom_color") && (
+                    <div className="premium-field-overlay">
+                      <span className="lock-tag">Starter Tier+</span>
+                    </div>
+                  )}
+                </div>
+                {!isLocked("custom_color") && formData.custom_image && (
+                   <div style={{ marginTop: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', height: '100px', width: 'fit-content' }}>
+                     <img src={formData.custom_image} alt="Preview" style={{ height: '100%', objectFit: 'contain' }} onError={(e) => e.target.style.display = 'none'} />
+                   </div>
+                )}
+              </div>
             </div>
 
             <div className="modal-footer">

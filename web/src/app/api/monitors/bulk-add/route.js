@@ -11,7 +11,7 @@ export async function POST(req) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { guildId, type, sources, targetChannels, targetRoles, embedColor, sendInitialAlert, use_native_player } = await req.json();
+    const { guildId, type, sources, targetChannels, targetRoles, embedColor, customImage, sendInitialAlert, use_native_player } = await req.json();
 
     if (!guildId || !type || !sources || !targetChannels || targetChannels.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -86,7 +86,8 @@ export async function POST(req) {
           target_channels: channelIds,
           target_roles: roleIds,
           embed_color: embedColor || (type === 'youtube' ? null : '#3d3f45'),
-          send_initial_alert: sendInitialAlert ?? false
+          send_initial_alert: sendInitialAlert ?? false,
+          custom_image: customImage && (isMaster || isPremium || tier >= 1) ? customImage : undefined
         };
 
         // For YouTube, also provide channel_id which the monitor specifically looks for

@@ -1,0 +1,547 @@
+.monitorCard {
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 24px;
+  min-height: 280px;
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.cardGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.showTools {
+  border-color: rgba(123, 44, 191, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.cardSelected {
+  border-color: var(--brand-accent) !important;
+  background: rgba(0, 245, 255, 0.03) !important;
+  box-shadow: var(--glow-cyan), inset 0 0 15px rgba(0, 245, 255, 0.05);
+  transform: scale(1.02);
+  z-index: 5;
+}
+
+.toolsToggle {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.toolsToggle:hover,
+.toolsToggle.active {
+  background: var(--brand-primary);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--glow-blue);
+}
+
+.diagnosticsPanel {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0 -1.8rem;
+  padding: 0 1.8rem;
+  opacity: 0;
+}
+
+.diagnosticsPanel.expanded {
+  max-height: 160px;
+  padding: 1.25rem 1.8rem;
+  opacity: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.toolGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repostSlider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  cursor: pointer;
+}
+
+.repostSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  box-shadow: var(--glow-blue);
+  cursor: pointer;
+}
+
+.toolBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 52px;
+  justify-content: center;
+}
+
+.toolBtn.wide {
+  width: 100%;
+  min-height: 40px;
+  flex-direction: row;
+  padding: 8px 12px;
+  gap: 8px;
+  justify-content: center;
+}
+
+.purgeSlider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(239, 68, 68, 0.1);
+  outline: none;
+  cursor: pointer;
+}
+
+.purgeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+  cursor: pointer;
+}
+
+.toolBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.toolBtn.purge:hover:not(:disabled) {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.toolGroup.locked {
+  position: relative;
+  cursor: not-allowed;
+}
+
+.toolBtn.isLocked {
+  opacity: 0.6;
+  border-color: rgba(255, 215, 0, 0.2);
+  cursor: not-allowed;
+}
+
+.premiumLockMessage {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.actionFeedback {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  border-left: 3px solid transparent;
+  word-break: break-word;
+}
+
+.actionFeedback.success {
+  color: #10b981;
+  border-left-color: #10b981;
+}
+
+.actionFeedback.error {
+  color: #ef4444;
+  border-left-color: #ef4444;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1;
+}
+
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.pulse {
+  animation: pulse 0.8s ease-in-out infinite;
+}
+
+.cardDisabled {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.platformBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.platformIconWrapper {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  transition: all 0.3s;
+}
+
+.monitorCard:hover .platformIconWrapper {
+  border-color: var(--brand-primary);
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.05);
+}
+
+.platformIconImg {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.monitorCheckbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 20;
+  opacity: 0;
+}
+
+.selectionCorner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 40px 40px 0 0;
+  border-color: var(--brand-accent) transparent transparent transparent;
+  z-index: 10;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.selectionCorner::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  filter: blur(1px);
+}
+
+.checkIcon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: white;
+  z-index: 15;
+  opacity: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  transform: scale(0.5) rotate(-20deg);
+}
+
+.monitorCard:hover .selectionCorner,
+.monitorCheckbox:checked ~ .selectionCorner {
+  opacity: 1;
+}
+
+.monitorCheckbox:checked ~ .selectionCorner {
+  border-color: var(--accent-color) transparent transparent transparent;
+}
+
+.monitorCard:hover .selectionCorner {
+  border-color: rgba(255, 255, 255, 0.1) transparent transparent transparent;
+}
+
+.monitorCheckbox:checked ~ .checkIcon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.monitorCard:hover .checkIcon {
+  opacity: 0.5;
+  transform: scale(0.8);
+}
+
+.monitorCheckbox:checked ~ .selectionCorner {
+  opacity: 1 !important;
+  border-color: var(--brand-accent) transparent transparent transparent !important;
+}
+
+.platformName {
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusBadge.online {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.statusBadge.offline {
+  background: rgba(107, 114, 128, 0.1);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.statusBadge.online .statusDot {
+  background: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.statusBadge.offline .statusDot {
+  background: #6b7280;
+}
+
+.monitorName {
+  font-size: 1.4rem;
+  font-weight: 850;
+  margin: 0 0 1.25rem 0;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.monitorMeta {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.metaValue {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.metaValue.hasDate {
+  color: white;
+  font-weight: 500;
+}
+
+.metaCode {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: fit-content;
+  transition: all 0.2s;
+}
+
+.monitorCard:hover .metaCode {
+  color: var(--brand-accent);
+  background: rgba(0, 245, 255, 0.05);
+  border-color: rgba(0, 245, 255, 0.1);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.actionBtn {
+  height: 46px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.actionBtn.edit {
+  width: 42px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+.actionBtn.toggle {
+  flex: 1;
+}
+
+.actionBtn.toggle.pause {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.actionBtn.toggle.resume {
+  background: var(--brand-primary);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.actionBtn.delete {
+  padding: 0 16px;
+  background: transparent;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.actionBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.actionBtn.edit:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px) rotate(90deg);
+}
+
+.actionBtn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.monitorCard:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-strong);
+  transform: translateY(-5px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    var(--glow-blue);
+}

@@ -14,7 +14,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { action, guildId, monitorIds, target_channels, target_roles, embed_color, use_native_player } = body;
+  const { action, guildId, monitorIds, target_channels, target_roles, embed_color, custom_image, use_native_player } = body;
   const cleanId = guildId ? String(guildId).replace('-', '') : null;
 
   // 1. Authorization: Master users can do anything. 
@@ -134,6 +134,9 @@ export async function POST(request) {
         if (target_roles) extra.target_roles = target_roles;
         if (embed_color && (isStaff || hasFeature(guildTier, guildId, "custom_color", premiumUntil))) {
            extra.embed_color = embed_color;
+        }
+        if (custom_image && (isStaff || hasFeature(guildTier, guildId, "custom_color", premiumUntil))) {
+          extra.custom_image = custom_image;
         }
         if (use_native_player !== undefined && row?.type === 'youtube' && (isStaff || hasFeature(guildTier, guildId, "basic", premiumUntil))) {
           extra.use_native_player = use_native_player;

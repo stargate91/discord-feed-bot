@@ -23,7 +23,9 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
     use_roles: false,
     use_color: false,
     use_native: false,
-    use_native_player: false
+    use_native_player: false,
+    use_custom_image: false,
+    custom_image: ''
   });
 
   const colorInputRef = useRef(null);
@@ -57,6 +59,7 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
     if (formData.use_roles) updateData.target_roles = formData.target_roles;
     if (formData.use_color) updateData.embed_color = formData.embed_color;
     if (formData.use_native) updateData.use_native_player = formData.use_native_player;
+    if (formData.use_custom_image) updateData.custom_image = formData.custom_image;
 
     if (Object.keys(updateData).length === 0) {
       addToast("Please select at least one field to update.", "info", "No changes");
@@ -174,6 +177,23 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
               </div>
             </div>
 
+            <div className="form-group-bulk" style={{ opacity: isPremium || tier >= 2 ? 1 : 0.5 }}>
+              <div className="bulk-check-label">
+                <input type="checkbox" checked={formData.use_custom_image} onChange={e => setFormData({...formData, use_custom_image: e.target.checked})} />
+                <label>Update Custom Image URL</label>
+              </div>
+              <div style={{ opacity: formData.use_custom_image ? 1 : 0.4, pointerEvents: formData.use_custom_image ? 'auto' : 'none', marginTop: '8px' }}>
+                <input 
+                  type="text"
+                  className="styled-input-main"
+                  placeholder="https://imgur.com/example.png"
+                  value={formData.custom_image}
+                  onChange={(e) => setFormData({...formData, custom_image: e.target.value})}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
+
             <div className="modal-footer">
               <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn-primary" disabled={loading}>
@@ -188,14 +208,14 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 1000; padding: 2rem;
+          display: flex; align-items: flex-start; justify-content: center;
+          z-index: 1000; padding: 2rem; overflow-y: auto;
         }
         .modal-content {
-          width: 100%; max-width: 550px;
+          width: 100%; max-width: 550px; margin-top: 2rem; margin-bottom: 2rem;
           background: #12121a; border: 1px solid rgba(255, 255, 255, 0.08);
           box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
-          position: relative; overflow: hidden;
+          position: relative;
         }
         .modal-content::before {
           content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;

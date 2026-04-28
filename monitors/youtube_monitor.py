@@ -171,6 +171,7 @@ class YouTubeMonitor(BaseMonitor):
             fallback_thumb = entry.media_thumbnail[0]["url"]
             
         thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
+        thumbnail = self.get_image_url(thumbnail)
         
         alert_text = self.get_alert_message({
             "name": author_name,
@@ -268,6 +269,7 @@ class YouTubeMonitor(BaseMonitor):
             fallback_thumb = entry.media_thumbnail[0]["url"]
             
         thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
+        thumbnail = self.get_image_url(thumbnail)
         
         # Format localized alert message
         alert_text = self.get_alert_message({

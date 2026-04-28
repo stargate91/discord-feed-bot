@@ -12,11 +12,6 @@ export default function FloatingHelp() {
   const searchParams = useSearchParams();
   const guildId = searchParams.get("guild");
 
-  // Hide on public premium page (kinti prémium)
-  if (!guildId && pathname === "/premium") {
-    return null;
-  }
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -26,6 +21,11 @@ export default function FloatingHelp() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Hide on public premium page (kinti prémium)
+  if (!guildId && pathname === "/premium") {
+    return null;
+  }
 
   const toggleMenu = (e) => {
     e.stopPropagation();

@@ -67,6 +67,7 @@ class GOGFreeMonitor(BaseMonitor):
         final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
 
         image_url = game.get("image") or game.get("thumbnail")
+        image_url = self.get_image_url(image_url)
         na_text = self.bot.get_feedback("default_na", guild_id=self.guild_id)
         worth = game.get("worth", na_text)
         giveaway_type = game.get("type", "Game")
@@ -148,6 +149,7 @@ class GOGFreeMonitor(BaseMonitor):
             final_url = game.get("gamerpower_url", game_url) if is_steam_link else game_url
 
             image_url = game.get("image") or game.get("thumbnail")
+            image_url = self.get_image_url(image_url)
             worth = game.get("worth", na_text)
             giveaway_type = game.get("type", "Game")
             end_date = game.get("end_date", na_text)

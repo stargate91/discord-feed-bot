@@ -109,6 +109,16 @@ class BaseMonitor(ABC):
             except (ValueError, TypeError):
                 pass
         return default_hex
+        
+    def get_image_url(self, default_url=None):
+        """Get the image URL, prioritizing the custom image if configured."""
+        custom = self.config.get("custom_image")
+        if not custom:
+            extra = self.config.get("extra_settings", {})
+            if isinstance(extra, dict):
+                custom = extra.get("custom_image")
+        
+        return custom if custom else default_url
 
     async def check_for_updates(self):
         """Perform the check for updates. Deprecated in favor of fetch_new_items."""

@@ -160,7 +160,8 @@ class GitHubMonitor(BaseMonitor):
             description=body,
             author=author,
             published_ts=ts,
-            accent_color=self.get_color(0x24292e)
+            accent_color=self.get_color(0x24292e),
+            image_url=self.get_image_url()
         )
         
         return {

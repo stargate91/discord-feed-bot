@@ -473,7 +473,8 @@ def generate_github_layout(
     description: str,
     author: str,
     published_ts: int,
-    accent_color: int
+    accent_color: int,
+    image_url: str = None
 ):
     """
     Centralized generator for GitHub Release feeds using Discord Components V2.
@@ -494,7 +495,13 @@ def generate_github_layout(
             
     container_items.append(discord.ui.TextDisplay("\n".join(formatted_title_lines)))
         
-    # 2. Description (excerpt)
+    # 2. Image (if present)
+    if image_url:
+        container_items.append(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(image_url))
+        )
+        
+    # 3. Description (excerpt)
     if description:
         container_items.append(discord.ui.TextDisplay(description))
         
