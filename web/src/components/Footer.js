@@ -1,33 +1,34 @@
 import React from 'react';
+import styles from '../app/marketing.module.css';
 
 export default function Footer() {
   return (
-    <footer className="lp-footer">
-      <div className="lp-footer-inner">
-        <div className="lp-footer-brand">
-          <img src="/nova_v2.jpg" alt="NovaFeeds" className="lp-footer-logo" />
+    <footer className={styles.lpFooter}>
+      <div className={styles.lpFooterInner}>
+        <div className={styles.lpFooterBrand}>
+          <img src="/nova_v2.jpg" alt="NovaFeeds" className={styles.lpFooterLogo} />
           <div>
-            <div className="lp-footer-name">NovaFeeds</div>
-            <p className="lp-footer-desc">Your friendly neighborhood Discord feed bot.</p>
+            <div className={styles.lpFooterName}>NovaFeeds</div>
+            <p className={styles.lpFooterDesc}>Your friendly neighborhood Discord feed bot.</p>
           </div>
         </div>
-        <div className="lp-footer-col">
+        <div className={styles.lpFooterCol}>
           <h4>Product</h4>
           <a href="/dashboard">Dashboard</a>
           <a href="/premium">Premium</a>
         </div>
-        <div className="lp-footer-col">
+        <div className={styles.lpFooterCol}>
           <h4>Resources</h4>
           <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer">Support Server</a>
           <a href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=3387582172359760&response_type=code&redirect_uri=https%3A%2F%2Fnovafeeds.xyz%2Fapi%2Fauth%2Fcallback%2Fdiscord&integration_type=0&scope=identify+guilds+bot+applications.commands`} target="_blank" rel="noopener noreferrer">Invite Bot</a>
         </div>
-        <div className="lp-footer-col">
+        <div className={styles.lpFooterCol}>
           <h4>Legal</h4>
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
         </div>
       </div>
-      <div className="lp-footer-bottom">
+      <div className={styles.lpFooterBottom}>
         <span>© {new Date().getFullYear()} NovaFeeds. All rights reserved.</span>
       </div>
     </footer>

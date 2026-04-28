@@ -395,6 +395,36 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
             </div>
           )}
 
+          {(monitor.type === 'movie' || monitor.type === 'tv_series') && (
+            <div className="grid-responsive" style={{ position: 'relative', marginTop: '1rem' }}>
+              <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
+                <label>Target Genres</label>
+                <MultiSelect
+                  options={MOVIE_GENRES}
+                  value={formData.target_genres}
+                  onChange={(val) => handleMultiChange('target_genres', val)}
+                  placeholder={isLocked("genre_filter") ? "Unlock Starter Tier" : "Select genres"}
+                  disabled={isLocked("genre_filter")}
+                />
+              </div>
+              <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
+                <label>Languages</label>
+                <MultiSelect
+                  options={LANGUAGES}
+                  value={formData.target_languages}
+                  onChange={(val) => handleMultiChange('target_languages', val)}
+                  placeholder={isLocked("tmdb_language_filter") ? "Unlock Starter Tier" : "Select languages"}
+                  disabled={isLocked("tmdb_language_filter")}
+                />
+              </div>
+              {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
+                <div className="premium-field-overlay">
+                  <span className="lock-tag">Starter Tier+</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {(!['youtube'].includes(monitor.type) || (monitor.type === 'youtube' && !formData.use_native_player)) && (
             <div className="form-group" style={{ position: 'relative', marginTop: '1rem' }}>
               <label>Embed Accent Color</label>
@@ -433,53 +463,6 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           )}
 
 
-          {monitor.type === 'steam_news' && (
-            <div className="checkbox-card">
-              <div className="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  id="steam_patch_only"
-                  name="steam_patch_only"
-                  checked={formData.steam_patch_only}
-                  onChange={handleChange}
-                />
-                <div className="checkbox-text">
-                  <label htmlFor="steam_patch_only">Partial Updates Only</label>
-                  <span>Only notify on Patch Notes and Game Updates (skips general blog posts)</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(monitor.type === 'movie' || monitor.type === 'tv_series') && (
-            <div className="grid-responsive" style={{ position: 'relative' }}>
-              <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
-                <label>Target Genres</label>
-                <MultiSelect
-                  options={MOVIE_GENRES}
-                  value={formData.target_genres}
-                  onChange={(val) => handleMultiChange('target_genres', val)}
-                  placeholder={isLocked("genre_filter") ? "Unlock Starter Tier" : "Select genres"}
-                  disabled={isLocked("genre_filter")}
-                />
-              </div>
-              <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
-                <label>Languages</label>
-                <MultiSelect
-                  options={LANGUAGES}
-                  value={formData.target_languages}
-                  onChange={(val) => handleMultiChange('target_languages', val)}
-                  placeholder={isLocked("tmdb_language_filter") ? "Unlock Starter Tier" : "Select languages"}
-                  disabled={isLocked("tmdb_language_filter")}
-                />
-              </div>
-              {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
-                <div className="premium-field-overlay">
-                  <span className="lock-tag">Starter Tier+</span>
-                </div>
-              )}
-            </div>
-          )}
 
 
           {monitor.type === 'epic_games' && (

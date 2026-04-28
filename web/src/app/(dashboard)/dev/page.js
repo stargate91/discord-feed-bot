@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Trash2, Copy, Check, Zap, X, ShieldAlert, RefreshCcw, Activity, Terminal } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { Trash2, Copy, Check, Zap, X, ShieldAlert, Activity } from 'lucide-react';
+import LoginButton from '@/components/LoginButton';
 import CustomSelect from '@/components/CustomSelect';
 import LogStreamer from '@/components/LogStreamer';
+import devService from '@/services/devService';
+import { DEV_ROTATION_OPTIONS, DEV_ACTIVITY_OPTIONS, DEV_DURATION_OPTIONS, DEV_TIER_OPTIONS } from '@/lib/constants';
+import styles from './dev.module.css';
 
 export default function DevSettings() {
+  const { data: session } = useSession();
+
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [duration, setDuration] = useState('30');
@@ -23,11 +30,15 @@ export default function DevSettings() {
   const [newStatusText, setNewStatusText] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
   const [showPresence, setShowPresence] = useState(false);
+  
+  // Broadcast State
   const [showBroadcast, setShowBroadcast] = useState(false);
-  const [showPremium, setShowPremium] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnounce, setNewAnnounce] = useState({ title: '', content: '', type: 'info' });
   const [announceLoading, setAnnounceLoading] = useState(false);
+  
+  // Maintenance State
+  const [showPremium, setShowPremium] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
   const [resetAllLoading, setResetAllLoading] = useState(false);
   const [resetAllStatus, setResetAllStatus] = useState(null);
@@ -39,105 +50,54 @@ export default function DevSettings() {
   // Custom Modal State
   const [modalConfig, setModalConfig] = useState({ show: false, title: '', message: '', action: null, type: 'danger' });
 
-  // Options Definitions
-  const ROTATION_OPTIONS = [
-    { value: 'random', label: 'Random Rotation' },
-    { value: 'sequential', label: 'Sequential Rotation' }
-  ];
-
-  const ACTIVITY_OPTIONS = [
-    { value: 'playing', label: 'Playing' },
-    { value: 'watching', label: 'Watching' },
-    { value: 'listening', label: 'Listening to' },
-    { value: 'streaming', label: 'Streaming' },
-    { value: 'competing', label: 'Competing in' }
-  ];
-
-  const DURATION_OPTIONS = [
-    { value: '30', label: '1 Month (30 Days)' },
-    { value: '90', label: '3 Months (90 Days)' },
-    { value: '180', label: '6 Months (180 Days)' },
-    { value: '365', label: '1 Year (365 Days)' },
-    { value: '0', label: 'Lifetime (Infinity)' },
-    { value: 'custom', label: 'Custom Days...' }
-  ];
-  
-  const TIER_OPTIONS = [
-    { value: '1', label: 'Scout (Tier 1)' },
-    { value: '2', label: 'Operator (Tier 2)' },
-    { value: '3', label: 'Architect (Tier 3)' }
-  ];
-
-  const fetchKeys = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/premium');
-      const data = await res.json();
-      if (Array.isArray(data)) setKeys(data);
-    } catch (err) { console.error(err); }
+      const [fetchedKeys, fetchedStatuses, botSettings, fetchedAnnouncements] = await Promise.all([
+        devService.getKeys(),
+        devService.getStatuses(),
+        devService.getBotSettings(),
+        devService.getAnnouncements()
+      ]);
+      
+      if (Array.isArray(fetchedKeys)) setKeys(fetchedKeys);
+      if (Array.isArray(fetchedStatuses)) setStatuses(fetchedStatuses);
+      if (botSettings.status_rotation_mode) setRotationMode(botSettings.status_rotation_mode);
+      if (botSettings.presence_interval_seconds) setRotationInterval(botSettings.presence_interval_seconds);
+      if (Array.isArray(fetchedAnnouncements)) setAnnouncements(fetchedAnnouncements);
+    } catch (err) {
+      console.error("Error fetching dev data", err);
+    }
     setLoading(false);
   };
 
-  const fetchStatuses = async () => {
-    try {
-      const res = await fetch('/api/bot/status');
-      const data = await res.json();
-      if (Array.isArray(data)) setStatuses(data);
-    } catch (err) { console.error(err); }
-  };
-
-  const fetchBotSettings = async () => {
-    try {
-      const res = await fetch('/api/bot/settings');
-      const data = await res.json();
-      if (data.status_rotation_mode) setRotationMode(data.status_rotation_mode);
-      if (data.presence_interval_seconds) setRotationInterval(data.presence_interval_seconds);
-    } catch (err) { console.error(err); }
-  };
-
-  const fetchAnnouncements = async () => {
-    try {
-      const res = await fetch('/api/announcements');
-      if (!res.ok) return;
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) return;
-
-      const data = await res.json();
-      if (Array.isArray(data)) setAnnouncements(data);
-    } catch (err) { console.error(err); }
-  };
-
   useEffect(() => {
-    fetchKeys();
-    fetchStatuses();
-    fetchBotSettings();
-    fetchAnnouncements();
+    fetchData();
   }, []);
 
+  // --- Premium Keys ---
   const handleGenerate = async () => {
     setGenerating(true);
     const daysToGenerate = duration === 'custom' ? parseInt(customDays) : parseInt(duration);
     try {
-      const res = await fetch('/api/premium/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: daysToGenerate, uses: parseInt(maxUses), tier: parseInt(tier) })
-      });
-      if (res.ok) fetchKeys();
+      await devService.generateKey(daysToGenerate, parseInt(maxUses), parseInt(tier));
+      const newKeys = await devService.getKeys();
+      setKeys(newKeys);
     } catch (err) { console.error(err); }
     setGenerating(false);
   };
 
   const handleDelete = async (code) => {
     try {
-      const res = await fetch(`/api/premium?code=${code}`, { method: 'DELETE' });
-      if (res.ok) setKeys(keys.filter(k => k.code !== code));
+      await devService.deleteKey(code);
+      setKeys(keys.filter(k => k.code !== code));
     } catch (err) { console.error(err); }
   };
 
   const handleRevoke = async (code) => {
     try {
-      const res = await fetch(`/api/premium?code=${code}`, { method: 'PATCH' });
-      if (res.ok) setKeys(keys.map(k => k.code === code ? { ...k, is_revoked: true } : k));
+      await devService.revokeKey(code);
+      setKeys(keys.map(k => k.code === code ? { ...k, is_revoked: true } : k));
     } catch (err) { console.error(err); }
   };
 
@@ -147,64 +107,55 @@ export default function DevSettings() {
     setTimeout(() => setCopying(null), 2000);
   };
 
+  // --- Bot Status ---
   const handleAddStatus = async () => {
     if (!newStatusText.trim()) return;
     setStatusLoading(true);
     try {
-      const res = await fetch('/api/bot/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: newStatusType, text: newStatusText })
-      });
-      if (res.ok) {
-        setNewStatusText('');
-        fetchStatuses();
-      }
+      await devService.addStatus(newStatusType, newStatusText);
+      setNewStatusText('');
+      const fetchedStatuses = await devService.getStatuses();
+      setStatuses(fetchedStatuses);
     } catch (err) { console.error(err); }
     setStatusLoading(false);
   };
 
   const handleDeleteStatus = async (id) => {
     try {
-      const res = await fetch(`/api/bot/status?id=${id}`, { method: 'DELETE' });
-      if (res.ok) fetchStatuses();
+      await devService.deleteStatus(id);
+      const fetchedStatuses = await devService.getStatuses();
+      setStatuses(fetchedStatuses);
     } catch (err) { console.error(err); }
   };
 
   const handleUpdateBotSetting = async (key, value) => {
     try {
-      await fetch('/api/bot/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, value })
-      });
+      await devService.updateBotSetting(key, value);
     } catch (err) { console.error(err); }
   };
 
+  // --- Announcements ---
   const handleSendAnnouncement = async () => {
     if (!newAnnounce.title || !newAnnounce.content) return;
     setAnnounceLoading(true);
     try {
-      const res = await fetch('/api/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAnnounce)
-      });
-      if (res.ok) {
-        setNewAnnounce({ title: '', content: '', type: 'info' });
-        fetchAnnouncements();
-      }
+      await devService.addAnnouncement(newAnnounce);
+      setNewAnnounce({ title: '', content: '', type: 'info' });
+      const fetchedAnnouncements = await devService.getAnnouncements();
+      setAnnouncements(fetchedAnnouncements);
     } catch (err) { console.error(err); }
     setAnnounceLoading(false);
   };
 
   const handleDeleteAnnouncement = async (id) => {
     try {
-      const res = await fetch(`/api/announcements?id=${id}`, { method: 'DELETE' });
-      if (res.ok) fetchAnnouncements();
+      await devService.deleteAnnouncement(id);
+      const fetchedAnnouncements = await devService.getAnnouncements();
+      setAnnouncements(fetchedAnnouncements);
     } catch (err) { console.error(err); }
   };
 
+  // --- System Administration ---
   const handleResetAllHistory = async () => {
     if (!modalConfig.show && !confirmNuclear) {
       setModalConfig({
@@ -220,20 +171,11 @@ export default function DevSettings() {
     setResetAllLoading(true);
     setResetAllStatus(null);
     try {
-      const res = await fetch('/api/admin/reset-history', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'history' })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setResetAllStatus({ type: 'success', message: 'Nuclear Reset Complete! ALL monitor history cleared.' });
-        setConfirmNuclear(false);
-      } else {
-        setResetAllStatus({ type: 'error', message: data.error || 'Reset failed' });
-      }
+      await devService.resetHistory();
+      setResetAllStatus({ type: 'success', message: 'Nuclear Reset Complete! ALL monitor history cleared.' });
+      setConfirmNuclear(false);
     } catch (err) {
-      setResetAllStatus({ type: 'error', message: 'Connection failed' });
+      setResetAllStatus({ type: 'error', message: err.message || 'Connection failed' });
     }
     setResetAllLoading(false);
   };
@@ -253,53 +195,45 @@ export default function DevSettings() {
     setFactoryLoading(true);
     setFactoryStatus(null);
     try {
-      const res = await fetch('/api/admin/reset-history', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'factory' })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setFactoryStatus({ type: 'success', message: 'FACTORY RESET COMPLETE. SYSTEM WIPED.' });
-        setConfirmFactory(false);
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        setFactoryStatus({ type: 'error', message: data.error || 'Reset failed' });
-      }
+      await devService.factoryReset();
+      setFactoryStatus({ type: 'success', message: 'FACTORY RESET COMPLETE. SYSTEM WIPED.' });
+      setConfirmFactory(false);
+      setTimeout(() => window.location.reload(), 2000);
     } catch (err) {
-      setFactoryStatus({ type: 'error', message: 'Connection failed' });
+      setFactoryStatus({ type: 'error', message: err.message || 'Connection failed' });
     }
     setFactoryLoading(false);
   };
 
   return (
-    <div className="dev-page-wrapper" style={{ maxWidth: '1450px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
+    <div className={styles.devPageWrapper}>
       
       {/* Custom Confirmation Modal */}
       {modalConfig.show && (
-        <div className="modal-overlay">
-          <div className={`modal-content ${modalConfig.type}`}>
-            <div className="modal-header">
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modalContent} ${modalConfig.type === 'extreme' ? styles.extreme : ''}`}>
+            <div className={styles.modalHeader}>
               <ShieldAlert size={24} />
               <h3>{modalConfig.title}</h3>
             </div>
-            <div className="modal-body">
+            <div className={styles.modalBody}>
               <p>{modalConfig.message}</p>
             </div>
-            <div className="modal-footer">
-              <button className="modal-btn cancel" onClick={() => setModalConfig({ ...modalConfig, show: false })}>Cancel</button>
-              <button className="modal-btn confirm" onClick={() => { modalConfig.action(); setModalConfig({ ...modalConfig, show: false }); }}>Confirm Intent</button>
+            <div className={styles.modalFooter}>
+              <button className={`${styles.modalBtn} ${styles.cancel}`} onClick={() => setModalConfig({ ...modalConfig, show: false })}>Cancel</button>
+              <button className={`${styles.modalBtn} ${styles.confirm}`} onClick={() => { modalConfig.action(); setModalConfig({ ...modalConfig, show: false }); }}>Confirm Intent</button>
             </div>
           </div>
         </div>
       )}
 
-      <header className="header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Developer Controls</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Master administrator tools for logs, announcements, and premium management.
-          </p>
+      <header className="page-header">
+        <div className="page-header-info">
+          <h1 className="page-title">Developer Controls</h1>
+          <p className="page-subtitle">Master administrator tools for logs, announcements, and premium management.</p>
+        </div>
+        <div className="page-header-actions">
+          <LoginButton session={session} />
         </div>
       </header>
 
@@ -310,72 +244,47 @@ export default function DevSettings() {
       {/* Broadcast Notifications Section */}
       <div 
         onClick={() => setShowBroadcast(!showBroadcast)} 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          cursor: 'pointer',
-          padding: '1.25rem 1.5rem',
-          background: 'rgba(59, 130, 246, 0.1)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: showBroadcast ? '24px 24px 0 0' : '24px',
-          transition: 'all 0.3s ease',
-          userSelect: 'none',
-          marginBottom: showBroadcast ? '0' : '1rem'
-        }}
+        className={`${styles.accordionHeader} ${styles.broadcast} ${showBroadcast ? styles.accordionHeaderOpen : styles.accordionHeaderClosed}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className={styles.accordionTitleContainer}>
           <Activity size={20} color="#60a5fa" />
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Global Broadcasts</h3>
+          <h3 className={styles.accordionTitle}>Global Broadcasts</h3>
         </div>
-        <span style={{ fontSize: '0.9rem', transform: showBroadcast ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#60a5fa' }}>▼</span>
+        <span className={styles.accordionArrow} style={{ transform: showBroadcast ? 'rotate(180deg)' : 'rotate(0deg)', color: '#60a5fa' }}>▼</span>
       </div>
 
-      <div style={{ 
-        maxHeight: showBroadcast ? '1000px' : '0', 
-        overflow: 'hidden', 
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: showBroadcast ? 1 : 0,
-        background: 'rgba(15, 15, 25, 0.4)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(59, 130, 246, 0.2)',
-        borderTop: 'none',
-        borderRadius: '0 0 24px 24px',
-        padding: showBroadcast ? '2rem' : '0 2rem',
-        marginBottom: showBroadcast ? '1rem' : '0'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem' }}>
+      <div className={`${styles.accordionContent} ${styles.broadcast} ${showBroadcast ? styles.accordionContentOpen : styles.accordionContentClosed}`}>
+        <div className={styles.broadcastGrid}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Message Title</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Message Title</label>
               <input 
                 type="text" 
                 value={newAnnounce.title} 
                 onChange={(e) => setNewAnnounce({ ...newAnnounce, title: e.target.value })}
                 placeholder="e.g. Scheduled Maintenance"
-                className="styled-input-basic"
+                className={styles.styledInputBasic}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Content Markdown</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Content Markdown</label>
               <textarea 
                 value={newAnnounce.content} 
                 onChange={(e) => setNewAnnounce({ ...newAnnounce, content: e.target.value })}
                 placeholder="Details of the announcement..."
-                className="styled-input-basic"
+                className={styles.styledInputBasic}
                 style={{ minHeight: '120px', resize: 'vertical' }}
               />
             </div>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end' }}>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Alert Type</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <label className={styles.formLabel}>Alert Type</label>
+                  <div className={styles.typeBtnGroup}>
                     {['info', 'warning', 'danger'].map(type => (
                       <button 
                         key={type}
                         onClick={() => setNewAnnounce({ ...newAnnounce, type })}
-                        className={`type-btn ${newAnnounce.type === type ? 'active' : ''} ${type}`}
+                        className={`${styles.typeBtn} ${newAnnounce.type === type ? styles[`active${type.charAt(0).toUpperCase() + type.slice(1)}`] : ''}`}
                       >
                         {type.toUpperCase()}
                       </button>
@@ -392,12 +301,12 @@ export default function DevSettings() {
             <h4 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Active Broadcasts</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto' }}>
               {announcements.map(a => (
-                <div key={a.id} className="announce-mini-card">
+                <div key={a.id} className={styles.announceMiniCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <span className={`mini-type ${a.type}`}>{a.type}</span>
-                    <button onClick={() => handleDeleteAnnouncement(a.id)} className="icon-btn-small"><X size={12} /></button>
+                    <span className={`${styles.miniType} ${styles[a.type]}`}>{a.type}</span>
+                    <button onClick={() => handleDeleteAnnouncement(a.id)} className={styles.iconBtnDanger}><X size={12} /></button>
                   </div>
-                  <p className="mini-title">{a.title}</p>
+                  <p className={styles.miniTitle}>{a.title}</p>
                 </div>
               ))}
               {announcements.length === 0 && <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: '2rem' }}>No active broadcasts.</p>}
@@ -409,67 +318,42 @@ export default function DevSettings() {
       {/* Discord Presence Section */}
       <div 
         onClick={() => setShowPresence(!showPresence)} 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          cursor: 'pointer',
-          padding: '1.25rem 1.5rem',
-          background: 'rgba(123, 44, 191, 0.1)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(123, 44, 191, 0.3)',
-          borderRadius: showPresence ? '24px 24px 0 0' : '24px',
-          transition: 'all 0.3s ease',
-          userSelect: 'none',
-          marginBottom: showPresence ? '0' : '1rem'
-        }}
+        className={`${styles.accordionHeader} ${styles.presence} ${showPresence ? styles.accordionHeaderOpen : styles.accordionHeaderClosed}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></div>
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Discord Rich Presence</h3>
+        <div className={styles.accordionTitleContainer}>
+          <div className={styles.presenceIndicator}></div>
+          <h3 className={styles.accordionTitle}>Discord Rich Presence</h3>
         </div>
-        <span style={{ fontSize: '0.9rem', transform: showPresence ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: 'var(--accent-hover)' }}>▼</span>
+        <span className={styles.accordionArrow} style={{ transform: showPresence ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--accent-hover)' }}>▼</span>
       </div>
       
-      <div style={{ 
-        maxHeight: showPresence ? '3000px' : '0', 
-        overflow: 'hidden', 
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: showPresence ? 1 : 0,
-        background: 'rgba(15, 15, 25, 0.4)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(123, 44, 191, 0.2)',
-        borderTop: 'none',
-        borderRadius: '0 0 24px 24px',
-        padding: showPresence ? '2rem' : '0 2rem',
-        marginBottom: showPresence ? '1rem' : '0'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2.5rem' }}>
+      <div className={`${styles.accordionContent} ${styles.presence} ${showPresence ? styles.accordionContentOpen : styles.accordionContentClosed}`}>
+        <div className={styles.presenceGrid}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Global Configuration</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rotation Mode</label>
-              <CustomSelect options={ROTATION_OPTIONS} value={rotationMode} onChange={(val) => { setRotationMode(val); handleUpdateBotSetting('status_rotation_mode', val); }} />
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Rotation Mode</label>
+              <CustomSelect options={DEV_ROTATION_OPTIONS} value={rotationMode} onChange={(val) => { setRotationMode(val); handleUpdateBotSetting('status_rotation_mode', val); }} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rotation Interval</label>
-              <div style={{ position: 'relative' }}>
-                <input type="number" value={rotationInterval} onChange={(e) => setRotationInterval(e.target.value)} onBlur={(e) => handleUpdateBotSetting('presence_interval_seconds', e.target.value)} className="styled-input-basic" style={{ width: '100%', paddingRight: '3rem' }} min="10" />
-                <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>sec</span>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Rotation Interval</label>
+              <div className={styles.inputWithSuffix}>
+                <input type="number" value={rotationInterval} onChange={(e) => setRotationInterval(e.target.value)} onBlur={(e) => handleUpdateBotSetting('presence_interval_seconds', e.target.value)} className={styles.styledInputBasic} style={{ width: '100%', paddingRight: '3rem' }} min="10" />
+                <span className={styles.inputSuffix}>sec</span>
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Add New Pattern</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Activity Type</label>
-              <CustomSelect options={ACTIVITY_OPTIONS} value={newStatusType} onChange={(val) => setNewStatusType(val)} />
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Activity Type</label>
+              <CustomSelect options={DEV_ACTIVITY_OPTIONS} value={newStatusType} onChange={(val) => setNewStatusType(val)} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Text Pattern</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Text Pattern</label>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" value={newStatusText} onChange={(e) => setNewStatusText(e.target.value)} placeholder="e.g. {count} servers" className="styled-input-basic" style={{ flex: 1 }} />
+                <input type="text" value={newStatusText} onChange={(e) => setNewStatusText(e.target.value)} placeholder="e.g. {count} servers" className={styles.styledInputBasic} style={{ flex: 1 }} />
                 <button className="btn" onClick={handleAddStatus} disabled={statusLoading}>{statusLoading ? '...' : 'ADD'}</button>
               </div>
             </div>
@@ -478,12 +362,12 @@ export default function DevSettings() {
 
         <div style={{ marginTop: '2.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
           {statuses.map(s => (
-            <div key={s.id} className="status-mini-card">
+            <div key={s.id} className={styles.statusMiniCard}>
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <span className="mini-type-badge">{s.type}</span>
+                <span className={styles.miniTypeBadge}>{s.type}</span>
                 <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.text}</span>
               </div>
-              <button className="icon-btn-danger" onClick={() => handleDeleteStatus(s.id)}><Trash2 size={16} /></button>
+              <button className={styles.iconBtnDanger} onClick={() => handleDeleteStatus(s.id)}><Trash2 size={16} /></button>
             </div>
           ))}
         </div>
@@ -492,81 +376,56 @@ export default function DevSettings() {
       {/* Premium Key Management Section */}
       <div 
         onClick={() => setShowPremium(!showPremium)} 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          cursor: 'pointer',
-          padding: '1.25rem 1.5rem',
-          background: 'rgba(168, 85, 247, 0.1)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(168, 85, 247, 0.3)',
-          borderRadius: showPremium ? '24px 24px 0 0' : '24px',
-          transition: 'all 0.3s ease',
-          userSelect: 'none',
-          marginBottom: showPremium ? '0' : '1rem'
-        }}
+        className={`${styles.accordionHeader} ${styles.premium} ${showPremium ? styles.accordionHeaderOpen : styles.accordionHeaderClosed}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className={styles.accordionTitleContainer}>
           <Zap size={20} color="#c084fc" />
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Premium Key Management</h3>
+          <h3 className={styles.accordionTitle}>Premium Key Management</h3>
         </div>
-        <span style={{ fontSize: '0.9rem', transform: showPremium ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#c084fc' }}>▼</span>
+        <span className={styles.accordionArrow} style={{ transform: showPremium ? 'rotate(180deg)' : 'rotate(0deg)', color: '#c084fc' }}>▼</span>
       </div>
 
-      <div style={{ 
-        maxHeight: showPremium ? '3000px' : '0', 
-        overflow: 'hidden', 
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: showPremium ? 1 : 0,
-        background: 'rgba(15, 15, 25, 0.4)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(168, 85, 247, 0.2)',
-        borderTop: 'none',
-        borderRadius: '0 0 24px 24px',
-        padding: showPremium ? '2rem' : '0 2rem',
-        marginBottom: showPremium ? '1rem' : '0'
-      }}>
+      <div className={`${styles.accordionContent} ${styles.premium} ${showPremium ? styles.accordionContentOpen : styles.accordionContentClosed}`}>
         <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Generate New Access Keys</h4>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '3rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Duration</label>
-            <CustomSelect options={DURATION_OPTIONS} value={duration} onChange={(val) => setDuration(val)} width="250px" />
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Duration</label>
+            <CustomSelect options={DEV_DURATION_OPTIONS} value={duration} onChange={(val) => setDuration(val)} width="250px" />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tier</label>
-            <CustomSelect options={TIER_OPTIONS} value={tier} onChange={(val) => setTier(val)} width="200px" />
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Tier</label>
+            <CustomSelect options={DEV_TIER_OPTIONS} value={tier} onChange={(val) => setTier(val)} width="200px" />
           </div>
           {duration === 'custom' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Days</label>
-              <input type="number" value={customDays} onChange={(e) => setCustomDays(e.target.value)} className="styled-input-basic" style={{ width: '100px' }} min="1" />
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Days</label>
+              <input type="number" value={customDays} onChange={(e) => setCustomDays(e.target.value)} className={styles.styledInputBasic} style={{ width: '100px' }} min="1" />
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Uses</label>
-            <input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className="styled-input-basic" style={{ width: '100px' }} min="1" />
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Max Uses</label>
+            <input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className={styles.styledInputBasic} style={{ width: '100px' }} min="1" />
           </div>
           <button className="btn" onClick={handleGenerate} disabled={generating}>{generating ? 'Generating...' : 'Generate New Key'}</button>
         </div>
 
         <h4 style={{ color: 'var(--accent-hover)', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Active & Unused Keys</h4>
-        <div className="keys-grid">
+        <div className={styles.keysGrid}>
           {loading ? <div style={{ textAlign: 'center', padding: '2rem', gridColumn: '1/-1' }}>Loading...</div> : keys.map(k => (
-            <div key={k.code} className="key-card">
+            <div key={k.code} className={styles.keyCard}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span className="key-code">{k.code}</span>
+                <span className={styles.keyCode}>{k.code}</span>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className={`tier-badge tier-${k.tier || 3}`}>Tier {k.tier || 3}</span>
+                  <span className={`${styles.tierBadge} ${styles[`tier${k.tier || 3}`]}`}>Tier {k.tier || 3}</span>
                   <span>• {k.duration_days === 0 ? 'Lifetime' : `${k.duration_days}d`}</span>
                   <span>• {k.used_count}/{k.max_uses} uses</span>
                   {k.is_revoked && <span style={{ color: '#ef4444' }}>[REVOKED]</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="icon-btn" onClick={() => copyToClipboard(k.code)}>{copying === k.code ? <Check size={16} /> : <Copy size={16} />}</button>
-                <button className="icon-btn" onClick={() => handleRevoke(k.code)} style={{ color: '#f59e0b' }} disabled={k.is_revoked}><ShieldAlert size={16} /></button>
-                <button className="icon-btn" onClick={() => handleDelete(k.code)} style={{ color: '#ef4444' }}><X size={16} /></button>
+                <button className={styles.iconBtn} onClick={() => copyToClipboard(k.code)}>{copying === k.code ? <Check size={16} /> : <Copy size={16} />}</button>
+                <button className={styles.iconBtn} onClick={() => handleRevoke(k.code)} style={{ color: '#f59e0b' }} disabled={k.is_revoked}><ShieldAlert size={16} /></button>
+                <button className={styles.iconBtn} onClick={() => handleDelete(k.code)} style={{ color: '#ef4444' }}><X size={16} /></button>
               </div>
             </div>
           ))}
@@ -577,43 +436,18 @@ export default function DevSettings() {
       {/* System Maintenance Section */}
       <div 
         onClick={() => setShowMaintenance(!showMaintenance)} 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          cursor: 'pointer',
-          padding: '1.25rem 1.5rem',
-          background: 'rgba(239, 68, 68, 0.1)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: showMaintenance ? '24px 24px 0 0' : '24px',
-          transition: 'all 0.3s ease',
-          userSelect: 'none',
-          marginBottom: showMaintenance ? '0' : '1rem'
-        }}
+        className={`${styles.accordionHeader} ${styles.maintenance} ${showMaintenance ? styles.accordionHeaderOpen : styles.accordionHeaderClosed}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className={styles.accordionTitleContainer}>
           <ShieldAlert size={20} color="#ef4444" />
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>System Maintenance</h3>
+          <h3 className={styles.accordionTitle}>System Maintenance</h3>
         </div>
-        <span style={{ fontSize: '0.9rem', transform: showMaintenance ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', color: '#ef4444' }}>▼</span>
+        <span className={styles.accordionArrow} style={{ transform: showMaintenance ? 'rotate(180deg)' : 'rotate(0deg)', color: '#ef4444' }}>▼</span>
       </div>
 
-      <div style={{ 
-        maxHeight: showMaintenance ? '1000px' : '0', 
-        overflow: 'hidden', 
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        opacity: showMaintenance ? 1 : 0,
-        background: 'rgba(15, 15, 25, 0.4)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(239, 68, 68, 0.2)',
-        borderTop: 'none',
-        borderRadius: '0 0 24px 24px',
-        padding: showMaintenance ? '2rem' : '0 2rem',
-        marginBottom: showMaintenance ? '1rem' : '0'
-      }}>
+      <div className={`${styles.accordionContent} ${styles.maintenance} ${showMaintenance ? styles.accordionContentOpen : styles.accordionContentClosed}`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ padding: '1.5rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '16px', border: '1px dashed rgba(239, 68, 68, 0.2)' }}>
+          <div className={styles.nuclearCard}>
             <h4 style={{ color: '#ef4444', fontSize: '1rem', marginBottom: '0.5rem' }}>Nuclear Options</h4>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
               Warning: This will clear the publication history for <strong>ALL</strong> monitors across <strong>ALL</strong> servers. 
@@ -621,7 +455,7 @@ export default function DevSettings() {
             </p>
             
             <button 
-              className={`btn danger ${confirmNuclear ? 'confirm-active' : ''}`} 
+              className="btn danger" 
               style={{ 
                 padding: '1rem 2rem', 
                 background: confirmNuclear ? '#b91c1c' : '#ef4444',
@@ -647,7 +481,7 @@ export default function DevSettings() {
             )}
           </div>
 
-          <div style={{ padding: '1.5rem', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+          <div className={styles.factoryCard}>
             <h4 style={{ color: '#ef4444', fontSize: '1rem', marginBottom: '0.5rem' }}>Extreme Danger: Factory Reset</h4>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
               This is the ultimate wipe. It will delete <strong>ALL MONITORS</strong>, <strong>ALL SETTINGS</strong>, <strong>ALL PREMIUM KEYS</strong>, and all history. 
@@ -655,7 +489,7 @@ export default function DevSettings() {
             </p>
             
             <button 
-              className={`btn danger ${confirmFactory ? 'confirm-active' : ''}`} 
+              className="btn danger" 
               style={{ 
                 padding: '1rem 2rem', 
                 background: confirmFactory ? '#ef4444' : 'transparent',
@@ -682,106 +516,6 @@ export default function DevSettings() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .styled-input-basic { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.75rem 1rem; border-radius: 12px; outline: none; }
-        .styled-input-basic:focus { border-color: var(--accent-color); }
-        .keys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1rem; }
-        .key-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .key-code { font-family: monospace; font-weight: 700; color: var(--accent-hover); letter-spacing: 1px; }
-        .tier-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; }
-        .tier-1 { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
-        .tier-2 { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-        .tier-3 { background: rgba(168, 85, 247, 0.1); color: #c084fc; }
-        .type-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.4); font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .type-btn.active.info { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: #3b82f6; }
-        .type-btn.active.warning { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: #f59e0b; }
-        .type-btn.active.danger { background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; }
-        .announce-mini-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 14px; }
-        .status-mini-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .mini-type-badge { font-size: 0.6rem; font-weight: 900; color: var(--accent-hover); text-transform: uppercase; margin-bottom: 2px; }
-        .icon-btn-danger { background: transparent; border: none; color: rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
-        .icon-btn-danger:hover { color: #ef4444; }
-        .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .icon-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
-
-        .modal-overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          animation: fadeIn 0.3s ease;
-        }
-
-        .modal-content {
-          background: rgba(20, 20, 30, 0.95);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
-          padding: 2rem;
-          width: 90%;
-          max-width: 450px;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-          animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal-content.extreme {
-          border-color: #ef4444;
-          background: linear-gradient(145deg, rgba(30, 10, 10, 0.95), rgba(20, 20, 30, 0.95));
-          box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);
-        }
-
-        .modal-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 1rem;
-          color: #ef4444;
-        }
-
-        .modal-header h3 { margin: 0; font-size: 1.25rem; }
-
-        .modal-body p {
-          color: rgba(255, 255, 255, 0.7);
-          line-height: 1.6;
-          margin: 0;
-        }
-
-        .modal-footer {
-          display: flex;
-          gap: 12px;
-          margin-top: 2rem;
-        }
-
-        .modal-btn {
-          flex: 1;
-          padding: 0.8rem;
-          border-radius: 12px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: none;
-        }
-
-        .modal-btn.cancel {
-          background: rgba(255, 255, 255, 0.05);
-          color: white;
-        }
-
-        .modal-btn.confirm {
-          background: #ef4444;
-          color: white;
-          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        .modal-btn:hover { transform: translateY(-2px); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      `}</style>
     </div>
   );
 }

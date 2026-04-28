@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import PricingCard from '@/components/PricingCard';
 import { tiers } from '@/lib/premium-data';
+import styles from './Premium.module.css';
+
+import LoginButton from '@/components/LoginButton';
 
 export default function PremiumDashboard({ guildId, session }) {
   const [billingInterval, setBillingInterval] = useState('mo');
@@ -69,24 +72,30 @@ export default function PremiumDashboard({ guildId, session }) {
   };
 
   return (
-    <div className="premium-dashboard-container">
-      <header className="header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <h2>Premium Plans</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+    <div className={styles.premiumDashboardContainer}>
+      <header className="page-header">
+        <div className="page-header-info">
+          <h1 className="page-title">Premium Plans</h1>
+          <p className="page-subtitle">
             Manage your server's premium status and unlock advanced features.
           </p>
         </div>
 
-        <div className="billing-toggle-container">
-          <button onClick={() => setBillingInterval('mo')} className={billingInterval === 'mo' ? 'active' : ''}>Monthly</button>
-          <button onClick={() => setBillingInterval('yr')} className={billingInterval === 'yr' ? 'active' : ''}>
-            Yearly <span className="save-badge">SAVE 20%</span>
-          </button>
+        <div className="page-header-actions">
+          <LoginButton session={session} />
         </div>
       </header>
 
-      <div className="pricing-grid">
+      <div className={styles.billingSwitcherWrapper}>
+        <div className={styles.dashboardBillingToggle}>
+          <button onClick={() => setBillingInterval('mo')} className={billingInterval === 'mo' ? styles.active : ''}>Monthly</button>
+          <button onClick={() => setBillingInterval('yr')} className={billingInterval === 'yr' ? styles.active : ''}>
+            Yearly <span className={styles.saveBadge}>SAVE 20%</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.dashboardPricingGrid}>
         {tiers.map((t) => (
           <PricingCard
             key={t.tier}
@@ -105,62 +114,7 @@ export default function PremiumDashboard({ guildId, session }) {
         ))}
       </div>
 
-      <style jsx>{`
-        .premium-dashboard-container {
-          width: 100%;
-          max-width: 1450px;
-          margin: 0 auto;
-          padding: 2rem 1rem 5rem;
-        }
 
-        .pricing-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1rem;
-          width: 100%;
-        }
-
-        .billing-toggle-container {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          background: rgba(255, 255, 255, 0.03);
-          padding: 5px;
-          border-radius: 14px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .billing-toggle-container button {
-          padding: 8px 20px;
-          border-radius: 10px;
-          border: none;
-          background: transparent;
-          color: #a0a0b0;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.85rem;
-        }
-        .billing-toggle-container button.active {
-          background: rgba(255, 255, 255, 0.08);
-          color: white;
-        }
-        .save-badge {
-          font-size: 0.6rem;
-          background: rgba(123, 44, 191, 0.2);
-          color: #9d4edd;
-          padding: 1px 6px;
-          border-radius: 8px;
-          margin-left: 5px;
-        }
-
-        @media (max-width: 1000px) {
-          .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-          .dashboard-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
-        }
-        @media (max-width: 600px) {
-          .pricing-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </div>
   );
 }

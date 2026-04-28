@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { NextResponse } from "next/server";
 
 import { canManageGuild } from "@/lib/permissions";
+import { isMasterGuild } from "@/lib/config";
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);
@@ -33,7 +34,11 @@ export async function GET(req) {
       if (tier === 0 && premiumUntil && new Date(premiumUntil) > new Date()) tier = 3;
 
       let maxAllowedDays = 3; // Free Tier: 3 days
-      if (isMaster || tier >= 3) maxAllowedDays = 99999; // Unlimited/All-time
+      
+      const configIsMaster = isMasterGuild(guildId);
+      const isMasterUser = session.user?.role === 'master';
+
+      if (isMaster || configIsMaster || isMasterUser || tier >= 3) maxAllowedDays = 99999; // Unlimited/All-time
       else if (tier >= 2) maxAllowedDays = 30; // Professional: 30 days
       else if (tier >= 1) maxAllowedDays = 7;  // Starter: 7 days
 

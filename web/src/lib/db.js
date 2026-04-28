@@ -19,8 +19,10 @@ if (!pool) {
         console.log("[DB] Running web-side migrations...");
         await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true");
         await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS tier INTEGER DEFAULT 0");
+        await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS is_master BOOLEAN DEFAULT false");
         await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP");
-        // Add any other missing columns that the web UI needs
+        await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT");
+        await client.query("ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS custom_branding TEXT");
         await client.query("ALTER TABLE monitors ADD COLUMN IF NOT EXISTS last_post_at TIMESTAMP WITH TIME ZONE");
         console.log("[DB] Web-side migrations completed.");
       } finally {

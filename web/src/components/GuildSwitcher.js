@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
+
+function getGuildIconUrl(guildId, iconHash, size = 64) {
+  if (!iconHash) return null;
+  const ext = iconHash.startsWith('a_') ? 'gif' : 'png';
+  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.${ext}?size=${size}`;
+}
 
 export default function GuildSwitcher({ isMaster }) {
   const [mounted, setMounted] = useState(false);
@@ -57,7 +62,6 @@ export default function GuildSwitcher({ isMaster }) {
           <div className="current-guild-info">
             <span className="guild-name-mini">Loading servers...</span>
           </div>
-          <span className="chevron down">▼</span>
         </button>
       </div>
     );
@@ -83,7 +87,7 @@ export default function GuildSwitcher({ isMaster }) {
             <>
               {currentGuild.icon ? (
                 <img 
-                  src={`https://cdn.discordapp.com/icons/${currentGuild.id}/${currentGuild.icon}.png`} 
+                  src={getGuildIconUrl(currentGuild.id, currentGuild.icon, 128)} 
                   alt="" 
                   className="guild-icon-mini" 
                 />
@@ -103,7 +107,6 @@ export default function GuildSwitcher({ isMaster }) {
             </>
           )}
         </div>
-        <span className={`chevron ${isOpen ? 'up' : 'down'}`}>▼</span>
       </button>
 
       {isOpen && (
@@ -120,7 +123,7 @@ export default function GuildSwitcher({ isMaster }) {
                 >
                   {guild.icon ? (
                     <img 
-                      src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`} 
+                      src={getGuildIconUrl(guild.id, guild.icon, 128)} 
                       alt="" 
                       className="item-icon-img" 
                     />

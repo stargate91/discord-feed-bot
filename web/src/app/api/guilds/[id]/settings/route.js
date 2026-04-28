@@ -6,7 +6,7 @@ import { notifyBotOfChange } from "@/lib/bot-sync";
 import fs from "fs";
 import path from "path";
 import { canManageGuild } from "@/lib/permissions";
-import { getGuildTierLimits, hasFeature } from "@/lib/config";
+import { getGuildTierLimits, hasFeature, isMasterGuild } from "@/lib/config";
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions);
@@ -23,25 +23,11 @@ export async function GET(req, { params }) {
   }
 
   try {
-    // 1. Load Master Guilds from config.json (Sidebar logic)
-    let isMaster = false;
-    try {
-      const configPath = path.resolve(process.cwd(), '../config.json');
-      if (fs.existsSync(configPath)) {
-        const rawData = fs.readFileSync(configPath, 'utf8');
-        const sanitizedData = rawData.replace(/:\s*([0-9]{15,})/g, ': "$1"');
-        const config = JSON.parse(sanitizedData);
-        const masterGuilds = config.master_guilds || {};
-        if (masterGuilds.hasOwnProperty(guildId)) {
-          isMaster = true;
-        }
-      }
-    } catch (cfgErr) {
-      console.error("[Settings API GET] Config check failed:", cfgErr);
-    }
+    // 1. Check Master status using shared logic
+    const isMaster = isMasterGuild(guildId);
 
     const res = await pool.query(
-      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier, stripe_subscription_id, custom_branding FROM guild_settings WHERE guild_id = $1::bigint",
+      "SELECT language, admin_role_id, premium_until, refresh_interval, alert_templates, tier, stripe_subscription_id, custom_branding, is_master FROM guild_settings WHERE guild_id = $1::bigint",
       [guildId]
     );
 
@@ -85,7 +71,7 @@ export async function GET(req, { params }) {
         refresh_interval: row.refresh_interval || 20,
         alert_templates: templates,
         tier: tier,
-        isMaster: isMaster,
+        isMaster: isMaster || !!row.is_master,
         hasStripeSubscription: !!row.stripe_subscription_id,
         custom_branding: row.custom_branding !== null ? row.custom_branding : null
       };
@@ -136,17 +122,8 @@ export async function PATCH(req, { params }) {
     guildTier = 3;
   }
 
-  // Check config.json for Master status as well
-  let isMaster = dbIsMaster;
-  if (!isMaster) {
-    try {
-      const configPath = path.resolve(process.cwd(), '../config.json');
-      if (fs.existsSync(configPath)) {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8').replace(/:\s*([0-9]{15,})/g, ': "$1"'));
-        if (config.master_guilds?.hasOwnProperty(guildId)) isMaster = true;
-      }
-    } catch (e) { }
-  }
+  // Check Master status using shared logic
+  const isMaster = isMasterGuild(guildId) || dbIsMaster;
 
 
   const limits = getGuildTierLimits(guildTier, isMaster);
@@ -160,7 +137,7 @@ export async function PATCH(req, { params }) {
 
   // Validate Alert Templates based on Tier
   const hasTemplates = alert_templates && Object.values(alert_templates).some(t => t && t.trim().length > 0);
-  if (hasTemplates && !hasFeature(guildTier, isMaster, "alert_template")) {
+  if (hasTemplates && !hasFeature(guildTier, guildId, "alert_template")) {
     return NextResponse.json({
       error: "Access Denied: Custom Alert Templates are only available for higher tier servers."
     }, { status: 400 });
@@ -168,7 +145,7 @@ export async function PATCH(req, { params }) {
 
   // Validate Custom Branding based on Tier
   let finalCustomBranding = custom_branding;
-  if (!hasFeature(guildTier, isMaster, "remove_branding")) {
+  if (!hasFeature(guildTier, guildId, "remove_branding")) {
     // If they don't have permission, just ignore the field and keep it null
     finalCustomBranding = null;
   }

@@ -1,0 +1,530 @@
+.monitorsPageWrapper {
+  animation: fadeIn 0.5s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.controlCenter {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.filterTabsWrapper {
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+}
+
+.scrollHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  margin-top: -8px;
+  margin-bottom: 8px;
+  padding-left: 10px;
+  opacity: 0.6;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 0.6; transform: translateY(0); }
+}
+
+.filterTabs {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 10px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filterTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filterTab {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.filterTab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.filterTabActive {
+  background: linear-gradient(135deg, var(--accent-color) 0%, #3c096c 100%);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(123, 44, 191, 0.4);
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  transition: transform 0.3s;
+}
+
+.filterTab:hover .tabIcon {
+  transform: scale(1.2) rotate(-5deg);
+  opacity: 1;
+}
+
+.filterTabActive .tabIcon {
+  opacity: 1;
+}
+
+.countBadge {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bulkActionsToolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bulkBtn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulkBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.bulkBtnDelete:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.bulkBtnToggleActive:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.bulkBtnTogglePaused:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.bulkBtnDeselect {
+  background: rgba(123, 44, 191, 0.15);
+  border-color: rgba(123, 44, 191, 0.4);
+  color: #b085f5;
+}
+.bulkBtnDeselect:hover {
+  background: rgba(123, 44, 191, 0.25);
+  color: white;
+}
+
+.bulkBtnDeleteConfirm {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+.bulkBtn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.searchInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 14px;
+  outline: none;
+  width: 250px; /* Slightly narrower to fit profile button */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.9rem;
+}
+
+.searchInput:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-color);
+  width: 300px;
+  box-shadow: 0 0 20px rgba(123, 44, 191, 0.15);
+}
+
+.monitorsPageWrapper :global(.page-header-actions) {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.btnBulkMagic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #7b2cbf 0%, #3c096c 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 20px rgba(60, 9, 108, 0.3);
+}
+
+.btnBulkMagic:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(60, 9, 108, 0.5), 0 0 20px rgba(123, 44, 191, 0.4);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.btnAdd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+.premiumBadge {
+  background: linear-gradient(90deg, #ffb703, #ff8200);
+  color: black;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(255, 183, 3, 0.3);
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 32px;
+  margin-top: 2rem;
+}
+
+.emptyStateIcon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.radarRing {
+  position: absolute;
+  border: 1px solid var(--accent-color);
+  border-radius: 50%;
+  opacity: 0;
+  animation: radar 4s infinite linear;
+}
+
+.ring1 { width: 40px; height: 40px; animation-delay: 0s; }
+.ring2 { width: 40px; height: 40px; animation-delay: 1.3s; }
+.ring3 { width: 40px; height: 40px; animation-delay: 2.6s; }
+
+@keyframes radar {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+.emptyStateTitle { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; }
+.emptyStateDesc { color: var(--text-secondary); max-width: 400px; line-height: 1.6; margin-bottom: 2rem; font-size: 0.95rem; }
+
+.emptyStateBtn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+  box-shadow: 0 10px 25px rgba(123, 44, 191, 0.3);
+}
+
+.emptyStateBtn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4);
+}
+
+.emptyStateBtnGhost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.emptyStateBtnGhost:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Delete Modal */
+.deleteModalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  animation: overlayIn 0.3s ease-out;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.deleteModalContent {
+  background: #111116;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 24px;
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(239, 68, 68, 0.1);
+  animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.deleteModalIcon {
+  width: 70px;
+  height: 70px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.deleteModalContent h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  color: white;
+}
+
+.deleteModalContent p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.deleteModalContent strong {
+  color: white;
+  font-weight: 700;
+}
+
+.deleteModalActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btnCancel, .btnConfirmDelete {
+  flex: 1;
+  padding: 0.85rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btnCancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btnCancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btnConfirmDelete {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btnConfirmDelete:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+}
+
+.btnCancel:disabled, .btnConfirmDelete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Floating Action Island Styles */
+.floatingActions {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: islandSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes islandSlideUp {
+  from { opacity: 0; transform: translate(-50%, 40px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.floatingActionsInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 15, 20, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  padding: 8px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(123, 44, 191, 0.1);
+}
+
+.floatingBulkBtn, .floatingAddBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 18px;
+  border: none;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.floatingBulkBtn {
+  background: rgba(255, 255, 255, 0.03);
+  color: #b085f5;
+  border: 1px solid rgba(176, 133, 245, 0.1);
+}
+
+.floatingBulkBtn:hover {
+  background: rgba(176, 133, 245, 0.1);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.floatingAddBtn {
+  background: linear-gradient(135deg, var(--accent-color) 0%, #3c096c 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(123, 44, 191, 0.3);
+}
+
+.floatingAddBtn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(123, 44, 191, 0.5), 0 0 15px rgba(123, 44, 191, 0.3);
+}
+
+@media (max-width: 768px) {
+  .floatingActions {
+    bottom: 1.5rem;
+    width: 90%;
+  }
+  .floatingActionsInner {
+    width: 100%;
+    justify-content: center;
+  }
+  .floatingBulkBtn span, .floatingAddBtn span {
+    display: none;
+  }
+  .floatingBulkBtn, .floatingAddBtn {
+    padding: 12px;
+    border-radius: 50%;
+  }
+}

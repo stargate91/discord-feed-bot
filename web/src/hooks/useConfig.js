@@ -41,11 +41,14 @@ export function useConfig() {
 
   const getTierConfig = (tier, isPremium = false) => {
     if (!config) return {};
-    const effectiveTier = (isPremium && tier === 0) ? 3 : tier;
+    const effectiveTier = isPremium ? 3 : tier;
     return config.tier_config?.[String(effectiveTier)] || config.tier_config?.["0"] || {};
   };
 
   const hasFeature = (tier, isPremium, featureName) => {
+    // Aggressive check: if isPremium is true or truthy, bypass all locks
+    if (isPremium === true || isPremium === 1 || isPremium === "true") return true;
+    
     const tierConfig = getTierConfig(tier, isPremium);
     const features = tierConfig.features || [];
     return features.includes(featureName) || featureName === "basic";

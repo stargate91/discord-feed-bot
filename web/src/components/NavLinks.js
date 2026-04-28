@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { LayoutDashboard, Crown, Monitor, BarChart2, Settings, HelpCircle, Code } from "lucide-react";
 
 export default function NavLinks({ session, isMaster }) {
   const [mounted, setMounted] = useState(false);
@@ -32,12 +33,12 @@ export default function NavLinks({ session, isMaster }) {
   if (!mounted) {
     return (
       <ul className="nav-links">
-        <li><div className="nav-link skeleton">Dashboard</div></li>
-        <li><div className="nav-link premium-link skeleton">Premium</div></li>
-        <li><div className="nav-link skeleton">Monitors</div></li>
-        <li><div className="nav-link skeleton">Analytics</div></li>
-        <li><div className="nav-link skeleton">Settings</div></li>
-        <li><div className="nav-link skeleton">FAQ</div></li>
+        <li><div className="nav-link skeleton"><LayoutDashboard size={20} className="nav-icon" /><span className="link-text">Dashboard</span></div></li>
+        <li><div className="nav-link premium-link skeleton"><Crown size={20} className="nav-icon" /><span className="link-text">Premium</span></div></li>
+        <li><div className="nav-link skeleton"><Monitor size={20} className="nav-icon" /><span className="link-text">Monitors</span></div></li>
+        <li><div className="nav-link skeleton"><BarChart2 size={20} className="nav-icon" /><span className="link-text">Analytics</span></div></li>
+        <li><div className="nav-link skeleton"><Settings size={20} className="nav-icon" /><span className="link-text">Settings</span></div></li>
+        <li><div className="nav-link skeleton"><HelpCircle size={20} className="nav-icon" /><span className="link-text">FAQ</span></div></li>
       </ul>
     );
   }
@@ -48,8 +49,10 @@ export default function NavLinks({ session, isMaster }) {
         <Link
           href={getHref("/dashboard")}
           className={`nav-link ${isActive("/dashboard") ? "active" : ""}`}
+          title="Dashboard"
         >
-          Dashboard
+          <LayoutDashboard size={20} className="nav-icon" />
+          <span className="link-text">Dashboard</span>
         </Link>
       </li>
 
@@ -57,8 +60,10 @@ export default function NavLinks({ session, isMaster }) {
         <Link
           href={getHref("/premium")}
           className={`nav-link premium-link ${isActive("/premium") ? "active" : ""}`}
+          title="Premium"
         >
-          <span>Premium</span>
+          <Crown size={20} className="nav-icon" />
+          <span className="link-text">Premium</span>
         </Link>
       </li>
 
@@ -68,32 +73,40 @@ export default function NavLinks({ session, isMaster }) {
             <Link
               href={getHref("/monitors")}
               className={`nav-link ${isActive("/monitors") ? "active" : ""}`}
+              title="Monitors"
             >
-              Monitors
+              <Monitor size={20} className="nav-icon" />
+              <span className="link-text">Monitors</span>
             </Link>
           </li>
           <li>
             <Link
               href={getHref("/analytics")}
               className={`nav-link ${isActive("/analytics") ? "active" : ""}`}
+              title="Analytics"
             >
-              Analytics
+              <BarChart2 size={20} className="nav-icon" />
+              <span className="link-text">Analytics</span>
             </Link>
           </li>
           <li>
             <Link
               href={getHref("/settings")}
               className={`nav-link ${isActive("/settings") ? "active" : ""}`}
+              title="Settings"
             >
-              Settings
+              <Settings size={20} className="nav-icon" />
+              <span className="link-text">Settings</span>
             </Link>
           </li>
           <li>
             <Link
               href={getHref("/faq")}
               className={`nav-link ${isActive("/faq") ? "active" : ""}`}
+              title="FAQ"
             >
-              FAQ
+              <HelpCircle size={20} className="nav-icon" />
+              <span className="link-text">FAQ</span>
             </Link>
           </li>
 
@@ -102,8 +115,10 @@ export default function NavLinks({ session, isMaster }) {
               <Link
                 href={getHref("/dev")}
                 className={`nav-link dev-link ${isActive("/dev") ? "active" : ""}`}
+                title="Dev Settings"
               >
-                Dev Settings
+                <Code size={20} className="nav-icon" />
+                <span className="link-text">Dev Settings</span>
               </Link>
             </li>
           )}
@@ -114,3 +129,4 @@ export default function NavLinks({ session, isMaster }) {
     </ul>
   );
 }
+

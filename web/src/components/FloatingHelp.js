@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import { HelpCircle, Book, MessageCircle, X, ExternalLink, ChevronRight, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function FloatingHelp() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const guildId = searchParams.get("guild");
+
+  // Hide on public premium page (kinti prémium)
+  if (!guildId && pathname === "/premium") {
+    return null;
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {

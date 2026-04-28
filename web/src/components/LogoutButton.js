@@ -1,6 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
 
 export default function LogoutButton() {
   return (
@@ -18,7 +19,8 @@ export default function LogoutButton() {
         opacity: 0.8
       }}
     >
-      Logout
+      <LogOut size={20} className="nav-icon" />
+      <span className="link-text">Logout</span>
       <style jsx>{`
         .logout-btn:hover {
           background: rgba(255, 77, 77, 0.1) !important;

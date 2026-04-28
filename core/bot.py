@@ -334,15 +334,20 @@ class FeedBot(commands.Bot):
 
     def get_guild_refresh_interval(self, guild_id):
         """Returns the configured refresh interval in minutes, validated against tier limits."""
-        min_m, max_m, _, _, _ = self.get_guild_tier_limits(guild_id)
+        min_m, _, _, _, _ = self.get_guild_tier_limits(guild_id)
         settings = self.guild_settings_cache.get(guild_id, {})
         
-        ri = settings.get("refresh_interval")
+        # We use a fixed fallback (e.g. 60 mins) instead of min_m to prevent 
+        # automatic interval changes when a guild upgrades its tier.
+        ri = settings.get("refresh_interval", 20)
+        
         if ri is not None and isinstance(ri, (int, float)):
-            # Clamp value strictly to limits
-            clamped = max(min_m, min(max_m, int(ri)))
+            # Clamp only to the minimum allowed by the tier.
+            # No upper limit is enforced for the interval itself.
+            clamped = max(min_m, int(ri))
             return clamped
-        return min_m
+            
+        return max(min_m, 20)
 
 
 
