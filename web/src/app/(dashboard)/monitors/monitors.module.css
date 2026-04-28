@@ -447,78 +447,88 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-/* Floating Action Island Styles */
+/* Command Pill Styles */
 .floatingActions {
   position: fixed;
   bottom: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  animation: islandSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pillSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes islandSlideUp {
-  from { opacity: 0; transform: translate(-50%, 40px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+@keyframes pillSlideUp {
+  from { opacity: 0; transform: translate(-50%, 60px) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
 .floatingActionsInner {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(15, 15, 20, 0.6);
+  gap: 4px;
+  background: rgba(10, 10, 15, 0.7);
   backdrop-filter: blur(20px) saturate(180%);
-  padding: 8px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(123, 44, 191, 0.1);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 6px;
+  border-radius: 100px;
+  border: 1px solid rgba(123, 44, 191, 0.3);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(123, 44, 191, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floatingActionsInner:hover {
+  border-color: rgba(123, 44, 191, 0.5);
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(123, 44, 191, 0.25);
+  transform: translateY(-5px);
 }
 
 .floatingBulkBtn, .floatingAddBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  border-radius: 18px;
+  gap: 12px;
+  padding: 12px 28px;
+  border-radius: 100px;
   border: none;
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  letter-spacing: 0.5px;
 }
 
 .floatingBulkBtn {
-  background: rgba(255, 255, 255, 0.03);
-  color: #b085f5;
-  border: 1px solid rgba(176, 133, 245, 0.1);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .floatingBulkBtn:hover {
-  background: rgba(176, 133, 245, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: white;
-  transform: translateY(-2px);
 }
 
 .floatingAddBtn {
-  background: linear-gradient(135deg, var(--accent-color) 0%, #3c096c 100%);
+  background: var(--accent-color);
   color: white;
   box-shadow: 0 4px 15px rgba(123, 44, 191, 0.3);
 }
 
 .floatingAddBtn:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 25px rgba(123, 44, 191, 0.5), 0 0 15px rgba(123, 44, 191, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(123, 44, 191, 0.5);
+  filter: brightness(1.1);
 }
 
 @media (max-width: 768px) {
   .floatingActions {
     bottom: 1.5rem;
-    width: 90%;
   }
   .floatingActionsInner {
-    width: 100%;
-    justify-content: center;
+    padding: 5px;
   }
   .floatingBulkBtn span, .floatingAddBtn span {
     display: none;

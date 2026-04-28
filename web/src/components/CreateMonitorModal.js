@@ -4,19 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
 import { X, ChevronRight, ChevronLeft, Info, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/context/ToastContext";
+import ColorPicker from './ColorPicker';
 
 const PLATFORMS = [
   // Content & Streaming
   { id: 'youtube', name: 'YouTube', logo: '/emojis/youtube.png', color: '#FF0000', description: 'Monitor a channel for new videos.', inputLabel: 'Channel Info', inputKey: 'channel_id', placeholder: '@handle, Link or Name', hint: 'Format: @handle, channel link, name or UCID.' },
   { id: 'twitch', name: 'Twitch', logo: '/emojis/twitch.png', color: '#9146FF', description: 'Go live alerts for Twitch streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'twitch_user', hint: 'Format: Username or Channel Link.' },
   { id: 'kick', name: 'Kick', logo: '/emojis/kick.png', color: '#53fc18', description: 'Go live alerts for Kick streamers.', inputLabel: 'Username', inputKey: 'username', placeholder: 'kick_user', hint: 'Format: Username or Channel Link.' },
-  
+
   // Gaming
   { id: 'epic_games', name: 'Epic Free', logo: '/emojis/epic-games.png', color: '#ffffff', description: 'Weekly free games from Epic Store.', isGlobal: true },
   { id: 'steam_free', name: 'Steam Free', logo: '/emojis/steam.png', color: '#66c0f4', description: 'New free games discovered on Steam.', isGlobal: true },
   { id: 'steam_news', name: 'Steam News', logo: '/emojis/steam.png', color: '#66c0f4', description: 'Game updates and news from Steam.', inputLabel: 'Steam Game', inputKey: 'app_id', placeholder: 'Dota 2, 730 or Link', hint: 'Format: Game Name, App ID or Store URL.' },
   { id: 'gog_free', name: 'GOG Free', logo: '/emojis/gog.png', color: '#b237c1', description: 'Limited time free offers on GOG.com.', isGlobal: true },
-  
+
   // Entertainment
   { id: 'movie', name: 'Movies', logo: '/emojis/tmdb.png', color: '#00d1b2', description: 'Trending and new popular movies.', isGlobal: true },
   { id: 'tv_series', name: 'TV Series', logo: '/emojis/tmdb.png', color: '#3273dc', description: 'Daily trending and new TV shows.', isGlobal: true },
@@ -87,7 +88,7 @@ import { useConfig } from '@/hooks/useConfig';
 
 export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess, tier = 0, isPremium = false }) {
   const { hasFeature } = useConfig();
-  
+
   const isLocked = (featureName) => {
     return !hasFeature(tier, isPremium, featureName);
   };
@@ -116,7 +117,6 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
   const [creating, setCreating] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [resolvedChannel, setResolvedChannel] = useState(null);
-  const colorInputRef = useRef(null);
 
   const handleYouTubeResolve = async () => {
     if (!formData.platform_input) return;
@@ -161,8 +161,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
   const handlePlatformSelect = (platform) => {
     setSelectedPlatform(platform);
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       name: platform.name,
       embed_color: '#3d3f45'
     }));
@@ -180,7 +180,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.target_channels || formData.target_channels.length === 0) {
       addToast('You must select at least one target channel.', 'error', 'Missing Channel');
       return;
@@ -250,12 +250,12 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
 
         {step === 1 ? (
           <div className="platform-grid">
-             {PLATFORMS.map(p => (
-              <div 
-                key={p.id} 
-                className="platform-card" 
+            {PLATFORMS.map(p => (
+              <div
+                key={p.id}
+                className="platform-card"
                 onClick={() => handlePlatformSelect(p)}
-                style={{"--platform-color": p.color}}
+                style={{ "--platform-color": p.color }}
               >
                 <div className="p-icon">
                   <img src={p.logo} alt={p.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
@@ -274,124 +274,124 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
         ) : (
           <form onSubmit={handleSubmit} className="modal-form">
             <div className="form-section">
-               <h4 className="section-title">Essential Config</h4>
-               <div className="form-group">
-                 <label>Monitor Name</label>
-                 <input 
-                   type="text" 
-                   value={formData.name} 
-                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                   required 
-                   className="styled-input-main"
-                   placeholder="e.g. My Favorite Streamer"
-                 />
-               </div>
+              <h4 className="section-title">Essential Config</h4>
+              <div className="form-group">
+                <label>Monitor Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="styled-input-main"
+                  placeholder="e.g. My Favorite Streamer"
+                />
+              </div>
 
-               {selectedPlatform.isCrypto ? (
-                 <div className="form-group highlighted-group">
-                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                     <label>Price Alert Targets</label>
-                     <div className="hint-pill"><Info size={12} /> Set coin and threshold</div>
-                   </div>
-                   
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                     {cryptoPairs.map((pair, idx) => (
-                       <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                         <input 
-                           type="text" 
-                           placeholder="BTC" 
-                           value={pair.symbol} 
-                           onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
-                           className="styled-input-main compact-input"
-                           style={{ flex: 1 }}
-                           required
-                         />
-                         <span style={{ opacity: 0.3 }}>:</span>
-                         <input 
-                           type="number" 
-                           placeholder="50000" 
-                           value={pair.threshold} 
-                           onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
-                           className="styled-input-main compact-input"
-                           style={{ flex: 2 }}
-                           required
-                         />
-                         {cryptoPairs.length > 1 && (
-                           <button 
-                             type="button" 
-                             onClick={() => removeCryptoPair(idx)}
-                             className="delete-icon-btn"
-                           >
-                             <Trash2 size={16} />
-                           </button>
-                         )}
-                       </div>
-                     ))}
-                     
-                     <button 
-                       type="button" 
-                       onClick={addCryptoPair}
-                       className="add-pair-btn"
-                     >
-                       <Plus size={14} /> Add Another Coin
-                     </button>
-                   </div>
-                 </div>
-               ) : !selectedPlatform.isGlobal && (
-                 <div className="form-group highlighted-group">
-                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <label>{selectedPlatform.inputLabel}</label>
-                     <div className="hint-pill"><Info size={12} /> {selectedPlatform.hint}</div>
-                   </div>
-                   <div style={{ display: 'flex', gap: '10px' }}>
-                     <input 
-                       type="text" 
-                       value={formData.platform_input} 
-                       onChange={(e) => setFormData({...formData, platform_input: e.target.value})}
-                       required 
-                       className="styled-input-main accent-border"
-                       style={{ flex: 1 }}
-                       placeholder={selectedPlatform.placeholder}
-                     />
-                     {selectedPlatform.id === 'youtube' && (
-                       <button 
-                         type="button" 
-                         onClick={handleYouTubeResolve}
-                         className="resolve-btn"
-                         disabled={resolving || !formData.platform_input}
-                       >
-                         {resolving ? '...' : 'Find'}
-                       </button>
-                     )}
-                   </div>
-                   {selectedPlatform.id === 'youtube' && resolvedChannel && (
-                     <div className="channel-preview">
-                       <img src={resolvedChannel.thumbnail} alt="" />
-                       <div className="channel-info">
-                         <span className="channel-name">{resolvedChannel.title}</span>
-                         <span className="channel-id">{resolvedChannel.id}</span>
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               )}
+              {selectedPlatform.isCrypto ? (
+                <div className="form-group highlighted-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label>Price Alert Targets</label>
+                    <div className="hint-pill"><Info size={12} /> Set coin and threshold</div>
+                  </div>
 
-               {selectedPlatform?.id === 'epic_games' && (
-                 <div className="checkbox-card">
-                   <div className="checkbox-wrapper">
-                     <input 
-                       type="checkbox" 
-                       id="include_upcoming"
-                       checked={formData.include_upcoming} 
-                       onChange={(e) => setFormData({...formData, include_upcoming: e.target.checked})} 
-                     />
-                     <div className="checkbox-text">
-                       <label htmlFor="include_upcoming">Include Upcoming Games</label>
-                       <span>Also notify about the free games coming next week.</span>
-                     </div>
-                   </div>
-                 </div>
-               )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {cryptoPairs.map((pair, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="BTC"
+                          value={pair.symbol}
+                          onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
+                          className="styled-input-main compact-input"
+                          style={{ flex: 1 }}
+                          required
+                        />
+                        <span style={{ opacity: 0.3 }}>:</span>
+                        <input
+                          type="number"
+                          placeholder="50000"
+                          value={pair.threshold}
+                          onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
+                          className="styled-input-main compact-input"
+                          style={{ flex: 2 }}
+                          required
+                        />
+                        {cryptoPairs.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeCryptoPair(idx)}
+                            className="delete-icon-btn"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={addCryptoPair}
+                      className="add-pair-btn"
+                    >
+                      <Plus size={14} /> Add Another Coin
+                    </button>
+                  </div>
+                </div>
+              ) : !selectedPlatform.isGlobal && (
+                <div className="form-group highlighted-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label>{selectedPlatform.inputLabel}</label>
+                    <div className="hint-pill"><Info size={12} /> {selectedPlatform.hint}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={formData.platform_input}
+                      onChange={(e) => setFormData({ ...formData, platform_input: e.target.value })}
+                      required
+                      className="styled-input-main accent-border"
+                      style={{ flex: 1 }}
+                      placeholder={selectedPlatform.placeholder}
+                    />
+                    {selectedPlatform.id === 'youtube' && (
+                      <button
+                        type="button"
+                        onClick={handleYouTubeResolve}
+                        className="resolve-btn"
+                        disabled={resolving || !formData.platform_input}
+                      >
+                        {resolving ? '...' : 'Find'}
+                      </button>
+                    )}
+                  </div>
+                  {selectedPlatform.id === 'youtube' && resolvedChannel && (
+                    <div className="channel-preview">
+                      <img src={resolvedChannel.thumbnail} alt="" />
+                      <div className="channel-info">
+                        <span className="channel-name">{resolvedChannel.title}</span>
+                        <span className="channel-id">{resolvedChannel.id}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedPlatform?.id === 'epic_games' && (
+                <div className="checkbox-card">
+                  <div className="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      id="include_upcoming"
+                      checked={formData.include_upcoming}
+                      onChange={(e) => setFormData({ ...formData, include_upcoming: e.target.checked })}
+                    />
+                    <div className="checkbox-text">
+                      <label htmlFor="include_upcoming">Include Upcoming Games</label>
+                      <span>Also notify about the free games coming next week.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {(selectedPlatform?.id === 'movie' || selectedPlatform?.id === 'tv_series') && (
@@ -400,20 +400,20 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                 <div className="grid-responsive" style={{ position: 'relative' }}>
                   <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
                     <label>Target Genres</label>
-                    <MultiSelect 
+                    <MultiSelect
                       options={MOVIE_GENRES}
                       value={formData.target_genres}
-                      onChange={(val) => setFormData({...formData, target_genres: val})}
+                      onChange={(val) => setFormData({ ...formData, target_genres: val })}
                       placeholder={isLocked("genre_filter") ? "Unlock Starter Tier" : "Select genres"}
                       disabled={isLocked("genre_filter")}
                     />
                   </div>
                   <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
                     <label>Languages</label>
-                    <MultiSelect 
+                    <MultiSelect
                       options={LANGUAGES}
                       value={formData.target_languages}
-                      onChange={(val) => setFormData({...formData, target_languages: val})}
+                      onChange={(val) => setFormData({ ...formData, target_languages: val })}
                       placeholder={isLocked("tmdb_language_filter") ? "Unlock Starter Tier" : "Select languages"}
                       disabled={isLocked("tmdb_language_filter")}
                     />
@@ -428,186 +428,167 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
             )}
 
             <div className="form-section">
-               <h4 className="section-title">Notification Settings</h4>
-               <div className="grid-responsive">
-                 <div className="form-group">
-                   <label>Target Channels</label>
-                   <MultiSelect 
-                     options={guildChannels}
-                     value={formData.target_channels}
-                     onChange={(val) => setFormData({...formData, target_channels: val})}
-                     placeholder={loadingContext ? "Loading..." : "Select channels"}
-                   />
-                 </div>
-                 <div className="form-group">
-                   <label>Ping Roles</label>
-                   <MultiSelect 
-                     options={guildRoles}
-                     value={formData.target_roles}
-                     onChange={(val) => setFormData({...formData, target_roles: val})}
-                     placeholder={loadingContext ? "Loading..." : "Select roles"}
-                   />
-                 </div>
-               </div>
+              <h4 className="section-title">Notification Settings</h4>
+              <div className="grid-responsive">
+                <div className="form-group">
+                  <label>Target Channels</label>
+                  <MultiSelect
+                    options={guildChannels}
+                    value={formData.target_channels}
+                    onChange={(val) => setFormData({ ...formData, target_channels: val })}
+                    placeholder={loadingContext ? "Loading..." : "Select channels"}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Ping Roles</label>
+                  <MultiSelect
+                    options={guildRoles}
+                    value={formData.target_roles}
+                    onChange={(val) => setFormData({ ...formData, target_roles: val })}
+                    placeholder={loadingContext ? "Loading..." : "Select roles"}
+                  />
+                </div>
+              </div>
 
-               <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                   <label>Custom Alert Message</label>
-                   {isLocked(2) ? (
-                     <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
-                       <Info size={12} /> Professional Tier Required
-                     </div>
-                   ) : (
-                     <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-                       <Info size={12} /> Overrides server defaults
-                     </div>
-                   )}
-
-                 </div>
-                 <div style={{ position: 'relative' }}>
-                   <textarea
-                     name="custom_alert"
-                     value={formData.custom_alert}
-                     onChange={(e) => setFormData({...formData, custom_alert: e.target.value})}
-                     className="styled-input-main"
-                     placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
-                     rows={3}
-                     style={{ 
-                       resize: 'vertical', 
-                       fontFamily: 'monospace', 
-                       fontSize: '0.9rem',
-                       width: '100%',
-                       opacity: isLocked("alert_template") ? 0.5 : 1
-                     }}
-                     disabled={isLocked("alert_template")}
-                   />
-                   {isLocked("alert_template") && (
-                     <div className="premium-field-overlay">
-                       <span className="lock-tag">Professional Tier+</span>
-                     </div>
-                   )}
-                 </div>
-
-                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked("alert_template") ? 0.3 : 1 }}>
-                   {getAvailableVars(selectedPlatform?.id).map(v => (
-                     <button
-                       key={v}
-                       type="button"
-                       className="var-btn"
-                       onClick={() => !isLocked("alert_template") && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
-                       title={`Insert {${v}}`}
-                       disabled={isLocked("alert_template")}
-                     >
-                       {`{${v}}`}
-                     </button>
-                   ))}
-                 </div>
-
-               </div>
-
-                {['twitch', 'kick'].includes(selectedPlatform?.id) && (
-                  <div className="form-group alert-toggle-container" style={{ 
-                    marginTop: '1rem', 
-                    background: 'rgba(255,255,255,0.03)', 
-                    padding: '0.75rem 1.25rem', 
-                    borderRadius: '16px', 
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                      <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
-                        Post an update immediately if the source is already live or has new items.
-                      </p>
+              <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label>Custom Alert Message</label>
+                  {isLocked(2) ? (
+                    <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                      <Info size={12} /> Professional Tier Required
                     </div>
+                  ) : (
+                    <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                      <Info size={12} /> Overrides server defaults
+                    </div>
+                  )}
+
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    name="custom_alert"
+                    value={formData.custom_alert}
+                    onChange={(e) => setFormData({ ...formData, custom_alert: e.target.value })}
+                    className="styled-input-main"
+                    placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
+                    rows={3}
+                    style={{
+                      resize: 'vertical',
+                      fontFamily: 'monospace',
+                      fontSize: '0.9rem',
+                      width: '100%',
+                      opacity: isLocked("alert_template") ? 0.5 : 1
+                    }}
+                    disabled={isLocked("alert_template")}
+                  />
+                  {isLocked("alert_template") && (
+                    <div className="premium-field-overlay">
+                      <span className="lock-tag">Professional Tier+</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked("alert_template") ? 0.3 : 1 }}>
+                  {getAvailableVars(selectedPlatform?.id).map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      className="var-btn"
+                      onClick={() => !isLocked("alert_template") && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
+                      title={`Insert {${v}}`}
+                      disabled={isLocked("alert_template")}
+                    >
+                      {`{${v}}`}
+                    </button>
+                  ))}
+                </div>
+
+              </div>
+
+              {['twitch', 'kick'].includes(selectedPlatform?.id) && (
+                <div className="form-group alert-toggle-container" style={{
+                  marginTop: '1rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                      Post an update immediately if the source is already live or has new items.
+                    </p>
+                  </div>
+                  <label className="switch" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.send_initial_alert}
+                      onChange={(e) => setFormData({ ...formData, send_initial_alert: e.target.checked })}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+              )}
+
+              {selectedPlatform?.id === 'youtube' && (
+                <div className="form-group alert-toggle-container" style={{
+                  marginTop: '1rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%',
+                  opacity: isLocked(1) ? 0.5 : 1
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
+                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
+                      Bypass the custom layout and let Discord embed the video directly.
+                    </p>
+                  </div>
+                  {isLocked("custom_color") ? (
+                    <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+                      <Info size={12} /> Starter Tier+
+                    </div>
+                  ) : (
                     <label className="switch" style={{ margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.send_initial_alert} 
-                        onChange={(e) => setFormData({...formData, send_initial_alert: e.target.checked})}
+                      <input
+                        type="checkbox"
+                        checked={formData.use_native_player}
+                        onChange={(e) => setFormData({ ...formData, use_native_player: e.target.checked })}
                       />
                       <span className="slider round"></span>
                     </label>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {selectedPlatform?.id === 'youtube' && (
-                  <div className="form-group alert-toggle-container" style={{ 
-                    marginTop: '1rem', 
-                    background: 'rgba(255,255,255,0.03)', 
-                    padding: '0.75rem 1.25rem', 
-                    borderRadius: '16px', 
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                    opacity: isLocked(1) ? 0.5 : 1
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
-                      <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
-                        Bypass the custom layout and let Discord embed the video directly.
-                      </p>
-                    </div>
-                    {isLocked("custom_color") ? (
-                      <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+              {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !formData.use_native_player)) && (
+                <div className="form-group" style={{ marginTop: '1rem', opacity: isLocked("custom_color") ? 0.5 : 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label>Embed Color</label>
+                    {isLocked("custom_color") && (
+                      <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
                         <Info size={12} /> Starter Tier+
                       </div>
-                    ) : (
-                      <label className="switch" style={{ margin: 0 }}>
-                        <input 
-                          type="checkbox" 
-                          checked={formData.use_native_player} 
-                          onChange={(e) => setFormData({...formData, use_native_player: e.target.checked})}
-                        />
-                        <span className="slider round"></span>
-                      </label>
                     )}
                   </div>
-                )}
-
-               {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !formData.use_native_player)) && (
-                 <div className="form-group" style={{ marginTop: '1rem', opacity: isLocked("custom_color") ? 0.5 : 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label>Embed Color</label>
-                      {isLocked("custom_color") && (
-                        <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
-                          <Info size={12} /> Starter Tier+
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <input 
-                        type="color" 
-                        ref={colorInputRef}
-                        value={formData.embed_color}
-                        onChange={(e) => !isLocked("custom_color") && setFormData({...formData, embed_color: e.target.value})}
-                        style={{ display: 'none' }}
-                        disabled={isLocked("custom_color")}
-                      />
-                      <div 
-                        className="color-trigger"
-                        onClick={() => !isLocked("custom_color") && colorInputRef.current.click()}
-                        style={{ background: formData.embed_color, cursor: isLocked("custom_color") ? 'not-allowed' : 'pointer' }}
-                      ></div>
-                      <input 
-                        type="text" 
-                        value={formData.embed_color} 
-                        onChange={(e) => !isLocked("custom_color") && setFormData({...formData, embed_color: e.target.value})}
-                        placeholder="#3d3f45"
-                        className="styled-input-main"
-                        style={{ flex: 1 }}
-                        disabled={isLocked("custom_color")}
-                      />
-                    </div>
-                 </div>
-               )}
+                  <ColorPicker 
+                    value={formData.embed_color} 
+                    onChange={(color) => !isLocked("custom_color") && setFormData({...formData, embed_color: color})}
+                    disabled={isLocked("custom_color")}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="modal-footer">

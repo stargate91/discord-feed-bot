@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import MultiSelect from './MultiSelect';
 import { X, Plus, Trash2, Info } from 'lucide-react';
+import ColorPicker from './ColorPicker';
 
 // --- STATIC OPTIONS ---
 const MOVIE_GENRES = [
@@ -428,34 +429,13 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           {(!['youtube'].includes(monitor.type) || (monitor.type === 'youtube' && !formData.use_native_player)) && (
             <div className="form-group" style={{ position: 'relative', marginTop: '1rem' }}>
               <label>Embed Accent Color</label>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', opacity: isLocked("custom_color") ? 0.5 : 1 }}>
-                <input
-                  type="color"
-                  ref={colorInputRef}
-                  value={formData.embed_color || '#3d3f45'}
-                  onChange={(e) => !isLocked("custom_color") && handleMultiChange('embed_color', e.target.value)}
-                  style={{ display: 'none' }}
-                  disabled={isLocked("custom_color")}
-                />
-                <div
-                  className="color-trigger"
-                  onClick={() => !isLocked("custom_color") && colorInputRef.current.click()}
-                  style={{ background: formData.embed_color || '#3d3f45', cursor: isLocked("custom_color") ? 'not-allowed' : 'pointer' }}
-                  title={isLocked("custom_color") ? "Requires Starter Tier" : "Open color picker"}
-                ></div>
-                <input
-                  type="text"
-                  name="embed_color"
-                  value={formData.embed_color}
-                  onChange={(e) => !isLocked("custom_color") && handleChange(e)}
-                  placeholder="#3d3f45"
-                  className="styled-input-main"
-                  style={{ flex: 1 }}
-                  disabled={isLocked("custom_color")}
-                />
-              </div>
+              <ColorPicker 
+                value={formData.embed_color || '#3d3f45'} 
+                onChange={(color) => !isLocked("custom_color") && handleMultiChange('embed_color', color)}
+                disabled={isLocked("custom_color")}
+              />
               {isLocked("custom_color") && (
-                <div className="premium-field-overlay-small">
+                <div className="premium-field-overlay-small" style={{ top: '40px' }}>
                   <span className="lock-tag">Starter Tier+</span>
                 </div>
               )}

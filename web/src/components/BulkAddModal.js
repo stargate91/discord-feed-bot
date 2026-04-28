@@ -6,6 +6,7 @@ import { X, Rss, Play, Zap, Check, AlertCircle, ChevronRight, ChevronLeft, Refre
 import CustomSelect from './CustomSelect';
 import MultiSelect from './MultiSelect';
 import { useToast } from '@/context/ToastContext';
+import ColorPicker from './ColorPicker';
 
 const platforms = [
   { id: 'youtube', name: 'YouTube', icon: <img src="/emojis/youtube.png" alt="YT" style={{ width: '24px', height: '24px' }} />, color: '#ff0000', emoji: '/emojis/youtube.png', placeholder: 'https://youtube.com/@handle\n@username\nUCID', hint: 'Links, @handles or UCIDs' },
@@ -218,20 +219,10 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                     {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !useNativePlayer)) && (
                       <div className="form-group">
                         <label>Accent Color</label>
-                        <div className="color-input-wrapper">
-                          <input
-                            type="color"
-                            value={embedColor}
-                            onChange={(e) => setEmbedColor(e.target.value)}
-                            className="color-picker"
-                          />
-                          <input
-                            type="text"
-                            value={embedColor}
-                            onChange={(e) => setEmbedColor(e.target.value)}
-                            className="color-text"
-                          />
-                        </div>
+                        <ColorPicker 
+                          value={embedColor} 
+                          onChange={setEmbedColor}
+                        />
                       </div>
                     )}
                   </div>

@@ -4,6 +4,7 @@ import MultiSelect from './MultiSelect';
 import { X, Save, AlertCircle, Info } from 'lucide-react';
 import { useToast } from "@/context/ToastContext";
 import { useSession } from 'next-auth/react';
+import ColorPicker from './ColorPicker';
 
 export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, guildId, tier = 0, isPremium = false }) {
   const { addToast } = useToast();
@@ -128,26 +129,14 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
                 <input type="checkbox" checked={formData.use_color} onChange={e => setFormData({...formData, use_color: e.target.checked})} />
                 <label>Update Embed Color</label>
               </div>
-              <div style={{ opacity: formData.use_color ? 1 : 0.4, pointerEvents: formData.use_color ? 'auto' : 'none', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input 
-                  type="color" 
-                  ref={colorInputRef}
-                  value={formData.embed_color}
-                  onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
-                  style={{ display: 'none' }}
-                />
-                <div 
-                  className="color-trigger"
-                  onClick={() => colorInputRef.current.click()}
-                  style={{ background: formData.embed_color }}
-                ></div>
-                <input 
-                  type="text" 
+              <div style={{ 
+                opacity: formData.use_color ? 1 : 0.4, 
+                pointerEvents: formData.use_color ? 'auto' : 'none', 
+                marginTop: '8px'
+              }}>
+                <ColorPicker 
                   value={formData.embed_color} 
-                  onChange={(e) => setFormData({...formData, embed_color: e.target.value})}
-                  placeholder="#3d3f45"
-                  className="styled-input-main"
-                  style={{ flex: 1 }}
+                  onChange={(color) => setFormData({...formData, embed_color: color})}
                 />
               </div>
             </div>

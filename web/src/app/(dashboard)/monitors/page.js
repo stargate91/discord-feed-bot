@@ -417,19 +417,21 @@ function MonitorsContent() {
           </div>
         </div>
       )}
-      {/* Floating Action Island */}
-      <div className={styles.floatingActions}>
-        <div className={styles.floatingActionsInner}>
-          <button className={styles.floatingBulkBtn} onClick={() => setIsBulkAddOpen(true)}>
-            <Zap size={18} />
-            <span>Bulk Wizard</span>
-          </button>
-          <button className={styles.floatingAddBtn} onClick={() => setIsCreateModalOpen(true)}>
-            <Plus size={18} />
-            <span>Add Monitor</span>
-          </button>
+      {/* Floating Command Pill - Hidden when any modal is open */}
+      {!(isCreateModalOpen || isBulkAddOpen || isModalOpen || isBulkEditOpen || monitorToDelete || isBulkDeletingMode) && (
+        <div className={styles.floatingActions}>
+          <div className={styles.floatingActionsInner}>
+            <button className={styles.floatingBulkBtn} onClick={() => setIsBulkAddOpen(true)}>
+              <Zap size={18} />
+              <span>Bulk Wizard</span>
+            </button>
+            <button className={styles.floatingAddBtn} onClick={() => setIsCreateModalOpen(true)}>
+              <Plus size={18} />
+              <span>Add Monitor</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

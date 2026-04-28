@@ -42,19 +42,18 @@ export default function DiscordV2Preview() {
                   <img src="/nova_thumbnail.jpg" alt="Video Thumbnail" />
                 </div>
 
-                {/* Info & Button Row - Aligned */}
-                <div className="embed-footer-info">
-                  <div className="info-top-row">
+                {/* Info & Button Row - Perfectly Aligned */}
+                <div className="embed-footer-aligned">
+                  <div className="footer-left">
                     <div className="author-name">Nova Cybernetics</div>
+                    <div className="publish-label">Published:</div>
+                    <div className="publish-date">April 27, 2026 02:10 <span className="relative-time">(just now)</span></div>
+                  </div>
+                  <div className="footer-right">
                     <button className="discord-btn-v2">
                       <span>View on YouTube</span>
                       <ExternalLink size={14} />
                     </button>
-                  </div>
-
-                  <div className="info-bottom-row">
-                    <div className="publish-label">Published:</div>
-                    <div className="publish-date">April 27, 2026 02:10 <span className="relative-time">(just now)</span></div>
                   </div>
                 </div>
 
@@ -243,30 +242,44 @@ export default function DiscordV2Preview() {
 
         .embed-image img { width: 100%; height: auto; display: block; }
 
-        .embed-footer-info {
+        .embed-footer-aligned {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        
+        .footer-left {
           display: flex;
           flex-direction: column;
           gap: 4px;
-          margin-bottom: 16px;
+          flex: 1;
         }
 
-        .info-top-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .author-name { 
+          color: #ffffff; 
+          font-weight: 700; 
+          font-size: 0.95rem; 
+          line-height: 1.2;
+          margin-bottom: 2px;
         }
-
-        .author-name { color: #ffffff; font-weight: 700; font-size: 0.95rem; }
         
-        .info-bottom-row {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
         .publish-label { color: #ffffff; font-weight: 700; font-size: 0.85rem; }
-        .publish-date { color: #dbdee1; font-size: 0.85rem; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; display: inline-block; width: fit-content; }
+        .publish-date { 
+          color: #dbdee1; 
+          font-size: 0.85rem; 
+          background: rgba(255,255,255,0.05); 
+          padding: 4px 8px; 
+          border-radius: 4px; 
+          display: inline-block; 
+          width: fit-content; 
+        }
         .relative-time { color: #949ba4; }
+
+        .footer-right {
+          flex-shrink: 0;
+        }
 
         .discord-btn-v2 {
           background: #2b2d31;
@@ -308,7 +321,7 @@ export default function DiscordV2Preview() {
         .embed-branding span { color: #5865f2; font-weight: 700; font-style: normal; }
 
         @media (max-width: 600px) {
-          .info-top-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+          .embed-footer-aligned { flex-direction: column; align-items: flex-start; gap: 12px; }
           .discord-btn-v2 { width: 100%; justify-content: center; }
         }
       `}</style>
