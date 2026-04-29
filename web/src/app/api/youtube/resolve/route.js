@@ -10,24 +10,28 @@ export async function GET(request) {
     return NextResponse.json({ error: "Input is required" }, { status: 400 });
   }
 
-  // 0. Check Cache First
+  // 0. Check Cache First (Skip if it's a direct link to ensure fix applies)
+  const isDirectLink = input.includes("youtube.com/") || input.includes("youtu.be/") || input.startsWith("@");
+  
   try {
-    const cacheRes = await pool.query(
-      "SELECT channel_id, title, thumbnail, updated_at FROM youtube_cache WHERE query = $1",
-      [input.toLowerCase()]
-    );
+    if (!isDirectLink) {
+      const cacheRes = await pool.query(
+        "SELECT channel_id, title, thumbnail, updated_at FROM youtube_cache WHERE query = $1",
+        [input.toLowerCase()]
+      );
 
-    if (cacheRes.rows.length > 0) {
-      const row = cacheRes.rows[0];
-      const ageInDays = (new Date() - new Date(row.updated_at)) / (1000 * 60 * 60 * 24);
-      
-      if (ageInDays < 7) {
-        return NextResponse.json({
-          id: row.channel_id,
-          title: row.title,
-          thumbnail: row.thumbnail,
-          cached: true
-        });
+      if (cacheRes.rows.length > 0) {
+        const row = cacheRes.rows[0];
+        const ageInDays = (new Date() - new Date(row.updated_at)) / (1000 * 60 * 60 * 24);
+        
+        if (ageInDays < 7) {
+          return NextResponse.json({
+            id: row.channel_id,
+            title: row.title,
+            thumbnail: row.thumbnail,
+            cached: true
+          });
+        }
       }
     }
   } catch (cacheErr) {
@@ -55,14 +59,47 @@ export async function GET(request) {
     }
 
     if (!result) {
-        // 2. Try to resolve handle (@handle) or Search
-        let handle = input;
-        if (input.includes("youtube.com/")) {
-            const match = input.match(/youtube\.com\/(@[a-zA-Z0-9._-]+)/);
-            if (match) handle = match[1];
-        }
+      // 2. Try to extract ID or Handle from URL
+      let channelId = null;
+      let handle = null;
+
+      if (input.includes("youtube.com/") || input.includes("youtu.be/")) {
+        const channelIdMatch = input.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/);
+        const handleMatch = input.match(/youtube\.com\/(@[a-zA-Z0-9._-]+)/);
         
-        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(handle)}&key=${apiKey}&maxResults=1`);
+        if (channelIdMatch) channelId = channelIdMatch[1];
+        else if (handleMatch) handle = handleMatch[1];
+      } else if (input.startsWith("@")) {
+        handle = input;
+      }
+
+      if (channelId) {
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`);
+        const data = await res.json();
+        if (data.items?.length > 0) {
+          result = {
+            id: data.items[0].id,
+            title: data.items[0].snippet.title,
+            thumbnail: data.items[0].snippet.thumbnails.default.url
+          };
+        }
+      } else if (handle) {
+        // Use forHandle for EXACT match (premium fix)
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`);
+        const data = await res.json();
+        if (data.items?.length > 0) {
+          result = {
+            id: data.items[0].id,
+            title: data.items[0].snippet.title,
+            thumbnail: data.items[0].snippet.thumbnails.default.url
+          };
+        }
+      }
+    }
+
+    if (!result) {
+        // 3. Fallback to search only if not a direct link/handle
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(input)}&key=${apiKey}&maxResults=1`);
         const data = await res.json();
         if (data.items?.length > 0) {
             result = {

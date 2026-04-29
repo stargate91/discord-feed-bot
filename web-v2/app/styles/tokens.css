@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════
+   NovaFeeds v2 — Design Token System
+   Single source of truth for all visual properties.
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  /* ── Raw Palette ── */
+  --color-purple-400: #9d4edd;
+  --color-purple-500: #7b2cbf;
+  --color-purple-700: #5a189a;
+  --color-purple-900: #240046;
+
+  --color-pink-500: #ff00ff;
+  --color-cyan-500: #00ffff;
+
+  --color-gray-50:  #f8f8f8;
+  --color-gray-300: #a0a0b0;
+  --color-gray-500: rgba(255, 255, 255, 0.4);
+  --color-gray-800: #11111a;
+  --color-gray-900: #0a0a0f;
+  --color-gray-950: #050508;
+
+  --color-green-500: #10b981;
+  --color-red-500:   #ef4444;
+  --color-amber-400: #ffb703;
+  --color-blue-500:  #3b82f6;
+
+  /* ── Semantic: Accent ── */
+  --accent:       var(--color-purple-500);
+  --accent-hover: var(--color-purple-400);
+  --accent-glow:  rgba(123, 44, 191, 0.4);
+  --accent-pink:  var(--color-pink-500);
+  --accent-cyan:  var(--color-cyan-500);
+
+  /* ── Semantic: Backgrounds ── */
+  --bg-app:       var(--color-gray-900);
+  --bg-panel:     var(--color-gray-800);
+  --bg-card:      rgba(255, 255, 255, 0.03);
+  --bg-elevated:  rgba(255, 255, 255, 0.06);
+  --bg-overlay:   rgba(0, 0, 0, 0.85);
+
+  /* ── Semantic: Text ── */
+  --text-primary:   var(--color-gray-50);
+  --text-secondary: var(--color-gray-300);
+  --text-muted:     var(--color-gray-500);
+
+  /* ── Semantic: Borders ── */
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+
+  /* ── Semantic: Status ── */
+  --success: var(--color-green-500);
+  --warning: var(--color-amber-400);
+  --error:   var(--color-red-500);
+  --info:    var(--color-blue-500);
+
+  /* ── Spacing (4px base) ── */
+  --sp-1:  0.25rem;   /* 4px  */
+  --sp-2:  0.5rem;    /* 8px  */
+  --sp-3:  0.75rem;   /* 12px */
+  --sp-4:  1rem;      /* 16px */
+  --sp-5:  1.25rem;   /* 20px */
+  --sp-6:  1.5rem;    /* 24px */
+  --sp-8:  2rem;      /* 32px */
+  --sp-10: 2.5rem;    /* 40px */
+  --sp-12: 3rem;      /* 48px */
+  --sp-16: 4rem;      /* 64px */
+  --sp-20: 5rem;      /* 80px */
+  --sp-24: 6rem;      /* 96px */
+
+  /* ── Radii ── */
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-sm:   0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md:   0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-lg:   0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+
+  /* ── Typography ── */
+  --font-sans: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif);
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Transitions ── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast:   150ms;
+  --duration-normal: 300ms;
+  --duration-slow:   500ms;
+}
