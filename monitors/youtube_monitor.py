@@ -79,10 +79,10 @@ class YouTubeMonitor(BaseMonitor):
         if api_key:
             try:
                 handle = input_str if input_str.startswith("@") else f"@{input_str}"
-                log.info(f"[YouTubeAPI] Resolving '{handle}' via official API...")
+                log.info(f"[YouTubeAPI] Resolving '{handle}' (Input: {input_str})")
                 
                 async with aiohttp.ClientSession() as session:
-                    # A: Try forHandle first (most accurate for @handles)
+                    # A: Try forHandle first
                     api_url = "https://www.googleapis.com/youtube/v3/channels"
                     params = {
                         "part": "snippet",
@@ -95,15 +95,18 @@ class YouTubeMonitor(BaseMonitor):
                             if data.get("items"):
                                 ucid = data["items"][0]["id"]
                                 title = data["items"][0]["snippet"]["title"]
-                                log.info(f"[YouTubeAPI] Resolved via forHandle: '{handle}' -> '{ucid}' ({title})")
+                                log.info(f"[YouTubeAPI] Match! '{handle}' -> '{ucid}' ({title})")
                                 return (ucid, title)
+                        else:
+                            log.warning(f"[YouTubeAPI] forHandle status {response.status} for {handle}")
 
-                    # B: Fallback to Search API (if forHandle fails or not a direct handle)
-                    log.info(f"[YouTubeAPI] forHandle failed, falling back to Search API for '{handle}'...")
+                    # B: Fallback to Search API (Cleaner query without @ for search)
+                    search_query = input_str.replace("@", "")
+                    log.info(f"[YouTubeAPI] Falling back to Search for: '{search_query}'")
                     search_url = "https://www.googleapis.com/youtube/v3/search"
                     params = {
                         "part": "snippet",
-                        "q": handle,
+                        "q": search_query,
                         "type": "channel",
                         "maxResults": 1,
                         "key": api_key
@@ -114,14 +117,14 @@ class YouTubeMonitor(BaseMonitor):
                             if data.get("items"):
                                 ucid = data["items"][0]["id"]["channelId"]
                                 title = data["items"][0]["snippet"]["title"]
-                                log.info(f"[YouTubeAPI] Resolved via Search: '{handle}' -> '{ucid}' ({title})")
+                                log.info(f"[YouTubeAPI] Search Match! '{search_query}' -> '{ucid}' ({title})")
                                 return (ucid, title)
                         else:
-                            log.warning(f"[YouTubeAPI] API returned status {response.status}")
+                            log.warning(f"[YouTubeAPI] Search API status {response.status}")
             except Exception as e:
-                log.error(f"[YouTubeAPI] Error during resolution: {e}")
-
-        return None
+                log.error(f"[YouTubeAPI] Resolution Error: {e}")
+        else:
+            log.error("[YouTubeAPI] CRITICAL: YOUTUBE_API_KEY is missing in Bot environment!")
 
     def get_shared_key(self):
         return f"youtube:{self.channel_id}"
