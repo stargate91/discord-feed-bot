@@ -75,11 +75,10 @@ class YouTubeMonitor(BaseMonitor):
                 
                 async with aiohttp.ClientSession() as session:
                     # A: Try forHandle first (most accurate for @handles)
-                    handle_clean = handle.replace("@", "")
                     api_url = "https://www.googleapis.com/youtube/v3/channels"
                     params = {
                         "part": "snippet",
-                        "forHandle": handle_clean,
+                        "forHandle": handle,
                         "key": api_key
                     }
                     async with session.get(api_url, params=params, timeout=10) as response:
