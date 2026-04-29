@@ -277,6 +277,27 @@ async def update_monitor_name(monitor_id, new_name):
     await pool.execute(q, new_name, int(monitor_id))
 
 
+async def update_monitor_channel_id(monitor_id, new_channel_id):
+    """Updates the channel_id inside the extra_settings JSON blob for a monitor."""
+    pool = await get_pool()
+    # 1. Fetch current settings
+    res = await pool.fetchrow("SELECT extra_settings FROM monitors WHERE id = $1", int(monitor_id))
+    if not res: return False
+    
+    settings = {}
+    if res[0]:
+        try: settings = json.loads(res[0])
+        except: settings = {}
+    
+    # 2. Update the specific key
+    settings["channel_id"] = new_channel_id
+    
+    # 3. Save back
+    q = "UPDATE monitors SET extra_settings = $1 WHERE id = $2"
+    await pool.execute(q, json.dumps(settings), int(monitor_id))
+    return True
+
+
 async def add_premium_days(guild_id, days):
     """Adds premium days to a guild. If already has premium, it stacks."""
     pool = await get_pool()

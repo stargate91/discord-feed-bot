@@ -38,14 +38,22 @@ class YouTubeMonitor(BaseMonitor):
                 count = sum(1 for m in self.bot.monitor_manager.monitors if m.guild_id == self.guild_id and m.platform == "youtube")
                 title = f"YouTube #{count + 1}"
 
-            # Update the monitor name in DB if it was just a handle/nametag or a generic ID
-            if self.name.startswith("@") or self.name.startswith("UC") or self.name == self.channel_id:
+            # Update the monitor name and channel_id in DB if it was just a handle/nametag or a generic ID
+            should_update_id = not self.channel_id.startswith("UC") or len(self.channel_id) != 24
+            
+            if self.name.startswith("@") or self.name.startswith("UC") or self.name == self.channel_id or should_update_id:
                 try:
-                    await db.update_monitor_name(self.id, title)
-                    self.name = title
-                    log.info(f"Updated monitor name to: {title}")
+                    # 1. Update Display Name if needed
+                    if self.name != title:
+                        await db.update_monitor_name(self.id, title)
+                        self.name = title
+                        log.info(f"Updated monitor name to: {title}")
+                    
+                    # 2. Update actual ID in DB (Crucial Fix)
+                    await db.update_monitor_channel_id(self.id, ucid)
+                    log.info(f"Updated monitor channel_id in DB to: {ucid}")
                 except Exception as e:
-                    log.error(f"Failed to update monitor name in DB: {e}")
+                    log.error(f"Failed to update monitor in DB: {e}")
 
             self.channel_id = ucid
             self.feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={self.channel_id}"
