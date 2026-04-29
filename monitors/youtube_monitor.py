@@ -33,24 +33,19 @@ class YouTubeMonitor(BaseMonitor):
             ucid, title = resolved_data
             log.info(f"Successfully resolved '{self.channel_id}' to '{ucid}' (Title: {title})")
             
-            # If resolution returned the ID itself as the title (e.g. UCID fallback or scrape failure)
-            # we use a numbered fallback: YouTube #1, YouTube #2, etc.
             if title == ucid or not title:
                 count = sum(1 for m in self.bot.monitor_manager.monitors if m.guild_id == self.guild_id and m.platform == "youtube")
                 title = f"YouTube #{count + 1}"
 
-            # Update the monitor name and channel_id in DB if it was just a handle/nametag or a generic ID
             should_update_id = not self.channel_id.startswith("UC") or len(self.channel_id) != 24
             
             if self.name.startswith("@") or self.name.startswith("UC") or self.name == self.channel_id or should_update_id:
                 try:
-                    # 1. Update Display Name if needed
                     if self.name != title:
                         await db.update_monitor_name(self.id, title)
                         self.name = title
                         log.info(f"Updated monitor name to: {title}")
                     
-                    # 2. Update actual ID in DB (Crucial Fix)
                     await db.update_monitor_channel_id(self.id, ucid)
                     log.info(f"Updated monitor channel_id in DB to: {ucid}")
                 except Exception as e:
@@ -76,21 +71,18 @@ class YouTubeMonitor(BaseMonitor):
             
         api_key = os.getenv("YOUTUBE_API_KEY")
         
-        # --- Official YouTube API (Highly Reliable) ---
         if api_key:
             try:
                 handle = input_str if input_str.startswith("@") else f"@{input_str}"
                 log.info(f"[YouTubeAPI] Resolving '{handle}' (Input: {input_str})")
                 
                 async with aiohttp.ClientSession() as session:
-                    # A: Try forHandle first
-                    api_url = "https://www.googleapis.com/youtube/v3/channels"
                     params = {
                         "part": "snippet",
                         "forHandle": handle,
                         "key": api_key
                     }
-                    async with session.get(api_url, params=params, timeout=10) as response:
+                    async with session.get("https://www.googleapis.com/youtube/v3/channels", params=params, timeout=10) as response:
                         if response.status == 200:
                             data = await response.json()
                             if data.get("items"):
@@ -98,13 +90,9 @@ class YouTubeMonitor(BaseMonitor):
                                 title = data["items"][0]["snippet"]["title"]
                                 log.info(f"[YouTubeAPI] Match! '{handle}' -> '{ucid}' ({title})")
                                 return (ucid, title)
-                        else:
-                            log.warning(f"[YouTubeAPI] forHandle status {response.status} for {handle}")
 
-                    # B: Fallback to Search API (Cleaner query without @ for search)
                     search_query = input_str.replace("@", "")
                     log.info(f"[YouTubeAPI] Falling back to Search for: '{search_query}'")
-                    search_url = "https://www.googleapis.com/youtube/v3/search"
                     params = {
                         "part": "snippet",
                         "q": search_query,
@@ -112,7 +100,7 @@ class YouTubeMonitor(BaseMonitor):
                         "maxResults": 1,
                         "key": api_key
                     }
-                    async with session.get(search_url, params=params, timeout=10) as response:
+                    async with session.get("https://www.googleapis.com/youtube/v3/search", params=params, timeout=10) as response:
                         if response.status == 200:
                             data = await response.json()
                             if data.get("items"):
@@ -120,42 +108,79 @@ class YouTubeMonitor(BaseMonitor):
                                 title = data["items"][0]["snippet"]["title"]
                                 log.info(f"[YouTubeAPI] Search Match! '{search_query}' -> '{ucid}' ({title})")
                                 return (ucid, title)
-                        else:
-                            log.warning(f"[YouTubeAPI] Search API status {response.status}")
             except Exception as e:
                 log.error(f"[YouTubeAPI] Resolution Error: {e}")
         else:
             log.error("[YouTubeAPI] CRITICAL: YOUTUBE_API_KEY is missing in Bot environment!")
+        return None
 
     def get_shared_key(self):
         return f"youtube:{self.channel_id}"
 
-    async def fetch_new_items(self):
-        """Fetch YouTube RSS feed and return items. Filtering is handled by the manager."""
+    async def fetch_new_items(self, force_fresh=False):
+        """Fetch YouTube videos. Uses RSS feed with API fallback for reliability."""
         if not await self._ensure_channel_id():
-            log.warning(f"No valid channel ID for YouTube monitor: {self.name}")
             return []
 
         shared_key = self.get_shared_key()
-        feed = self.bot.monitor_manager.get_shared_data(shared_key)
+        items = None if force_fresh else self.bot.monitor_manager.get_shared_data(shared_key)
         
-        if not feed:
+        if items is None:
+            # 1. Try RSS Feed first
             import asyncio
             loop = asyncio.get_event_loop()
             try:
+                log.info(f"[YouTube] Fetching RSS feed for '{self.name}': {self.feed_url}")
                 feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
                 if hasattr(feed, 'entries') and feed.entries:
-                    self.bot.monitor_manager.set_shared_data(shared_key, feed)
+                    items = feed.entries
+                    log.info(f"[YouTube] Successfully fetched {len(items)} items via RSS for '{self.name}'")
             except Exception as e:
-                log.error(f"Failed to fetch YouTube feed for {self.name}: {e}")
-                return []
-        
+                log.warning(f"[YouTube] RSS fetch failed for {self.name}: {e}")
 
-        # Return all entries. MonitorManager will filter via is_published per-guild.
-        return list(reversed(feed.entries))
+            # 2. API Fallback
+            if not items:
+                api_key = os.getenv("YOUTUBE_API_KEY")
+                if api_key:
+                    try:
+                        log.info(f"[YouTube] RSS failed/empty. Falling back to API for '{self.name}'...")
+                        params = {
+                            "part": "snippet",
+                            "channelId": self.channel_id,
+                            "order": "date",
+                            "type": "video",
+                            "maxResults": 20,
+                            "key": api_key
+                        }
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get("https://www.googleapis.com/youtube/v3/search", params=params, timeout=10) as response:
+                                if response.status == 200:
+                                    data = await response.json()
+                                    raw_items = data.get("items", [])
+                                    items = []
+                                    for item in raw_items:
+                                        video_id = item["id"]["videoId"]
+                                        items.append({
+                                            "yt_videoid": video_id,
+                                            "id": f"yt:video:{video_id}",
+                                            "title": item["snippet"]["title"],
+                                            "author": item["snippet"]["channelTitle"],
+                                            "link": f"https://www.youtube.com/watch?v={video_id}",
+                                            "published_parsed": None,
+                                            "media_thumbnail": [{"url": item["snippet"]["thumbnails"]["high"]["url"]}]
+                                        })
+                                    log.info(f"[YouTube] Successfully fetched {len(items)} items via API for '{self.name}'")
+                    except Exception as e:
+                        log.error(f"[YouTube] API fallback error for {self.name}: {e}")
+
+            if items:
+                self.bot.monitor_manager.set_shared_data(shared_key, items)
+            else:
+                return []
+
+        return list(reversed(items))
 
     async def _resolve_thumbnail(self, video_id, fallback_thumbnail):
-        """Try maxresdefault first, fall back to hqdefault/media_thumbnail."""
         maxres_url = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
         try:
             timeout = aiohttp.ClientTimeout(total=5)
@@ -169,43 +194,24 @@ class YouTubeMonitor(BaseMonitor):
 
     async def process_item(self, entry):
         video_id = self.get_item_id(entry)
-        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+        author_name = entry.get("author") or self.name
         short_link = f"https://youtu.be/{video_id}"
-        entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
+        entry_title = entry.get("title", "Unknown Video")
         
-        published_ts = None
-        if hasattr(entry, 'published_parsed') and entry.published_parsed:
-            published_ts = calendar.timegm(entry.published_parsed)
-            
         fallback_thumb = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
             fallback_thumb = entry.media_thumbnail[0]["url"]
             
         thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
-        thumbnail = self.get_image_url(thumbnail)
+        alert_text = self.get_alert_message({"name": author_name, "title": entry_title, "url": short_link})
         
-        alert_text = self.get_alert_message({
-            "name": author_name,
-            "title": entry_title,
-            "url": short_link
-        })
-        
-        use_native = self.config.get("use_native_player", False)
-        
-        if use_native:
-            # Native layout: Send the raw URL unbracketed so Discord creates the player. No layout view.
+        if self.config.get("use_native_player", False):
             await self.send_update(content=f"{alert_text}\n{short_link}", view=None)
         else:
             content, layout = generate_youtube_layout(
-                bot=self.bot,
-                guild_id=self.guild_id,
-                alert_text=alert_text,
-                title=entry_title,
-                url=short_link,
-                image_url=thumbnail,
-                author=author_name,
-                published_ts=published_ts,
-                accent_color=self.get_color(0xff0000)
+                bot=self.bot, guild_id=self.guild_id, alert_text=alert_text,
+                title=entry_title, url=short_link, image_url=thumbnail,
+                author=author_name, accent_color=self.get_color(0xff0000)
             )
             await self.send_update(content=content, view=layout)
 
@@ -217,101 +223,43 @@ class YouTubeMonitor(BaseMonitor):
             video_id = self.get_item_id(entry)
             if video_id:
                 thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
-                if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-                    thumbnail = entry.media_thumbnail[0]["url"]
-                    
                 title = entry.get("title", "Unknown Video")
-                author = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
-                await db.mark_as_published(
-                    video_id, "youtube", self.feed_url, 
-                    guild_id=self.guild_id,
-                    title=title,
-                    thumbnail_url=thumbnail,
-                    author_name=author
-                )
+                author = entry.get("author") or self.name
+                await db.mark_as_published(video_id, "youtube", self.feed_url, guild_id=self.guild_id, title=title, thumbnail_url=thumbnail, author_name=author)
 
     async def get_latest_item(self):
-        """Fetch the most recent YouTube video from the feed."""
         items = await self.get_latest_items(1)
         return items[0] if items else None
 
     async def get_latest_items(self, count=1):
-        """Fetch the N most recent YouTube videos from the feed."""
-        if not await self._ensure_channel_id():
-            return []
-
-        import asyncio
-        loop = asyncio.get_event_loop()
-        try:
-            log.info(f"[YouTube] Fetching RSS feed for '{self.name}': {self.feed_url}")
-            feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
-        except Exception as e:
-            log.error(f"Manual check failed for YouTube {self.name}: {e}")
-            return []
+        """Fetch latest items with API fallback."""
+        items = await self.fetch_new_items(force_fresh=True)
+        if not items: return []
         
-        if not hasattr(feed, 'entries') or not feed.entries:
-            log.warning(f"[YouTube] Feed is empty or invalid for '{self.name}' (URL: {self.feed_url})")
-            return []
-
-        # Get top N entries (newest first)
-        entries = feed.entries[:count]
-        # Reverse for chronological order (Oldest -> Newest)
-        entries.reverse()
-
+        # items are reversed in fetch_new_items, but get_latest_items wants newest first for count
+        reversed_items = list(reversed(items))
+        entries = reversed_items[:count]
+        
         results = []
         for entry in entries:
             results.append(await self._format_entry(entry))
         return results
 
     async def _format_entry(self, entry):
-        """Helper to format a YouTube feed entry into standard output mapping."""
-        # Extract video ID
-        video_id = entry.get("yt_videoid") or entry.get("id", "").split(":")[-1]
-        
-        # Get channel name and format short link
-        author_name = entry.get("author") or entry.get("author_detail", {}).get("name") or self.name
+        video_id = self.get_item_id(entry)
+        author_name = entry.get("author") or self.name
         short_link = f"https://youtu.be/{video_id}"
-        entry_title = entry.get("title", self.bot.get_feedback("monitor_youtube_fallback_title", guild_id=self.guild_id))
-        
-        published_ts = None
-        if hasattr(entry, 'published_parsed') and entry.published_parsed:
-            published_ts = calendar.timegm(entry.published_parsed)
-            
+        entry_title = entry.get("title", "Unknown Video")
         fallback_thumb = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
-        if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
-            fallback_thumb = entry.media_thumbnail[0]["url"]
-            
         thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
-        thumbnail = self.get_image_url(thumbnail)
+        alert_text = self.get_alert_message({"name": author_name, "title": entry_title, "url": short_link})
         
-        # Format localized alert message
-        alert_text = self.get_alert_message({
-            "name": author_name,
-            "title": entry_title,
-            "url": short_link
-        })
-        
-        use_native = self.config.get("use_native_player", False)
-        
-        if use_native:
-            return {
-                "content": f"{alert_text}\n{short_link}",
-                "view": None
-            }
+        if self.config.get("use_native_player", False):
+            return {"content": f"{alert_text}\n{short_link}", "view": None}
         else:
             content, layout = generate_youtube_layout(
-                bot=self.bot,
-                guild_id=self.guild_id,
-                alert_text=alert_text,
-                title=entry_title,
-                url=short_link,
-                image_url=thumbnail,
-                author=author_name,
-                published_ts=published_ts,
-                accent_color=self.get_color(0xff0000)
+                bot=self.bot, guild_id=self.guild_id, alert_text=alert_text,
+                title=entry_title, url=short_link, image_url=thumbnail,
+                author=author_name, accent_color=self.get_color(0xff0000)
             )
-            
-            return {
-                "content": content,
-                "view": layout
-            }
+            return {"content": content, "view": layout}
