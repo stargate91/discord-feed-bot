@@ -109,7 +109,7 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
   };
 
   return (
-    <div 
+    <div
       className={`card monitor-card ${!monitor.enabled ? 'card-disabled' : ''} ${showTools ? 'show-tools' : ''} ${isSelected ? 'card-selected' : ''}`}
       onClick={() => {
         if (selectionMode) {
@@ -122,10 +122,10 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
       <div className="card-header">
         <div className="platform-brand">
           <div className="platform-icon-wrapper">
-            <input 
-              type="checkbox" 
-              className="monitor-checkbox" 
-              checked={isSelected} 
+            <input
+              type="checkbox"
+              className="monitor-checkbox"
+              checked={isSelected}
               onChange={(e) => {
                 e.stopPropagation();
                 onSelect(monitor.id);
@@ -205,22 +205,31 @@ export default function MonitorCard({ monitor, onToggle, onDelete, onEdit, isPre
               <Trash size={16} className={actionLoading === 'purge' ? 'shake' : ''} />
               <span>Purge ({purgeAmount})</span>
             </button>
-            <input
-              type="range" min="5" max="100" step="5"
-              value={purgeAmount}
-              onChange={(e) => setPurgeAmount(parseInt(e.target.value))}
-              className="purge-slider"
-            />
+            {(() => {
+              const values = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
+              const currentIndex = values.indexOf(purgeAmount);
+              return (
+                <input
+                  type="range"
+                  min="0"
+                  max={values.length - 1}
+                  step="1"
+                  value={currentIndex === -1 ? values.indexOf(5) : currentIndex}
+                  onChange={(e) => setPurgeAmount(values[parseInt(e.target.value)])}
+                  className="purge-slider"
+                />
+              );
+            })()}
           </div>
         </div>
         {actionStatus.message && (
           <div className={`action-feedback ${actionStatus.type}`}>
-            {actionStatus.type === 'success' && actionStatus.message.includes('LIVE NOW') ? <Radio size={14} className="pulse" /> : 
-             actionStatus.type === 'success' && actionStatus.message.includes('OFFLINE') ? <Moon size={14} /> :
-             actionStatus.type === 'success' && actionStatus.message.includes('Price Alert') ? <TrendingUp size={14} /> :
-             actionStatus.type === 'success' && actionStatus.message.includes('Found') ? <Sparkles size={14} /> :
-             actionStatus.type === 'success' ? <Check size={14} /> : 
-             <AlertCircle size={14} />}
+            {actionStatus.type === 'success' && actionStatus.message.includes('LIVE NOW') ? <Radio size={14} className="pulse" /> :
+              actionStatus.type === 'success' && actionStatus.message.includes('OFFLINE') ? <Moon size={14} /> :
+                actionStatus.type === 'success' && actionStatus.message.includes('Price Alert') ? <TrendingUp size={14} /> :
+                  actionStatus.type === 'success' && actionStatus.message.includes('Found') ? <Sparkles size={14} /> :
+                    actionStatus.type === 'success' ? <Check size={14} /> :
+                      <AlertCircle size={14} />}
             {actionStatus.message}
           </div>
         )}
