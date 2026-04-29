@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
 
@@ -9,6 +9,11 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -29,6 +34,10 @@ export const metadata = {
   },
 };
 
+export const viewport = {
+  themeColor: "#0a0a0f",
+};
+
 import { ToastProvider } from "@/context/ToastContext";
 import ToastContainer from "@/components/ToastContainer";
 
@@ -36,8 +45,8 @@ import StyledJsxRegistry from "@/lib/registry";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable}`}>
+      <body>
         <StyledJsxRegistry>
           <AuthProvider>
             <ToastProvider>

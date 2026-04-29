@@ -95,6 +95,7 @@
 }
 
 .lpBrandText {
+  font-family: var(--font-display) !important;
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: 2px;
@@ -518,11 +519,12 @@
 }
 
 .lpTitle {
+  font-family: var(--font-display) !important;
   font-size: 3.5rem;
   font-weight: 900;
   line-height: 1.1;
   color: #fff;
-  letter-spacing: -1.5px;
+  letter-spacing: -0.02em;
   margin-bottom: 1.25rem;
 }
 
@@ -766,10 +768,11 @@
 }
 
 .lpSectionTitle {
+  font-family: var(--font-display) !important;
   font-size: 3rem;
   font-weight: 900;
   color: #fff;
-  letter-spacing: -1.5px;
+  letter-spacing: -0.02em;
   line-height: 1.1;
   margin-bottom: 2.5rem;
 }

@@ -12,7 +12,9 @@
 
   --border-color: rgba(255, 255, 255, 0.08);
 
-  --font-main: var(--font-geist-sans), Arial, sans-serif;
+  --font-display: var(--font-outfit), var(--font-geist-sans), sans-serif;
+  --font-body: var(--font-geist-sans), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 
   --sidebar-width: 250px;
 }
@@ -23,10 +25,15 @@
   box-sizing: border-box;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-main);
+  font-family: var(--font-body);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -542,7 +549,8 @@ body::before {
   color: #ffffff !important;
   line-height: 1.2 !important;
   text-transform: uppercase !important;
-  font-family: var(--font-main), sans-serif !important;
+  font-family: var(--font-display) !important;
+  letter-spacing: -0.02em !important;
 }
 
 .brand-status {
@@ -604,9 +612,10 @@ body::before {
 }
 
 .page-title {
+  font-family: var(--font-display) !important;
   font-size: 2.4rem !important;
   font-weight: 900 !important;
-  letter-spacing: -1.5px !important;
+  letter-spacing: -0.03em !important;
   background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.6) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -740,11 +749,12 @@ body::before {
 }
 
 .card-value {
+  font-family: var(--font-display);
   font-size: 3.2rem;
   font-weight: 900;
   color: var(--text-primary);
   margin-bottom: 0.5rem;
-  letter-spacing: -2px;
+  letter-spacing: -0.02em;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
