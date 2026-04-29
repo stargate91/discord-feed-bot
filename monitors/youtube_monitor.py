@@ -20,6 +20,7 @@ class YouTubeMonitor(BaseMonitor):
     async def _ensure_channel_id(self):
         """Helper to ensure we have a valid UCID, resolving handles/names if necessary."""
         if self.channel_id and self.channel_id.startswith("UC") and len(self.channel_id) == 24:
+            log.debug(f"[YouTube] '{self.name}' already has a valid UCID: {self.channel_id}")
             return True
             
         if self.is_resolving: return False
@@ -242,12 +243,14 @@ class YouTubeMonitor(BaseMonitor):
         import asyncio
         loop = asyncio.get_event_loop()
         try:
+            log.info(f"[YouTube] Fetching RSS feed for '{self.name}': {self.feed_url}")
             feed = await loop.run_in_executor(None, lambda: feedparser.parse(self.feed_url))
         except Exception as e:
             log.error(f"Manual check failed for YouTube {self.name}: {e}")
             return []
         
         if not hasattr(feed, 'entries') or not feed.entries:
+            log.warning(f"[YouTube] Feed is empty or invalid for '{self.name}' (URL: {self.feed_url})")
             return []
 
         # Get top N entries (newest first)
