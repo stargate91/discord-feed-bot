@@ -106,10 +106,10 @@ function AnalyticsContent() {
 
   return (
     <div className={styles.analyticsWrapper} onClick={() => setIsDropdownOpen(false)}>
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Analytics Dashboard</h1>
-          <p className="page-subtitle">Track your feed performance, engagement metrics, and delivery statistics.</p>
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Analytics Dashboard</h1>
+          <p className="ui-dashboard-subtitle">Track your feed performance, engagement metrics, and delivery statistics.</p>
         </div>
 
         <div className={styles.tickerWrapper}>
@@ -158,56 +158,57 @@ function AnalyticsContent() {
       </header>
 
       <div className={styles.statsRow}>
-        <div className={styles.statCardPremium}>
+        <div className="ui-stat-card-premium">
            <div className={styles.statIconBg} style={{ '--color': '#7b2cbf' }}>
               <TrendingUp size={24} color="#7b2cbf" />
            </div>
            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Total Messages</span>
-              <div className={styles.statValue}>{data.totalPosts.toLocaleString()}</div>
+              <span className="ui-stat-label">Total Messages</span>
+              <div className="ui-stat-value" style={{ fontSize: '1.8rem' }}>{data.totalPosts.toLocaleString()}</div>
               <span className={styles.statChange}><ArrowUpRight size={14} /> Overall Activity</span>
            </div>
         </div>
 
-        <div className={styles.statCardPremium}>
+        <div className="ui-stat-card-premium">
            <div className={styles.statIconBg} style={{ '--color': '#9d4edd' }}>
               <Monitor size={24} color="#9d4edd" />
            </div>
            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Active Monitors</span>
-              <div className={styles.statValue}>{data.activeMonitors}</div>
+              <span className="ui-stat-label">Active Monitors</span>
+              <div className="ui-stat-value" style={{ fontSize: '1.8rem' }}>{data.activeMonitors}</div>
               <span className={styles.statChange}>Currently Monitoring</span>
            </div>
         </div>
 
-        <div className={styles.statCardPremium}>
+        <div className="ui-stat-card-premium">
            <div className={styles.statIconBg} style={{ '--color': '#5a189a' }}>
               <Layers size={24} color="#5a189a" />
            </div>
            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>Platform Count</span>
-              <div className={styles.statValue}>{data.platformCount}</div>
+              <span className="ui-stat-label">Platform Count</span>
+              <div className="ui-stat-value" style={{ fontSize: '1.8rem' }}>{data.platformCount}</div>
               <span className={styles.statChange}>Across all sources</span>
            </div>
         </div>
 
-        <div className={styles.statCardPremium}>
+        <div className="ui-stat-card-premium">
            <div className={styles.statIconBg} style={{ '--color': '#10b981' }}>
               <Activity size={24} color="#10b981" />
            </div>
            <div className={styles.statInfo}>
-              <span className={styles.statLabel}>System Health</span>
-              <div className={styles.statValue}>Optimal</div>
+              <span className="ui-stat-label">System Health</span>
+              <div className="ui-stat-value" style={{ fontSize: '1.8rem', color: '#10b981' }}>Optimal</div>
               <span className={styles.statChange} style={{ color: '#10b981' }}>All systems operational</span>
            </div>
         </div>
       </div>
 
       <div className={styles.mainChartsGrid}>
-        <div className={styles.chartLargeCard}>
+        <div className="ui-card">
+           <div className="ui-card-glow"></div>
            <div className={styles.chartHeaderInner}>
-              <h3>Message Activity Trend</h3>
-              <p>Daily breakdown of posts sent to your Discord server.</p>
+              <h3 className="ui-monitor-name">Message Activity Trend</h3>
+              <p className="ui-dashboard-subtitle">Daily breakdown of posts sent to your Discord server.</p>
            </div>
            <div className={styles.chartContentInner} style={{ flex: 1 }}>
               <ResponsiveContainer width="100%" height={350}>
@@ -249,10 +250,11 @@ function AnalyticsContent() {
            </div>
         </div>
 
-        <div className={styles.chartSmallCard}>
+        <div className="ui-card">
+           <div className="ui-card-glow"></div>
            <div className={styles.chartHeaderInner}>
-              <h3>Platform Distribution</h3>
-              <p>Message volume per source.</p>
+              <h3 className="ui-monitor-name">Platform Distribution</h3>
+              <p className="ui-dashboard-subtitle">Message volume per source.</p>
            </div>
            <div className={styles.chartContentInner} style={{ flex: 1 }}>
               <div className={styles.pieContainerVertical}>
@@ -289,20 +291,22 @@ function AnalyticsContent() {
            </div>
         </div>
 
-        <div className={styles.chartLargeCard}>
+        <div className="ui-card">
+           <div className="ui-card-glow"></div>
            <div className={styles.chartHeaderInner}>
-              <h3>Global Heatmap</h3>
-              <p>Peak activity hours and days for your feed monitors.</p>
+              <h3 className="ui-monitor-name">Global Heatmap</h3>
+              <p className="ui-dashboard-subtitle">Peak activity hours and days for your feed monitors.</p>
            </div>
            <div className={styles.chartContentInner} style={{ flex: 1 }}>
               <HeatmapChart data={data.heatmap || []} />
            </div>
         </div>
 
-        <div className={styles.chartSmallCard}>
+        <div className="ui-card">
+           <div className="ui-card-glow"></div>
            <div className={styles.chartHeaderInner}>
-              <h3>Source Efficiency</h3>
-              <p>Performance ranking.</p>
+              <h3 className="ui-monitor-name">Source Efficiency</h3>
+              <p className="ui-dashboard-subtitle">Performance ranking.</p>
            </div>
            <div className={styles.chartContentInner} style={{ flex: 1 }}>
               <ResponsiveContainer width="100%" height={220}>

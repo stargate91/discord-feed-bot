@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
+import "./ui.css";
 import AuthProvider from "@/components/SessionProvider";
 
 const geistSans = Geist({
@@ -41,20 +42,16 @@ export const viewport = {
 import { ToastProvider } from "@/context/ToastContext";
 import ToastContainer from "@/components/ToastContainer";
 
-import StyledJsxRegistry from "@/lib/registry";
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable}`}>
       <body>
-        <StyledJsxRegistry>
-          <AuthProvider>
-            <ToastProvider>
-              {children}
-              <ToastContainer />
-            </ToastProvider>
-          </AuthProvider>
-        </StyledJsxRegistry>
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+            <ToastContainer />
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

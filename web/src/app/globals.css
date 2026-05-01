@@ -1422,8 +1422,20 @@ body:has(.is-landing)::before {
 
 /* Universal Dashboard Mobile Fixes */
 @media (max-width: 768px) {
+  .sidebar {
+    display: none !important;
+  }
+
+  .app-container {
+    display: block !important;
+    width: 100% !important;
+  }
+
   .main-content {
+    width: 100% !important;
+    margin-left: 0 !important;
     padding: 1.2rem 1rem !important;
+    min-height: 100vh;
   }
 
   .page-header {

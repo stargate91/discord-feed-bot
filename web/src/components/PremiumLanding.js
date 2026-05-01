@@ -23,18 +23,18 @@ export default function PremiumLanding({ session }) {
   };
 
   return (
-    <div className={styles.premiumLandingRoot}>
+    <div className={`${styles.premiumLandingRoot} ui-full-width-content`}>
       {/* ── Navbar ── */}
       <MarketingNavbar session={session} />
 
       <div className={styles.landingContainer}>
         <header className={styles.marketingHeader}>
-          <div className={styles.sparkleBadge}>
+          <div className="ui-badge-neon">
             <Sparkles size={16} />
             <span>UPGRADE YOUR EXPERIENCE</span>
           </div>
-          <h2>Select your plan</h2>
-          <p>Upgrade your experience with advanced features and higher limits tailored for your community.</p>
+          <h2 className="ui-title-hero" style={{ fontSize: '3.5rem', marginTop: '1.5rem' }}>Select your plan</h2>
+          <p className="ui-text-lead">Upgrade your experience with advanced features and higher limits tailored for your community.</p>
 
           <div className={styles.billingSwitcherWrapper}>
             <div className={styles.dashboardBillingToggle}>
@@ -62,16 +62,6 @@ export default function PremiumLanding({ session }) {
           ))}
         </div>
       </div>
-
-
-
-      <style jsx global>{`
-        /* When rendering PremiumLanding inside the dashboard layout, override the dashboard padding */
-        .main-content {
-          padding: 0 !important;
-          max-width: 100% !important;
-        }
-      `}</style>
     </div>
   );
 }

@@ -205,42 +205,43 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <div className="header-platform-icon">
+    <div className="ui-modal-overlay">
+      <div className="ui-modal-content">
+        <div className="ui-modal-header">
+          <div className="ui-platform-icon-wrapper" style={{ width: '56px', height: '56px' }}>
              <img 
                src={`/emojis/${monitor.type === 'steam_news' ? 'steam' : monitor.type === 'epic_games' ? 'epic-games' : monitor.type === 'tv_series' || monitor.type === 'movie' ? 'tmdb' : monitor.type}.png`} 
                alt="" 
+               style={{ width: '32px', height: '32px', zIndex: 2 }}
              />
-             <div className="platform-glow" style={{ "--p-color": monitor.type === 'twitch' ? '#9146FF' : monitor.type === 'kick' ? '#53fc18' : monitor.type === 'steam_news' ? '#66c0f4' : monitor.type === 'rss' ? '#ee802f' : monitor.type === 'youtube' ? '#FF0000' : monitor.type === 'github' ? '#ffffff' : 'var(--accent-color)' }}></div>
+             <div className="ui-platform-icon-glow" style={{ background: monitor.type === 'twitch' ? '#9146FF' : monitor.type === 'kick' ? '#53fc18' : monitor.type === 'steam_news' ? '#66c0f4' : monitor.type === 'rss' ? '#ee802f' : monitor.type === 'youtube' ? '#FF0000' : monitor.type === 'github' ? '#ffffff' : 'var(--accent-color)', opacity: 0.2 }}></div>
           </div>
-          <div className="header-main-info">
-            <h3>Edit Monitor</h3>
-            <p className="subtitle">{monitor.name} <span className="type-badge">{monitor.type}</span></p>
+          <div style={{ flex: 1, marginLeft: '1.5rem' }}>
+            <h3 className="ui-modal-title">Edit Monitor</h3>
+            <p className="ui-modal-subtitle">{monitor.name} <span style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', color: 'var(--accent-hover)', border: '1px solid rgba(255,255,255,0.1)', marginLeft: '10px' }}>{monitor.type}</span></p>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <button className="ui-modal-close" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label>Monitor Name</label>
+        <form onSubmit={handleSubmit} className="ui-modal-body">
+          <div className="ui-form-group">
+            <label className="ui-form-label">Monitor Name</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              className="styled-input-main"
+              className="ui-input"
               placeholder="Enter a descriptive name"
             />
           </div>
 
           {monitor.type === 'crypto' && (
-            <div className="form-group highlighted-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label>Price Alert Targets</label>
-                <div className="hint-pill"><Info size={12} /> Set coin and threshold</div>
+            <div className="ui-form-group" style={{ background: 'rgba(123, 44, 191, 0.04)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(123, 44, 191, 0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <label className="ui-form-label">Price Alert Targets</label>
+                <div className="ui-hint-pill" style={{ background: 'rgba(50, 150, 255, 0.1)', color: '#3296ff' }}><Info size={12} /> Set coin and threshold</div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -251,7 +252,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                       placeholder="BTC"
                       value={pair.symbol}
                       onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
-                      className="styled-input-main compact-input"
+                      className="ui-input ui-input-mono"
                       style={{ flex: 1 }}
                       required
                     />
@@ -261,7 +262,7 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                       placeholder="50000"
                       value={pair.threshold}
                       onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
-                      className="styled-input-main compact-input"
+                      className="ui-input ui-input-mono"
                       style={{ flex: 2 }}
                       required
                     />
@@ -269,9 +270,10 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                       <button
                         type="button"
                         onClick={() => removeCryptoPair(idx)}
-                        className="delete-icon-btn"
+                        className="ui-delete-btn"
+                        style={{ width: '44px', height: '44px' }}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </button>
                     )}
                   </div>
@@ -280,23 +282,24 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 <button
                   type="button"
                   onClick={addCryptoPair}
-                  className="add-pair-btn"
+                  className="ui-add-btn"
+                  style={{ marginTop: '5px' }}
                 >
-                  <Plus size={14} /> Add Another Coin
+                  <Plus size={16} /> Add Another Coin
                 </button>
               </div>
             </div>
           )}
 
-          <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <label>Custom Alert Message</label>
+          <div className="ui-form-group" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <label className="ui-form-label">Custom Alert Message</label>
               {isLocked("alert_template") ? (
-                <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                <div style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800 }}>
                   <Info size={12} /> Professional Tier Required
                 </div>
               ) : (
-                <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                <div className="ui-hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
                   <Info size={12} /> Overrides server defaults
                 </div>
               )}
@@ -306,31 +309,28 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 name="custom_alert"
                 value={formData.custom_alert}
                 onChange={handleChange}
-                className="styled-input-main"
+                className="ui-input ui-textarea ui-input-mono"
                 placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
                 rows={3}
                 style={{ 
-                  resize: 'vertical', 
-                  fontFamily: 'monospace', 
-                  fontSize: '0.9rem',
-                  width: '100%',
                   opacity: isLocked("alert_template") ? 0.5 : 1
                 }}
                 disabled={isLocked("alert_template")}
               />
               {isLocked("alert_template") && (
-                <div className="premium-field-overlay">
-                  <span className="lock-tag">Professional Tier+</span>
+                <div className="ui-premium-field-overlay">
+                  <span className="ui-lock-tag">Professional Tier+</span>
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '1rem' }}>
               {getAvailableVars(monitor.type).map(v => (
                 <button
                   key={v}
                   type="button"
-                  className="var-btn"
+                  className="ui-btn"
+                  style={{ padding: '4px 12px', fontSize: '0.75rem', fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)' }}
                   onClick={() => setFormData(prev => ({ ...prev, custom_alert: prev.custom_alert + `{${v}}` }))}
                   title={`Insert {${v}}`}
                 >
@@ -340,9 +340,9 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
             </div>
           </div>
 
-          <div className="grid-responsive">
-            <div className="form-group">
-              <label>Target Channels</label>
+          <div className="ui-platform-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginTop: '1.5rem', gap: '1.5rem' }}>
+            <div className="ui-form-group">
+              <label className="ui-form-label">Target Channels</label>
               <MultiSelect
                 options={guildChannels}
                 value={formData.target_channels}
@@ -350,8 +350,8 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 placeholder={loadingData ? "Loading..." : "Select channels"}
               />
             </div>
-            <div className="form-group">
-              <label>Ping Roles</label>
+            <div className="ui-form-group">
+              <label className="ui-form-label">Ping Roles</label>
               <MultiSelect
                 options={guildRoles}
                 value={formData.target_roles}
@@ -362,47 +362,45 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
           </div>
 
           {monitor.type === 'youtube' && (
-            <div className="form-group alert-toggle-container" style={{ 
-              marginTop: '1rem', 
+            <div style={{ 
+              marginTop: '1.5rem', 
               background: 'rgba(255,255,255,0.03)', 
-              padding: '0.75rem 1.25rem', 
-              borderRadius: '16px', 
-              border: '1px solid rgba(255,255,255,0.08)',
+              padding: '1rem 1.5rem', 
+              borderRadius: '20px', 
+              border: '1px solid rgba(255,255,255,0.05)',
               display: 'flex',
-              flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              width: '100%',
               opacity: isLocked("custom_color") ? 0.5 : 1
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
-                <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                <label className="ui-form-label" style={{ color: 'white' }}>Use Native Discord Player</label>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
                   Bypass the custom layout and let Discord embed the video directly.
                 </p>
               </div>
               {isLocked("custom_color") ? (
-                <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+                <div style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
                   <Info size={12} /> Starter Tier+
                 </div>
               ) : (
-                <label className="switch" style={{ margin: 0 }}>
+                <label className="ui-switch">
                   <input 
                     type="checkbox" 
                     name="use_native_player"
                     checked={formData.use_native_player} 
                     onChange={handleChange}
                   />
-                  <span className="slider round"></span>
+                  <span className="ui-switch-slider"></span>
                 </label>
               )}
             </div>
           )}
 
           {(monitor.type === 'movie' || monitor.type === 'tv_series') && (
-            <div className="grid-responsive" style={{ position: 'relative', marginTop: '1rem' }}>
-              <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
-                <label>Target Genres</label>
+            <div className="ui-platform-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem', position: 'relative', marginTop: '1.5rem' }}>
+              <div className="ui-form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
+                <label className="ui-form-label">Target Genres</label>
                 <MultiSelect
                   options={MOVIE_GENRES}
                   value={formData.target_genres}
@@ -411,8 +409,8 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                   disabled={isLocked("genre_filter")}
                 />
               </div>
-              <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
-                <label>Languages</label>
+              <div className="ui-form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
+                <label className="ui-form-label">Languages</label>
                 <MultiSelect
                   options={LANGUAGES}
                   value={formData.target_languages}
@@ -422,38 +420,38 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 />
               </div>
               {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
-                <div className="premium-field-overlay">
-                  <span className="lock-tag">Starter Tier+</span>
+                <div className="ui-premium-field-overlay">
+                  <span className="ui-lock-tag">Starter Tier+</span>
                 </div>
               )}
             </div>
           )}
 
           {(!['youtube'].includes(monitor.type) || (monitor.type === 'youtube' && !formData.use_native_player)) && (
-            <div className="form-group" style={{ position: 'relative', marginTop: '1rem' }}>
-              <label>Embed Accent Color</label>
+            <div className="ui-form-group" style={{ position: 'relative', marginTop: '1.5rem' }}>
+              <label className="ui-form-label">Embed Accent Color</label>
               <ColorPicker 
                 value={formData.embed_color || '#3d3f45'} 
                 onChange={(color) => !isLocked("custom_color") && handleMultiChange('embed_color', color)}
                 disabled={isLocked("custom_color")}
               />
               {isLocked("custom_color") && (
-                <div className="premium-field-overlay-small" style={{ top: '40px' }}>
-                  <span className="lock-tag">Starter Tier+</span>
+                <div className="ui-premium-field-overlay" style={{ height: '52px', marginTop: '32px' }}>
+                  <span className="ui-lock-tag">Starter Tier+</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <label>Custom Image URL</label>
+          <div className="ui-form-group" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <label className="ui-form-label">Custom Image URL</label>
               {isLocked("custom_color") ? (
-                <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+                <div style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800 }}>
                   <Info size={12} /> Starter Tier Required
                 </div>
               ) : (
-                <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                <div className="ui-hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
                   <Info size={12} /> Imgur, Discord, etc.
                 </div>
               )}
@@ -464,22 +462,21 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
                 name="custom_image"
                 value={formData.custom_image}
                 onChange={handleChange}
-                className="styled-input-main"
+                className="ui-input"
                 placeholder={isLocked("custom_color") ? "Unlock Starter Tier to use custom images" : "https://imgur.com/example.png"}
                 style={{ 
-                  width: '100%',
                   opacity: isLocked("custom_color") ? 0.5 : 1
                 }}
                 disabled={isLocked("custom_color")}
               />
               {isLocked("custom_color") && (
-                <div className="premium-field-overlay">
-                  <span className="lock-tag">Starter Tier+</span>
+                <div className="ui-premium-field-overlay">
+                  <span className="ui-lock-tag">Starter Tier+</span>
                 </div>
               )}
             </div>
             {!isLocked("custom_color") && formData.custom_image && (
-               <div style={{ marginTop: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', height: '100px', width: 'fit-content' }}>
+               <div style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', height: '100px', width: 'fit-content', boxShadow: '0 5px 15px rgba(0,0,0,0.3)' }}>
                  <img src={formData.custom_image} alt="Preview" style={{ height: '100%', objectFit: 'contain' }} onError={(e) => e.target.style.display = 'none'} />
                </div>
             )}
@@ -489,229 +486,35 @@ export default function EditMonitorModal({ monitor, guildId, isOpen, onClose, on
 
 
           {monitor.type === 'epic_games' && (
-            <div className="checkbox-card">
-              <div className="checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  id="include_upcoming"
-                  name="include_upcoming"
-                  checked={formData.include_upcoming}
-                  onChange={handleChange}
-                />
-                <div className="checkbox-text">
-                  <label htmlFor="include_upcoming">Include Upcoming Games</label>
-                  <span>Also notify about the free games coming next week.</span>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.2rem', borderRadius: '20px', marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <label className="ui-switch" style={{ marginTop: '4px' }}>
+                  <input
+                    type="checkbox"
+                    id="include_upcoming"
+                    name="include_upcoming"
+                    checked={formData.include_upcoming}
+                    onChange={handleChange}
+                  />
+                  <span className="ui-switch-slider"></span>
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label htmlFor="include_upcoming" style={{ fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', color: 'white' }}>Include Upcoming Games</label>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Also notify about the free games coming next week.</span>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="modal-footer">
-            <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={saving || loadingData}>
+          <div className="ui-modal-footer">
+            <button type="button" className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }} onClick={onClose}>Cancel</button>
+            <button type="submit" className="ui-btn ui-btn-primary" disabled={saving || loadingData}>
               {saving ? 'Saving...' : 'Update Monitor'}
             </button>
           </div>
         </form>
       </div>
 
-      <style jsx>{`
-        .modal-overlay {
-          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-          display: flex; align-items: flex-start; justify-content: center;
-          z-index: 1000; padding: 2rem; overflow-y: auto;
-        }
-        .modal-content {
-          width: 100%; max-width: 700px; margin-top: 2rem; margin-bottom: 2rem;
-          background: rgba(15, 15, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
-          animation: modalAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          position: relative;
-        }
-        @keyframes modalAppear { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        
-        .modal-header { display: flex; align-items: center; gap: 20px; margin-bottom: 2.5rem; }
-        .header-platform-icon { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
-        .header-platform-icon img { width: 32px; height: 32px; object-fit: contain; z-index: 2; }
-        .platform-glow { position: absolute; width: 100%; height: 100%; background: var(--p-color); filter: blur(20px); opacity: 0.2; border-radius: 16px; z-index: 1; }
-        .header-main-info { flex: 1; }
-        .modal-header h3 { margin: 0; font-size: 1.6rem; letter-spacing: -0.5px; font-weight: 800; }
-        .subtitle { margin: 4px 0 0; color: var(--text-secondary); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
-        .type-badge { background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; color: var(--accent-color); border: 1px solid rgba(255,255,255,0.1); }
-        
-        .grid-responsive {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .close-btn { background: rgba(255,255,255,0.05); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-
-        .modal-form { display: flex; flex-direction: column; gap: 2rem; margin-top: 2rem; }
-        .form-group { display: flex; flex-direction: column; gap: 10px; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .styled-input-main {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
-          color: white; padding: 0.8rem 1.2rem; border-radius: 12px; outline: none; transition: all 0.25s;
-        }
-        .styled-input-main:focus { border-color: var(--accent-color); background: rgba(123, 44, 191, 0.05); }
-
-        .highlighted-group { background: rgba(123, 44, 191, 0.04); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(123, 44, 191, 0.1); }
-        .hint-pill { font-size: 0.7rem; font-weight: 600; background: rgba(50, 150, 255, 0.1); color: #3296ff; padding: 2px 8px; border-radius: 10px; display: flex; align-items: center; gap: 4px; }
-        
-        .compact-input {
-          padding: 0.6rem 0.8rem !important;
-          font-size: 0.9rem !important;
-        }
-
-        .var-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: var(--accent-color);
-          padding: 2px 8px;
-          border-radius: 6px;
-          font-size: 0.75rem;
-          font-family: monospace;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .var-btn:hover {
-          background: var(--accent-color);
-          color: white;
-          border-color: var(--accent-color);
-        }
-
-        .delete-icon-btn {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .delete-icon-btn:hover {
-          background: #ef4444;
-          color: white;
-        }
-
-        .add-pair-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          color: var(--text-secondary);
-          padding: 0.75rem;
-          border-radius: 12px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: all 0.2s;
-        }
-        .add-pair-btn:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: var(--accent-color);
-          color: white;
-        }
-
-        .color-trigger {
-          width: 48px; height: 48px; border-radius: 12px; 
-          cursor: pointer; transition: all 0.2s;
-          border: 2px solid rgba(255,255,255,0.1);
-          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .color-trigger:hover { transform: scale(1.05); border-color: rgba(255,255,255,0.3); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
-        .color-trigger:active { transform: scale(0.95); }
-
-        .checkbox-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 1.2rem; border-radius: 16px; }
-        .checkbox-wrapper { display: flex; gap: 1rem; align-items: flex-start; }
-        .checkbox-wrapper input { width: 20px; height: 20px; accent-color: var(--accent-color); margin-top: 3px; cursor: pointer; }
-        .checkbox-text { display: flex; flex-direction: column; }
-        .checkbox-text label { font-weight: 600; cursor: pointer; }
-        .checkbox-text span { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
-
-        .modal-footer { display: flex; gap: 1rem; margin-top: 1rem; }
-        .btn-ghost { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary); padding: 0.8rem; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.05); color: white; border-color: rgba(255,255,255,0.2); }
-        
-        .btn-primary { 
-          flex: 2; background: var(--accent-color); border: none; color: white; padding: 0.8rem; border-radius: 12px; 
-          font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 20px rgba(123, 44, 191, 0.2);
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 30px rgba(123, 44, 191, 0.3); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .premium-field-overlay {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          z-index: 5;
-        }
-
-        .premium-field-overlay-small {
-          position: absolute;
-          top: 24px; left: 0; right: 0; bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          z-index: 5;
-        }
-
-        .lock-tag {
-          background: rgba(255, 183, 3, 0.9);
-          color: black;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 800;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          pointer-events: auto;
-        }
-        
-        /* Switch Toggle Styles */
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 46px;
-          height: 24px;
-          flex-shrink: 0;
-        }
-
-        .switch input { 
-          opacity: 0; width: 0; height: 0;
-        }
-
-        .slider {
-          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-          background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); transition: .3s;
-        }
-
-        .slider:before {
-          position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px;
-          background-color: white; transition: .3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        input:checked + .slider { background-color: var(--accent-color); border-color: var(--accent-color); }
-        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        .slider.round { border-radius: 24px; }
-        .slider.round:before { border-radius: 50%; }
-      `}</style>
     </div>
   );
 }

@@ -230,6 +230,16 @@ class YouTubeMonitor(BaseMonitor):
             fallback_thumb = entry['media_thumbnail'][0]["url"]
             
         thumbnail = await self._resolve_thumbnail(video_id, fallback_thumb)
+        
+        # Safety check: Do not send alerts for videos older than 24 hours
+        # unless it's a manual check (which uses get_latest_item anyway)
+        if published_ts:
+            now_ts = int(datetime.now().timestamp())
+            age_hours = (now_ts - published_ts) / 3600
+            if age_hours > 24:
+                log.info(f"[YouTube] Skipping old video alert for '{entry_title}' ({video_id}) - Age: {age_hours:.1f}h")
+                return
+
         alert_text = self.get_alert_message({"name": author_name, "title": entry_title, "url": short_link})
         
         if self.config.get("use_native_player", False):

@@ -103,10 +103,10 @@ export default function FAQPage() {
       <div className={styles.glowTopRight}></div>
       <div className={styles.glowBottomLeft}></div>
 
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Frequently Asked Questions</h1>
-          <p className="page-subtitle">
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Frequently Asked Questions</h1>
+          <p className="ui-dashboard-subtitle">
             Everything you need to know about NovaFeeds. Can't find what you're looking for? 
             Our support team is always ready to help.
           </p>
@@ -123,6 +123,7 @@ export default function FAQPage() {
             key={section.category}
             className={`${styles.categoryTab} ${activeCategory === section.category ? styles.categoryTabActive : ''}`}
             onClick={() => setActiveCategory(section.category)}
+            style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}
           >
             {section.icon}
             <span>{section.category}</span>
@@ -140,7 +141,7 @@ export default function FAQPage() {
                 <div className={styles.iconPulse}></div>
               </div>
               <div className={styles.sectionTitleGroup}>
-                <h3>{section.category}</h3>
+                <h3 className="ui-monitor-name" style={{ fontSize: '1.5rem' }}>{section.category}</h3>
                 <div className={styles.sectionLine}></div>
               </div>
             </div>
@@ -157,19 +158,18 @@ export default function FAQPage() {
 
       {/* Support CTA Section */}
       <section className={styles.supportCta}>
-        <div className={styles.ctaCard}>
-          <div className={styles.ctaGlow}></div>
+        <div className="ui-card">
+          <div className="ui-card-glow"></div>
           <div className={styles.ctaContent}>
             <div className={styles.ctaIconWrapper}>
-              <MessageSquare size={32} />
+              <MessageSquare size={32} color="var(--accent-color)" />
             </div>
             <div className={styles.ctaText}>
-              <h3>Still have questions?</h3>
-              <p>Our dedicated support team and community are ready to help you 24/7. Join our Discord to get instant assistance.</p>
+              <h3 className="ui-monitor-name" style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Still have questions?</h3>
+              <p className="ui-dashboard-subtitle">Our dedicated support team and community are ready to help you 24/7. Join our Discord to get instant assistance.</p>
             </div>
             <a href="https://discord.gg/PbvX3S7pXR" target="_blank" rel="noopener noreferrer" className={styles.ctaButtonWrapper} style={{ textDecoration: 'none' }}>
-              <button className={styles.ctaButton}>
-                <div className={styles.ctaButtonPulse}></div>
+              <button className="ui-btn-primary" style={{ padding: '0.8rem 2rem' }}>
                 <MessageSquare size={20} />
                 <span>Join Support Server</span>
               </button>

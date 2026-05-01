@@ -1,6 +1,7 @@
 /* ── Container ── */
 .selectContainer {
-  padding: 8rem 2rem 4rem;
+  padding-top: 8rem;
+  padding-bottom: 4rem;
   max-width: 720px;
   margin: 0 auto;
   width: 100%;

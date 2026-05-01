@@ -63,17 +63,17 @@ export default function SelectServer() {
     <div className="premium-root is-marketing">
       <MarketingNavbar session={session} />
 
-      <div className={styles.selectContainer}>
+      <div className={`${styles.selectContainer} ui-container`}>
         <div className={styles.selectHero}>
           <div className={styles.selectHeroGlow}></div>
-          <div className={styles.selectBadge}>
+          <div className="ui-badge-neon">
             <Server size={14} />
             <span>SERVER HUB</span>
           </div>
-          <h1 className={styles.selectTitle}>
-            Your <span className={styles.selectTitleGradient}>Servers</span>
+          <h1 className="ui-title-hero" style={{ fontSize: '3.5rem' }}>
+            Your <span className="ui-text-gradient">Servers</span>
           </h1>
-          <p className={styles.selectSubtitle}>
+          <p className="ui-text-lead">
             Choose a Discord server to manage its feeds, monitors, and settings.
           </p>
 

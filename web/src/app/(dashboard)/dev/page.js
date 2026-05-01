@@ -227,10 +227,10 @@ export default function DevSettings() {
         </div>
       )}
 
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Developer Controls</h1>
-          <p className="page-subtitle">Master administrator tools for logs, announcements, and premium management.</p>
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Developer Controls</h1>
+          <p className="ui-dashboard-subtitle">Master administrator tools for logs, announcements, and premium management.</p>
         </div>
         <div className="page-header-actions">
           <LoginButton session={session} />
@@ -248,7 +248,7 @@ export default function DevSettings() {
       >
         <div className={styles.accordionTitleContainer}>
           <Activity size={20} color="#60a5fa" />
-          <h3 className={styles.accordionTitle}>Global Broadcasts</h3>
+          <h3 className="ui-monitor-name" style={{ marginBottom: 0 }}>Global Broadcasts</h3>
         </div>
         <span className={styles.accordionArrow} style={{ transform: showBroadcast ? 'rotate(180deg)' : 'rotate(0deg)', color: '#60a5fa' }}>▼</span>
       </div>
@@ -322,7 +322,7 @@ export default function DevSettings() {
       >
         <div className={styles.accordionTitleContainer}>
           <div className={styles.presenceIndicator}></div>
-          <h3 className={styles.accordionTitle}>Discord Rich Presence</h3>
+          <h3 className="ui-monitor-name" style={{ marginBottom: 0 }}>Discord Rich Presence</h3>
         </div>
         <span className={styles.accordionArrow} style={{ transform: showPresence ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--accent-hover)' }}>▼</span>
       </div>
@@ -380,7 +380,7 @@ export default function DevSettings() {
       >
         <div className={styles.accordionTitleContainer}>
           <Zap size={20} color="#c084fc" />
-          <h3 className={styles.accordionTitle}>Premium Key Management</h3>
+          <h3 className="ui-monitor-name" style={{ marginBottom: 0 }}>Premium Key Management</h3>
         </div>
         <span className={styles.accordionArrow} style={{ transform: showPremium ? 'rotate(180deg)' : 'rotate(0deg)', color: '#c084fc' }}>▼</span>
       </div>
@@ -440,7 +440,7 @@ export default function DevSettings() {
       >
         <div className={styles.accordionTitleContainer}>
           <ShieldAlert size={20} color="#ef4444" />
-          <h3 className={styles.accordionTitle}>System Maintenance</h3>
+          <h3 className="ui-monitor-name" style={{ marginBottom: 0 }}>System Maintenance</h3>
         </div>
         <span className={styles.accordionArrow} style={{ transform: showMaintenance ? 'rotate(180deg)' : 'rotate(0deg)', color: '#ef4444' }}>▼</span>
       </div>

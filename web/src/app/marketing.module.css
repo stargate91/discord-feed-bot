@@ -18,120 +18,6 @@
   to { opacity: 1; }
 }
 
-/* ── Navbar ── */
-.lpNavbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2000;
-  background: transparent;
-  border-bottom: 1px solid transparent;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 0.5rem 0;
-}
-
-.isScrolled {
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(25px) saturate(1.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.2rem 0;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.lpNavbarInner {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 2rem;
-  gap: 2rem;
-}
-
-.lpBrand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  text-decoration: none;
-  transition: transform 0.2s ease;
-}
-
-.lpBrand:hover {
-  transform: translateY(-1px);
-}
-
-.lpBrandLogoWrapper {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.lpBrandImg {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  z-index: 2;
-}
-
-.lpBrandGlow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  background: var(--accent-color, #7b2cbf);
-  filter: blur(15px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-}
-
-.lpBrand:hover .lpBrandGlow {
-  opacity: 0.4;
-}
-
-.lpBrandText {
-  font-family: var(--font-display) !important;
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: white;
-  text-transform: uppercase;
-  background: linear-gradient(to right, #fff, #a0a0b0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.lpNavLinks {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 6px 20px;
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-}
-
-.lpNavLink {
-  color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.lpNavLink:hover {
-  color: white;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
 
 .serversDropdownWrapper {
   position: relative;
@@ -453,10 +339,8 @@
 /* ── Hero ── */
 .lpHero {
   position: relative;
-  padding: 9rem 2rem 3rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+  padding-top: 9rem;
+  padding-bottom: 3rem;
 }
 
 .lpHeroGlow {
@@ -489,20 +373,7 @@
   text-align: left;
 }
 
-.lpBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 1rem;
-  background: rgba(123, 44, 191, 0.08);
-  border: 1px solid rgba(123, 44, 191, 0.2);
-  border-radius: 100px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent-hover);
-  letter-spacing: 0.3px;
-  margin-bottom: 1.5rem;
-}
+
 
 .lpBadgeDot {
   width: 6px;
@@ -518,48 +389,12 @@
   50% { opacity: 0.4; }
 }
 
-.lpTitle {
-  font-family: var(--font-display) !important;
-  font-size: 3.5rem;
-  font-weight: 900;
-  line-height: 1.1;
-  color: #fff;
-  letter-spacing: -0.02em;
-  margin-bottom: 1.25rem;
-}
 
-.lpTitleGradient {
-  background: linear-gradient(135deg, #fff 0%, var(--accent-hover) 50%, #c77dff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% auto;
-  animation: textGradientMove 5s linear infinite;
-}
-
-@keyframes textGradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.lpSubtitle {
-  font-size: 1.05rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  max-width: 480px;
-  margin-bottom: 2rem;
-  font-weight: 400;
-}
 
 .lpHeroActions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-}
-
-.lpHeroActions .lpBtnPrimary {
-  padding: 0.75rem 1.8rem;
-  font-size: 0.95rem;
 }
 
 /* Avatar */
@@ -648,10 +483,10 @@
   background: rgba(255, 255, 255, 0.07);
 }
 
-/* ── Preview Section ── */
 .lpPreviewSection {
   padding: 8rem 2rem;
-  max-width: 1350px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -746,203 +581,16 @@
 
 /* ── Features ── */
 .lpFeatures {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 5rem 2rem;
-  width: 100%;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
   text-align: center;
 }
 
-.lpSectionLabel {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  color: var(--accent-hover);
-  margin-bottom: 1.5rem;
-  padding: 0.5rem 1.25rem;
-  background: rgba(123, 44, 191, 0.1);
-  border: 1px solid rgba(123, 44, 191, 0.2);
-  border-radius: 100px;
-}
 
-.lpSectionTitle {
-  font-family: var(--font-display) !important;
-  font-size: 3rem;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin-bottom: 2.5rem;
-}
 
-.lpSectionDesc {
-  color: var(--text-secondary);
-  line-height: 1.8;
-  font-size: 1.1rem;
-  opacity: 0.8;
-}
 
-.lpFeaturesGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-}
 
-.lpFeatureCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 24px;
-  padding: 2.5rem 2rem;
-  text-align: left;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
 
-.lpFeatureCard::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  transition: border-color 0.3s;
-  pointer-events: none;
-}
-
-.lpFeatureCard:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-.lpFeatureCard:hover::after {
-  border-color: rgba(123, 44, 191, 0.2);
-}
-
-.lpFeatureIcon {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.15), rgba(123, 44, 191, 0.05));
-  border: 1px solid rgba(123, 44, 191, 0.2);
-  border-radius: 14px;
-  color: var(--accent-hover);
-  transition: all 0.3s;
-}
-
-.lpFeatureCard:hover .lpFeatureIcon {
-  transform: scale(1.1) rotate(-5deg);
-  background: var(--accent-color);
-  color: white;
-  box-shadow: 0 0 20px var(--accent-glow);
-}
-
-.lpFeatureCard h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.4rem;
-}
-
-.lpFeatureCard p {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.55;
-  opacity: 0.75;
-}
-
-/* ── Footer ── */
-.lpFooter {
-  width: 100%;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(5, 5, 10, 0.5);
-  padding: 3rem 2rem 1.5rem;
-  margin-top: 6rem;
-}
-
-.lpFooterInner {
-  max-width: 1100px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 3rem;
-  text-align: left;
-}
-
-.lpFooterBrand {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-.lpFooterLogo {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  margin-top: 2px;
-}
-
-.lpFooterName {
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-}
-
-.lpFooterDesc {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  opacity: 0.5;
-  line-height: 1.5;
-}
-
-.lpFooterCol {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.lpFooterCol h4 {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-secondary);
-  margin-bottom: 0.4rem;
-}
-
-.lpFooterCol a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 500;
-  opacity: 0.6;
-  transition: all 0.2s;
-}
-
-.lpFooterCol a:hover {
-  color: var(--text-primary);
-  opacity: 1;
-}
-
-.lpFooterBottom {
-  max-width: 1100px;
-  margin: 2rem auto 0;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  text-align: center;
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  opacity: 0.35;
-}
 
 /* ── Platform Tabs ── */
 .platformTabsContainer {
@@ -1024,7 +672,8 @@
   }
   .lpPreviewContainer {
     flex-direction: column;
-    padding: 2rem;
+    padding: 2rem 1rem;
+    gap: 3rem;
   }
 }
 

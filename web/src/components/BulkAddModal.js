@@ -119,34 +119,21 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
   const isTierEligible = isMaster || (isPremium && tier >= 2);
 
   return createPortal(
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(12px)',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      zIndex: 99999,
-      padding: '2rem',
-      overflowY: 'auto',
-    }}>
-      <div className="modal-content bulk-modal">
-        <header className="modal-header">
-          <div className="title-group">
-            <div className="icon-wrapper">
-              <Zap size={20} className="wand-icon" />
+    <div className="ui-modal-overlay">
+      <div className="ui-modal-content">
+        <div className="ui-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div className="ui-platform-icon-wrapper" style={{ width: '48px', height: '48px', background: 'rgba(123, 44, 191, 0.1)', borderColor: 'rgba(123, 44, 191, 0.2)' }}>
+              <Zap size={20} style={{ color: 'var(--accent-color)' }} />
+              <div className="ui-platform-icon-glow" style={{ background: 'var(--accent-color)', opacity: 0.2 }}></div>
             </div>
             <div>
-              <h3>Bulk Import Wizard</h3>
-              <p>Step {step} of 3: {step === 1 ? 'Select Platform' : step === 2 ? 'Configure Feeds' : 'Results'}</p>
+              <h3 className="ui-modal-title">Bulk Import Wizard</h3>
+              <p className="ui-modal-subtitle">Step {step} of 3: {step === 1 ? 'Select Platform' : step === 2 ? 'Configure Feeds' : 'Results'}</p>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
-        </header>
+          <button className="ui-modal-close" onClick={onClose}><X size={20} /></button>
+        </div>
 
         <div className="modal-body">
           {guildLoading ? (
@@ -166,29 +153,37 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           ) : (
             <>
               {step === 1 && (
-                <div className="step-1-grid">
+                <div className="ui-platform-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', padding: '2rem' }}>
                   {platforms.map(p => (
-                    <button
+                    <div
                       key={p.id}
-                      className={`platform-card ${selectedPlatform?.id === p.id ? 'active' : ''}`}
+                      className={`ui-platform-card ${selectedPlatform?.id === p.id ? 'active' : ''}`}
                       onClick={() => setSelectedPlatform(p)}
+                      style={{ "--platform-color": p.color, flexDirection: 'column', textAlign: 'center', padding: '2rem 1rem' }}
                     >
-                      <div className="p-icon" style={{ background: `${p.color}20`, color: p.color }}>
+                      <div className="ui-platform-icon-wrapper" style={{ width: '50px', height: '50px', marginBottom: '0.5rem' }}>
                         {p.icon}
+                        <div className="ui-platform-icon-glow"></div>
                       </div>
-                      <span className="p-name">{p.name}</span>
-                      {selectedPlatform?.id === p.id && <div className="check-badge"><Check size={12} /></div>}
-                    </button>
+                      <div className="ui-platform-info" style={{ alignItems: 'center' }}>
+                        <span className="ui-monitor-name" style={{ fontSize: '1rem' }}>{p.name}</span>
+                      </div>
+                      {selectedPlatform?.id === p.id && (
+                        <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--accent-color)', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px var(--accent-glow)' }}>
+                          <Check size={12} />
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
 
               {step === 2 && (
-                <div className="step-2-form">
-                  <div className="form-section">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label style={{ margin: 0 }}>Enter {selectedPlatform.name} sources (one per line)</label>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div className="ui-modal-body" style={{ padding: '2rem' }}>
+                  <div className="ui-form-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <label className="ui-form-label">Enter {selectedPlatform.name} sources (one per line)</label>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-hover)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                         {selectedPlatform.hint}
                       </span>
                     </div>
@@ -196,13 +191,14 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                       placeholder={selectedPlatform.placeholder}
                       value={inputList}
                       onChange={(e) => setInputList(e.target.value)}
-                      className="bulk-textarea"
+                      className="ui-input ui-textarea ui-input-mono"
+                      style={{ height: '180px' }}
                     />
                   </div>
 
-                  <div className="settings-grid">
-                    <div className="form-group">
-                      <label>Target Channels</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+                    <div className="ui-form-group">
+                      <label className="ui-form-label">Target Channels</label>
                       <MultiSelect
                         options={channels.map(c => ({ id: c.id, name: `#${c.name}` }))}
                         value={targetChannels}
@@ -210,8 +206,8 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                         placeholder="Select channels..."
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Ping Roles (Optional)</label>
+                    <div className="ui-form-group">
+                      <label className="ui-form-label">Ping Roles (Optional)</label>
                       <MultiSelect
                         options={roles.map(r => ({ id: r.id, name: r.name }))}
                         value={targetRoles}
@@ -219,27 +215,27 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                         placeholder="No ping roles"
                       />
                     </div>
-                    {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !useNativePlayer)) && (
-                      <div className="form-group">
-                        <label>Accent Color</label>
-                        <ColorPicker 
-                          value={embedColor} 
-                          onChange={setEmbedColor}
-                        />
-                      </div>
-                    )}
                   </div>
+                  {(!['youtube'].includes(selectedPlatform?.id) || (selectedPlatform?.id === 'youtube' && !useNativePlayer)) && (
+                    <div className="ui-form-group" style={{ marginTop: '1.5rem' }}>
+                      <label className="ui-form-label">Accent Color</label>
+                      <ColorPicker 
+                        value={embedColor} 
+                        onChange={setEmbedColor}
+                      />
+                    </div>
+                  )}
 
-                  <div className="form-group highlighted-group" style={{ 
+                  <div className="ui-form-group" style={{ 
                     background: 'rgba(255, 255, 255, 0.02)', 
-                    padding: '1.25rem',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    marginTop: '0.75rem'
+                    padding: '1.5rem',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    marginTop: '1.5rem'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Custom Image URL</label>
-                      <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <label className="ui-form-label">Custom Image URL</label>
+                      <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800 }}>
                          Imgur, Discord, etc.
                       </div>
                     </div>
@@ -247,75 +243,63 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
                       type="text"
                       value={customImage}
                       onChange={(e) => setCustomImage(e.target.value)}
-                      className="styled-input-main"
+                      className="ui-input"
                       placeholder="https://imgur.com/example.png"
-                      style={{ 
-                        width: '100%',
-                        background: 'rgba(0,0,0,0.2)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        padding: '0.6rem 1rem',
-                        borderRadius: '10px',
-                        color: 'white'
-                      }}
                     />
                   </div>
 
                   {['stream', 'kick'].includes(selectedPlatform?.id) && (
-                    <div className="form-group alert-toggle-container" style={{
-                      marginTop: '0.75rem',
+                    <div style={{
+                      marginTop: '1.5rem',
                       background: 'rgba(255,255,255,0.03)',
-                      padding: '0.6rem 1.1rem',
-                      borderRadius: '14px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      display: 'flex !important',
-                      flexDirection: 'row !important',
+                      padding: '1rem 1.5rem',
+                      borderRadius: '20px',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '100%'
+                      alignItems: 'center'
                     }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                        <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
-                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label className="ui-form-label" style={{ color: 'white' }}>Send initial alert</label>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '300px' }}>
                           Post updates immediately for any source that is already live.
                         </p>
                       </div>
-                      <label className="switch" style={{ margin: 0 }}>
+                      <label className="ui-switch">
                         <input
                           type="checkbox"
                           checked={sendInitialAlert}
                           onChange={(e) => setSendInitialAlert(e.target.checked)}
                         />
-                        <span className="slider round"></span>
+                        <span className="ui-switch-slider"></span>
                       </label>
                     </div>
                   )}
 
                   {selectedPlatform?.id === 'youtube' && (
-                    <div className="form-group alert-toggle-container" style={{
-                      marginTop: '0.75rem',
+                    <div style={{
+                      marginTop: '1.5rem',
                       background: 'rgba(255,255,255,0.03)',
-                      padding: '0.6rem 1.1rem',
-                      borderRadius: '14px',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      padding: '1rem 1.5rem',
+                      borderRadius: '20px',
+                      border: '1px solid rgba(255,255,255,0.05)',
                       display: 'flex',
-                      flexDirection: 'row',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '100%'
+                      alignItems: 'center'
                     }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                        <label style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
-                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label className="ui-form-label" style={{ color: 'white' }}>Use Native Discord Player</label>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '300px' }}>
                           Bypass the custom layout and let Discord embed the video directly.
                         </p>
                       </div>
-                      <label className="switch" style={{ margin: 0 }}>
+                      <label className="ui-switch">
                         <input
                           type="checkbox"
                           checked={useNativePlayer}
                           onChange={(e) => setUseNativePlayer(e.target.checked)}
                         />
-                        <span className="slider round"></span>
+                        <span className="ui-switch-slider"></span>
                       </label>
                     </div>
                   )}
@@ -323,32 +307,32 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
               )}
 
               {step === 3 && results && (
-                <div className="step-3-results">
-                  <div className="results-header">
-                    <div className="success-circle">
-                      <Check size={32} />
-                    </div>
-                    <h4>Import Completed</h4>
-                    <p>Successfully processed **{results.successCount + results.errorCount}** items.</p>
+                <div className="ui-modal-body" style={{ padding: '2.5rem', textAlign: 'center' }}>
+                  <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 20px rgba(16, 185, 129, 0.2)' }}>
+                    <Check size={32} />
                   </div>
+                  <h4 className="ui-modal-title" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Import Completed</h4>
+                  <p className="ui-modal-subtitle" style={{ textTransform: 'none', color: 'rgba(255,255,255,0.6)' }}>Successfully processed <strong>{results.successCount + results.errorCount}</strong> items.</p>
 
-                  <div className="results-summary">
-                    <div className="summary-card success">
-                      <span className="count">{results.successCount}</span>
-                      <span className="label">Added Successfully</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', margin: '2rem 0' }}>
+                    <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '1.5rem', borderRadius: '20px' }}>
+                      <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, color: '#10b981' }}>{results.successCount}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(16, 185, 129, 0.6)', textTransform: 'uppercase' }}>Added Successfully</span>
                     </div>
-                    <div className="summary-card error">
-                      <span className="count">{results.errorCount}</span>
-                      <span className="label">Failed / Duplicates</span>
+                    <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', padding: '1.5rem', borderRadius: '20px' }}>
+                      <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, color: '#ef4444' }}>{results.errorCount}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(239, 68, 68, 0.6)', textTransform: 'uppercase' }}>Failed / Duplicates</span>
                     </div>
                   </div>
 
                   {results.errors?.length > 0 && (
-                    <div className="error-log">
-                      <label>Issues encountered:</label>
-                      <ul>
+                    <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Issues encountered:</label>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {results.errors.map((err, i) => (
-                          <li key={i}><AlertCircle size={14} /> {err}</li>
+                          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                            <AlertCircle size={14} style={{ color: '#ef4444', flexShrink: 0 }} /> {err}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -359,22 +343,22 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
           )}
         </div>
 
-        <footer className="modal-footer">
+        <div className="ui-modal-footer">
           {!guildLoading && isTierEligible && step < 3 && (
             <>
               {step > 1 && (
-                <button className="btn btn-ghost" onClick={handleBack} disabled={processing}>
+                <button className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }} onClick={handleBack} disabled={processing}>
                   <ChevronLeft size={18} /> Back
                 </button>
               )}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
-                <button className="btn btn-ghost" onClick={onClose} disabled={processing}>Cancel</button>
+                <button className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }} onClick={onClose} disabled={processing}>Cancel</button>
                 {step === 1 ? (
-                  <button className="btn btn-primary" onClick={handleNext} disabled={!selectedPlatform}>
+                  <button className="ui-btn ui-btn-primary" onClick={handleNext} disabled={!selectedPlatform}>
                     Next <ChevronRight size={18} />
                   </button>
                 ) : (
-                  <button className="btn btn-primary" onClick={handleSubmit} disabled={processing}>
+                  <button className="ui-btn ui-btn-primary" onClick={handleSubmit} disabled={processing}>
                     {processing ? <><RefreshCw size={18} className="animate-spin" /> Processing...</> : <><Zap size={18} /> Create Monitors</>}
                   </button>
                 )}
@@ -382,466 +366,10 @@ export default function BulkAddModal({ isOpen, onClose, guildId, onSuccess, tier
             </>
           )}
           {(!isTierEligible || step === 3) && (
-            <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={onClose}>Close</button>
+            <button className="ui-btn ui-btn-primary" style={{ marginLeft: 'auto' }} onClick={onClose}>Close</button>
           )}
-        </footer>
+        </div>
 
-        <style jsx>{`
-          .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 2rem;
-            overflow-y: auto;
-            animation: overlayIn 0.3s ease-out;
-          }
-
-          @keyframes overlayIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          .modal-content {
-            width: 100%;
-            background: rgba(15, 15, 25, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 28px;
-            padding: 2.5rem;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-            animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          }
-
-          @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.9) translateY(40px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-          }
-
-          /* Switch Toggle Styles */
-          .switch {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-            flex-shrink: 0;
-          }
-
-          .switch input { 
-            opacity: 0; width: 0; height: 0;
-          }
-          
-          .alert-toggle-container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-          }
-
-          .slider {
-            position: absolute; cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255,255,255,0.1);
-            transition: .4s; border-radius: 34px;
-            border: 1px solid rgba(255,255,255,0.1);
-          }
-
-          .slider:before {
-            position: absolute; content: "";
-            height: 18px; width: 18px;
-            left: 2px; bottom: 2px;
-            background-color: white;
-            transition: .4s; border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          }
-
-          input:checked + .slider {
-            background-color: #3b82f6;
-            border-color: #60a5fa;
-          }
-
-          input:checked + .slider:before {
-            transform: translateX(22px);
-          }
-
-          .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-          }
-
-          .title-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-          }
-
-          .icon-wrapper {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: rgba(123, 44, 191, 0.1);
-            border: 1px solid rgba(123, 44, 191, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .modal-header h3 {
-            margin: 0;
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-          }
-
-          .modal-header p {
-            margin: 4px 0 0;
-            color: var(--accent-hover);
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-          }
-
-          .close-btn {
-            background: rgba(255,255,255,0.05);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-          }
-          .close-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-          }
-
-          .modal-body {
-            min-height: 200px;
-          }
-
-          .modal-footer {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
-          }
-
-          .btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 0.85rem 1.5rem;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-          }
-
-          .btn-ghost {
-            flex: 1;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-          }
-          .btn-ghost:hover {
-            background: rgba(255,255,255,0.05);
-            color: white;
-            border-color: rgba(255,255,255,0.2);
-          }
-
-          .btn-primary {
-            flex: 2;
-            background: var(--accent-color);
-            color: white;
-            box-shadow: 0 10px 25px rgba(123, 44, 191, 0.3);
-          }
-          .btn-primary:hover:not(:disabled) {
-            transform: translateY(-3px);
-            filter: brightness(1.1);
-            box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4);
-          }
-          .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-
-          .animate-spin {
-            animation: spin 1s linear infinite;
-          }
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-
-          .loading-text {
-            color: var(--text-secondary);
-            font-weight: 600;
-            animation: pulseText 1.5s infinite ease-in-out;
-            letter-spacing: 0.5px;
-          }
-
-          @keyframes pulseText {
-            0% { opacity: 0.4; transform: scale(0.98); }
-            50% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0.4; transform: scale(0.98); }
-          }
-
-          .bulk-modal {
-            max-width: 650px;
-            width: 90%;
-            background: #0f0f13;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-          }
-
-          .wand-icon {
-            color: var(--accent-color);
-            filter: drop-shadow(0 0 8px var(--accent-glow));
-          }
-
-          .step-1-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 1.25rem;
-            padding: 0.5rem;
-          }
-
-          .platform-card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 2rem 1.5rem;
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            color: white;
-          }
-
-          .platform-card:hover {
-            background: rgba(255,255,255,0.05);
-            transform: translateY(-5px);
-            border-color: rgba(255,255,255,0.1);
-          }
-
-          .platform-card.active {
-            background: rgba(123, 44, 191, 0.1);
-            border-color: var(--accent-color);
-            box-shadow: 0 10px 25px rgba(123, 44, 191, 0.15);
-          }
-
-          .p-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s;
-          }
-
-          .platform-card:hover .p-icon {
-            transform: scale(1.1) rotate(5deg);
-          }
-
-          .p-name {
-            font-weight: 700;
-            font-size: 0.95rem;
-          }
-
-          .check-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: var(--accent-color);
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .step-2-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-          }
-
-          .bulk-textarea {
-            width: 100%;
-            height: 180px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 1rem;
-            color: white;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 0.9rem;
-            resize: none;
-            outline: none;
-            transition: border-color 0.2s;
-          }
-
-          .bulk-textarea:focus {
-            border-color: var(--accent-color);
-            background: rgba(255,255,255,0.05);
-          }
-
-          .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-          }
-
-          .color-input-wrapper {
-            display: flex;
-            gap: 10px;
-          }
-
-          .color-picker {
-            width: 45px;
-            height: 45px;
-            padding: 0;
-            border: none;
-            border-radius: 8px;
-            background: transparent;
-            cursor: pointer;
-          }
-
-          .color-text {
-            flex: 1;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px;
-            padding: 0 12px;
-            color: white;
-            font-size: 0.85rem;
-            font-family: monospace;
-          }
-
-          .premium-lock {
-            padding: 4rem 2rem;
-            text-align: center;
-            background: rgba(255,215,0,0.02);
-            border-radius: 24px;
-            border: 1px dashed rgba(255,215,0,0.1);
-          }
-
-          .lock-content h4 {
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: #ffd700;
-            margin-bottom: 0.5rem;
-          }
-
-          .lock-content p {
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 2rem;
-            max-width: 350px;
-            margin-left: auto;
-            margin-right: auto;
-          }
-
-          .upgrade-btn {
-            display: inline-block;
-            background: linear-gradient(45deg, #ffd700, #ffa500);
-            color: black;
-            font-weight: 800;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            text-decoration: none;
-            transition: all 0.3s;
-            box-shadow: 0 10px 20px rgba(255,165,0,0.2);
-          }
-
-          .upgrade-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(255,165,0,0.3);
-          }
-
-          .step-3-results {
-            text-align: center;
-            padding: 1rem;
-          }
-
-          .success-circle {
-            width: 80px;
-            height: 80px;
-            background: rgba(74, 222, 128, 0.1);
-            color: #4ade80;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            border: 2px solid rgba(74, 222, 128, 0.2);
-          }
-
-          .results-summary {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin: 2.5rem 0;
-          }
-
-          .summary-card {
-            padding: 1.5rem;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-          }
-
-          .summary-card.success { background: rgba(74, 222, 128, 0.05); border: 1px solid rgba(74, 222, 128, 0.1); }
-          .summary-card.error { background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); }
-
-          .summary-card .count { font-size: 2rem; font-weight: 900; }
-          .summary-card.success .count { color: #4ade80; }
-          .summary-card.error .count { color: #ef4444; }
-
-          .summary-card .label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.6; }
-
-          .error-log {
-            text-align: left;
-            background: rgba(0,0,0,0.2);
-            padding: 1.25rem;
-            border-radius: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-          }
-
-          .error-log label { font-size: 0.8rem; font-weight: 700; color: #ef4444; margin-bottom: 10px; display: block; }
-          .error-log ul { list-style: none; padding: 0; margin: 0; }
-          .error-log li { font-size: 0.75rem; color: rgba(255,255,255,0.5); display: flex; gap: 8px; align-items: center; margin-bottom: 5px; }
-
-          @media (max-width: 600px) {
-            .settings-grid { grid-template-columns: 1fr; }
-            .step-1-grid { grid-template-columns: 1fr 1fr; }
-          }
-        `}</style>
       </div>
     </div>,
     document.body

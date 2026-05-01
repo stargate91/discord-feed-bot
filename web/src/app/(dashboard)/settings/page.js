@@ -254,10 +254,10 @@ function SettingsContent() {
 
   return (
     <div className={styles.settingsContainer}>
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Server Settings</h1>
-          <p className="page-subtitle">
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Server Settings</h1>
+          <p className="ui-dashboard-subtitle">
             Adjust bot preferences, management roles, and custom alert templates to match your server's identity.
           </p>
         </div>

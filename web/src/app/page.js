@@ -41,24 +41,30 @@ export default async function LandingPage() {
       <MarketingNavbar session={session} />
 
       {/* ── Hero ── */}
-      <section className={styles.lpHero}>
+      <section className={`${styles.lpHero} ui-container`}>
         <div className={styles.lpHeroGlow}></div>
         <div className={styles.lpHeroContent}>
           <div className={styles.lpHeroLeft}>
-            <div className={`${styles.lpBadge} parallax-element`} data-depth="0.2">
-              <span className={styles.lpBadgeDot}></span>
-              <Activity size={14} className="inline-block mr-1" /> Early access - growing fast
+            <div className="ui-badge-neon parallax-element" data-depth="0.2" style={{ alignItems: 'flex-start', padding: '0.5rem 1.25rem', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                <span className={styles.lpBadgeDot}></span>
+                <Activity size={14} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                <span style={{ lineHeight: 1, color: '#fff' }}>Early Access</span>
+                <span style={{ fontSize: '0.85em', opacity: 0.7, lineHeight: 1 }}>Growing Fast</span>
+              </div>
             </div>
-            <h1 className={`${styles.lpTitle} parallax-element`} data-depth="0.1">
+            <h1 className="ui-title-hero parallax-element" data-depth="0.1">
               Elevate your<br />
-              <span className={styles.lpTitleGradient}>server&apos;s feeds</span>
+              <span className="ui-text-gradient">server&apos;s feeds</span>
             </h1>
-            <p className={`${styles.lpSubtitle} parallax-element`} data-depth="0.05">
+            <p className="ui-text-lead parallax-element" data-depth="0.05" style={{ maxWidth: '480px', marginBottom: '2rem' }}>
               Your new favorite bot for Free Games, YouTube, Twitch, RSS, and Crypto - delivered right to your server.
             </p>
             <div className={styles.lpHeroActions}>
               {session ? (
-                <a href="/select-server" className={`${styles.lpBtn} ${styles.lpBtnPrimary}`}>
+                <a href="/select-server" className="ui-btn ui-btn-primary">
                   <Activity size={20} />
                   Go to Servers
                 </a>
@@ -67,7 +73,7 @@ export default async function LandingPage() {
                   href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1489908793780338688'}&permissions=3387582172359760&response_type=code&redirect_uri=https%3A%2F%2Fnovafeeds.xyz%2Fapi%2Fauth%2Fcallback%2Fdiscord&integration_type=0&scope=identify+guilds+bot+applications.commands`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${styles.lpBtn} ${styles.lpBtnPrimary}`}
+                  className="ui-btn ui-btn-primary"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                   Add to Discord
@@ -104,11 +110,11 @@ export default async function LandingPage() {
 
       {/* ── Discord Preview Showcase ── */}
       <section className={styles.lpPreviewSection}>
-        <div className={styles.lpPreviewContainer}>
+        <div className={`${styles.lpPreviewContainer} ui-glass-card`}>
           <div className={styles.lpPreviewText}>
-            <div className={styles.lpSectionLabel}>Stunning Layouts</div>
-            <h2 className={styles.lpSectionTitle}>The most beautiful alerts in Discord.</h2>
-            <p className={styles.lpSectionDesc}>
+            <div className="ui-label-caps">Stunning Layouts</div>
+            <h2 className="ui-title-section">The most beautiful alerts in Discord.</h2>
+            <p className="ui-text-lead" style={{ marginBottom: '2.5rem' }}>
               Nova v2 introduces high-fidelity message layouts. With rich embeds, 
               interactive buttons, and smart media handling, your server updates 
               will look more professional than ever.
@@ -135,10 +141,10 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Features ── */}
-      <section className={styles.lpFeatures}>
-        <span className={styles.lpSectionLabel}>Features</span>
-        <h2 className={styles.lpSectionTitle}>All the good stuff, none of the clutter</h2>
-        <div className={styles.lpFeaturesGrid}>
+      <section className={`${styles.lpFeatures} ui-container`}>
+        <span className="ui-label-caps">Features</span>
+        <h2 className="ui-title-section">All the good stuff, none of the clutter</h2>
+        <div className="ui-features-grid">
           {[
             { icon: <Zap size={24} />, title: "Free Game Alerts", desc: "Epic, Steam, GOG - we'll make sure you never miss a free drop." },
             { icon: <Play size={24} />, title: "YouTube & Twitch", desc: "Catch every upload and live stream the second it goes live." },
@@ -147,8 +153,8 @@ export default async function LandingPage() {
             { icon: <Layout size={24} />, title: "Web Dashboard", desc: "Tweak all your settings from a super easy-to-use control panel." },
             { icon: <Shield size={24} />, title: "Premium Tiers", desc: "Unlock more feeds, faster updates, and priority support." },
           ].map((f, i) => (
-            <div className={styles.lpFeatureCard} key={i}>
-              <div className={styles.lpFeatureIcon}>{f.icon}</div>
+            <div className="ui-card-feature" key={i}>
+              <div className="ui-card-feature-icon">{f.icon}</div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
             </div>

@@ -290,51 +290,51 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
+    <div className="ui-modal-overlay">
+      <div className="ui-modal-content">
+        <div className="ui-modal-header">
           <div>
-            <h3>Add New Monitor</h3>
-            <p className="subtitle">Choose a platform to start</p>
+            <h3 className="ui-modal-title">Add New Monitor</h3>
+            <p className="ui-modal-subtitle">Choose a platform to start</p>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <button className="ui-modal-close" onClick={onClose}><X size={20} /></button>
         </div>
 
         {step === 1 ? (
-          <div className="platform-grid">
+          <div className="ui-platform-grid">
             {PLATFORMS.map(p => (
               <div
                 key={p.id}
-                className="platform-card"
+                className="ui-platform-card"
                 onClick={() => handlePlatformSelect(p)}
                 style={{ "--platform-color": p.color }}
               >
-                <div className="p-icon">
+                <div className="ui-platform-icon-wrapper">
                   <img src={p.logo} alt={p.name} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-                  <div className="p-icon-glow"></div>
+                  <div className="ui-platform-icon-glow"></div>
                 </div>
-                <div className="p-info">
-                  <span className="p-name">{p.name}</span>
-                  <span className="p-desc">{p.description}</span>
+                <div className="ui-platform-info">
+                  <span className="ui-monitor-name" style={{ fontSize: '1rem' }}>{p.name}</span>
+                  <span className="ui-platform-desc">{p.description}</span>
                 </div>
-                <div className="p-arrow-wrapper">
-                  <ChevronRight size={18} className="p-arrow" />
+                <div style={{ color: 'rgba(255,255,255,0.1)', transition: 'all 0.3s' }}>
+                  <ChevronRight size={18} />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="modal-form">
-            <div className="form-section">
-              <h4 className="section-title">Essential Config</h4>
-              <div className="form-group">
-                <label>Monitor Name</label>
+          <form onSubmit={handleSubmit} className="ui-modal-body" style={{ padding: 0 }}>
+            <div style={{ padding: '2.5rem' }}>
+              <h4 className="ui-platform-label" style={{ marginBottom: '1.5rem', color: 'var(--accent-hover)' }}>Essential Config</h4>
+              <div className="ui-form-group">
+                <label className="ui-form-label">Monitor Name</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="styled-input-main"
+                  className="ui-input"
                   placeholder="e.g. My Favorite Streamer"
                 />
               </div>
@@ -354,8 +354,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                           placeholder="BTC"
                           value={pair.symbol}
                           onChange={(e) => updateCryptoPair(idx, 'symbol', e.target.value)}
-                          className="styled-input-main compact-input"
-                          style={{ flex: 1 }}
+                          className="ui-input ui-input-mono"
+                          style={{ flex: 1, padding: '0.6rem 0.8rem' }}
                           required
                         />
                         <span style={{ opacity: 0.3 }}>:</span>
@@ -364,8 +364,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                           placeholder="50000"
                           value={pair.threshold}
                           onChange={(e) => updateCryptoPair(idx, 'threshold', e.target.value)}
-                          className="styled-input-main compact-input"
-                          style={{ flex: 2 }}
+                          className="ui-input ui-input-mono"
+                          style={{ flex: 2, padding: '0.6rem 0.8rem' }}
                           required
                         />
                         {cryptoPairs.length > 1 && (
@@ -407,7 +407,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                           }}
                           onFocus={() => autoResults.length > 0 && setShowAutoDropdown(true)}
                           required
-                          className="styled-input-main"
+                          className="ui-input"
                           style={{ width: '100%' }}
                           placeholder={selectedPlatform.placeholder}
                         />
@@ -415,23 +415,23 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                           <div className="search-loader"></div>
                         )}
                         {showAutoDropdown && autoResults.length > 0 && (
-                          <div className="autocomplete-dropdown">
+                          <div className="ui-autocomplete-dropdown">
                             {autoResults.map(item => (
                               <div 
                                 key={item.id} 
-                                className="autocomplete-item"
+                                className="ui-autocomplete-item"
                                 onClick={() => {
                                   setFormData({ ...formData, platform_input: item.id, name: item.name });
-                                  setAutoQuery(item.id); // For Twitch and GitHub, the handle/repo is usually best to show in input
+                                  setAutoQuery(item.id); 
                                   setShowAutoDropdown(false);
                                 }}
                               >
-                                <img src={item.thumbnail || "/nova_thumbnail.jpg"} alt={item.name} className={selectedPlatform.id === 'twitch' ? 'game-thumb circle' : 'game-thumb'} />
-                                <div className="game-info">
-                                  <span className="game-title">
-                                    {item.name} {item.is_live && <span className="live-badge">LIVE</span>}
+                                <img src={item.thumbnail || "/nova_thumbnail.jpg"} alt={item.name} style={{ width: '40px', height: '40px', borderRadius: selectedPlatform.id === 'twitch' ? '50%' : '8px', objectFit: 'cover' }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white' }}>
+                                    {item.name} {item.is_live && <span style={{ background: '#ef4444', color: 'white', fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>LIVE</span>}
                                   </span>
-                                  <span className="game-id">
+                                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
                                     {selectedPlatform.id === 'github' ? `⭐ ${item.stars} - ${item.id}` : `ID: ${item.id}`}
                                   </span>
                                 </div>
@@ -446,7 +446,7 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                         value={formData.platform_input}
                         onChange={(e) => setFormData({ ...formData, platform_input: e.target.value })}
                         required
-                        className={`styled-input-main ${resolvedChannel ? 'valid' : ''}`}
+                        className="ui-input"
                         style={{ flex: 1 }}
                         placeholder={selectedPlatform.placeholder}
                       />
@@ -498,11 +498,11 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
             </div>
 
             {(selectedPlatform?.id === 'movie' || selectedPlatform?.id === 'tv_series') && (
-              <div className="form-section">
-                <h4 className="section-title">Advanced Filters</h4>
-                <div className="grid-responsive" style={{ position: 'relative' }}>
-                  <div className="form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
-                    <label>Target Genres</label>
+              <div style={{ padding: '0 2.5rem 2.5rem 2.5rem' }}>
+                <h4 className="ui-platform-label" style={{ marginBottom: '1.5rem', color: 'var(--accent-hover)' }}>Advanced Filters</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', position: 'relative' }}>
+                  <div className="ui-form-group" style={{ opacity: isLocked("genre_filter") ? 0.5 : 1 }}>
+                    <label className="ui-form-label">Target Genres</label>
                     <MultiSelect
                       options={MOVIE_GENRES}
                       value={formData.target_genres}
@@ -511,8 +511,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                       disabled={isLocked("genre_filter")}
                     />
                   </div>
-                  <div className="form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
-                    <label>Languages</label>
+                  <div className="ui-form-group" style={{ opacity: isLocked("tmdb_language_filter") ? 0.5 : 1 }}>
+                    <label className="ui-form-label">Languages</label>
                     <MultiSelect
                       options={LANGUAGES}
                       value={formData.target_languages}
@@ -522,19 +522,19 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     />
                   </div>
                   {(isLocked("genre_filter") || isLocked("tmdb_language_filter")) && (
-                    <div className="premium-field-overlay">
-                      <span className="lock-tag">Starter Tier+</span>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                      <span style={{ background: 'var(--accent-color)', color: 'white', padding: '6px 16px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 5px 15px var(--accent-glow)' }}>Starter Tier+</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            <div className="form-section">
-              <h4 className="section-title">Notification Settings</h4>
-              <div className="grid-responsive">
-                <div className="form-group">
-                  <label>Target Channels</label>
+            <div style={{ padding: '0 2.5rem 2.5rem 2.5rem' }}>
+              <h4 className="ui-platform-label" style={{ marginBottom: '1.5rem', color: 'var(--accent-hover)' }}>Notification Settings</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                <div className="ui-form-group">
+                  <label className="ui-form-label">Target Channels</label>
                   <MultiSelect
                     options={guildChannels}
                     value={formData.target_channels}
@@ -542,8 +542,8 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     placeholder={loadingContext ? "Loading..." : "Select channels"}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Ping Roles</label>
+                <div className="ui-form-group">
+                  <label className="ui-form-label">Ping Roles</label>
                   <MultiSelect
                     options={guildRoles}
                     value={formData.target_roles}
@@ -553,50 +553,45 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                 </div>
               </div>
 
-              <div className="form-group highlighted-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label>Custom Alert Message</label>
-                  {isLocked(2) ? (
-                    <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703' }}>
+              <div className="ui-form-group" style={{ background: 'rgba(255, 255, 255, 0.02)', marginTop: '1.5rem', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <label className="ui-form-label">Custom Alert Message</label>
+                  {isLocked("alert_template") ? (
+                    <div style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Info size={12} /> Professional Tier Required
                     </div>
                   ) : (
-                    <div className="hint-pill" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Info size={12} /> Overrides server defaults
                     </div>
                   )}
-
                 </div>
                 <div style={{ position: 'relative' }}>
                   <textarea
                     name="custom_alert"
                     value={formData.custom_alert}
                     onChange={(e) => setFormData({ ...formData, custom_alert: e.target.value })}
-                    className="styled-input-main"
+                    className="ui-input ui-textarea ui-input-mono"
                     placeholder={isLocked("alert_template") ? "Unlock Professional Tier to customize messages" : `Leave empty to use default.\nExample: @everyone Here is a new post: {title}`}
                     rows={3}
                     style={{
-                      resize: 'vertical',
-                      fontFamily: 'monospace',
-                      fontSize: '0.9rem',
-                      width: '100%',
                       opacity: isLocked("alert_template") ? 0.5 : 1
                     }}
                     disabled={isLocked("alert_template")}
                   />
                   {isLocked("alert_template") && (
-                    <div className="premium-field-overlay">
-                      <span className="lock-tag">Professional Tier+</span>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ background: 'var(--accent-color)', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Professional Tier+</span>
                     </div>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', opacity: isLocked("alert_template") ? 0.3 : 1 }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', opacity: isLocked("alert_template") ? 0.3 : 1 }}>
                   {getAvailableVars(selectedPlatform?.id).map(v => (
                     <button
                       key={v}
                       type="button"
-                      className="var-btn"
+                      className="ui-var-btn"
                       onClick={() => !isLocked("alert_template") && setFormData(prev => ({ ...prev, custom_alert: (prev.custom_alert || '') + `{${v}}` }))}
                       title={`Insert {${v}}`}
                       disabled={isLocked("alert_template")}
@@ -605,71 +600,66 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     </button>
                   ))}
                 </div>
-
               </div>
 
               {['twitch', 'kick'].includes(selectedPlatform?.id) && (
-                <div className="form-group alert-toggle-container" style={{
-                  marginTop: '1rem',
+                <div style={{
+                  marginTop: '1.5rem',
                   background: 'rgba(255,255,255,0.03)',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  padding: '1rem 1.5rem',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.05)',
                   display: 'flex',
-                  flexDirection: 'row',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
-                  width: '100%'
+                  alignItems: 'center'
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Send initial alert</label>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '280px', lineHeight: '1.2' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label className="ui-form-label" style={{ color: 'white' }}>Send initial alert</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '300px' }}>
                       Post an update immediately if the source is already live or has new items.
                     </p>
                   </div>
-                  <label className="switch" style={{ margin: 0 }}>
+                  <label className="ui-switch">
                     <input
                       type="checkbox"
                       checked={formData.send_initial_alert}
                       onChange={(e) => setFormData({ ...formData, send_initial_alert: e.target.checked })}
                     />
-                    <span className="slider round"></span>
+                    <span className="ui-switch-slider"></span>
                   </label>
                 </div>
               )}
 
               {selectedPlatform?.id === 'youtube' && (
-                <div className="form-group alert-toggle-container" style={{
-                  marginTop: '1rem',
+                <div style={{
+                  marginTop: '1.5rem',
                   background: 'rgba(255,255,255,0.03)',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  padding: '1rem 1.5rem',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.05)',
                   display: 'flex',
-                  flexDirection: 'row',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  width: '100%',
-                  opacity: isLocked(1) ? 0.5 : 1
+                  opacity: isLocked("custom_color") ? 0.5 : 1
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1 }}>
-                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label className="ui-form-label" style={{ color: 'white' }}>Use Native Discord Player</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '300px' }}>
                       Bypass the custom layout and let Discord embed the video directly.
                     </p>
                   </div>
                   {isLocked("custom_color") ? (
-                    <div className="hint-pill" style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', whiteSpace: 'nowrap' }}>
+                    <div style={{ background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800 }}>
                       <Info size={12} /> Starter Tier+
                     </div>
                   ) : (
-                    <label className="switch" style={{ margin: 0 }}>
+                    <label className="ui-switch">
                       <input
                         type="checkbox"
                         checked={formData.use_native_player}
                         onChange={(e) => setFormData({ ...formData, use_native_player: e.target.checked })}
                       />
-                      <span className="slider round"></span>
+                      <span className="ui-switch-slider"></span>
                     </label>
                   )}
                 </div>
@@ -711,10 +701,9 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
                     type="text"
                     value={formData.custom_image}
                     onChange={(e) => setFormData({ ...formData, custom_image: e.target.value })}
-                    className="styled-input-main"
+                    className="ui-input"
                     placeholder={isLocked("custom_color") ? "Unlock Starter Tier to use custom images" : "https://imgur.com/example.png"}
                     style={{ 
-                      width: '100%',
                       opacity: isLocked("custom_color") ? 0.5 : 1
                     }}
                     disabled={isLocked("custom_color")}
@@ -733,517 +722,17 @@ export default function CreateMonitorModal({ guildId, isOpen, onClose, onSuccess
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button type="button" className="btn-ghost" onClick={() => setStep(1)}><ChevronLeft size={18} /> Back</button>
-              <button type="submit" className="btn-primary" disabled={creating}>
+            <div className="ui-modal-footer">
+              <button type="button" className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }} onClick={() => setStep(1)}>
+                <ChevronLeft size={18} /> Back
+              </button>
+              <button type="submit" className="ui-btn ui-btn-primary" disabled={creating}>
                 {creating ? 'Creating...' : 'Create Monitor'}
               </button>
             </div>
           </form>
         )}
       </div>
-
-      <style jsx>{`
-        .modal-overlay {
-          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-          display: flex; align-items: flex-start; justify-content: center;
-          z-index: 1000; padding: 2rem; overflow-y: auto;
-        }
-        .modal-content {
-          width: 100%; max-width: 700px;
-          background: rgba(15, 15, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
-          animation: modalAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes modalAppear { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        
-        /* Switch Toggle Styles */
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 46px;
-          height: 24px;
-          flex-shrink: 0;
-        }
-
-        .switch input { 
-          opacity: 0; width: 0; height: 0;
-        }
-        
-        .alert-toggle-container {
-          display: flex !important;
-          flex-direction: row !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-        }
-
-        .slider {
-          position: absolute; cursor: pointer;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background-color: rgba(255,255,255,0.1);
-          transition: .4s; border-radius: 34px;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .slider:before {
-          position: absolute; content: "";
-          height: 18px; width: 18px;
-          left: 2px; bottom: 2px;
-          background-color: white;
-          transition: .4s; border-radius: 50%;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        input:checked + .slider {
-          background-color: #3b82f6;
-          border-color: #60a5fa;
-        }
-
-        input:checked + .slider:before {
-          transform: translateX(22px);
-        }
-
-        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-        .modal-header h3 { margin: 0; font-size: 1.6rem; letter-spacing: -0.5px; }
-        .subtitle { margin: 6px 0 0; color: var(--accent-hover); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
-        
-        .close-btn { background: rgba(255,255,255,0.05); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-
-        .platform-grid { display: flex; flex-direction: column; gap: 10px; }
-        .platform-card {
-          display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem;
-          background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 18px; cursor: pointer; transition: all 0.25s;
-        }
-        .platform-card:hover {
-          background: rgba(255, 255, 255, 0.05); border-color: var(--platform-color, rgba(255, 255, 255, 0.15));
-          transform: translateX(8px);
-          box-shadow: -5px 0 20px -5px var(--platform-color, transparent);
-        }
-        .p-icon { 
-          width: 44px; height: 44px; 
-          background: rgba(255,255,255,0.03); 
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 12px; display: flex; align-items: center; justify-content: center; 
-          transition: all 0.3s ease;
-          position: relative;
-        }
-        .p-icon-glow {
-          position: absolute; width: 100%; height: 100%;
-          background: var(--platform-color); opacity: 0;
-          filter: blur(15px); border-radius: 12px;
-          transition: opacity 0.3s; z-index: -1;
-        }
-        .platform-card:hover .p-icon-glow { opacity: 0.3; }
-        .platform-card:hover .p-icon {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: var(--platform-color);
-          transform: scale(1.05) rotate(-2deg);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .p-info { flex: 1; display: flex; flex-direction: column; }
-        .p-name { font-weight: 700; font-size: 1.05rem; }
-        .p-desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
-        .p-arrow-wrapper {
-          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-          background: rgba(255,255,255,0.03); border-radius: 10px;
-          transition: all 0.3s;
-        }
-        .platform-card:hover .p-arrow-wrapper {
-          background: var(--platform-color);
-          transform: rotate(15deg);
-        }
-        .p-arrow { color: rgba(255,255,255,0.2); transition: color 0.2s; }
-        .platform-card:hover .p-arrow { color: white; }
-
-        .modal-form { display: flex; flex-direction: column; gap: 2.5rem; margin-top: 1rem; }
-        .form-section { display: flex; flex-direction: column; gap: 1.25rem; }
-        .section-title { font-size: 0.8rem; font-weight: 800; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        
-        .form-group { display: flex; flex-direction: column; gap: 10px; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
-        
-        .highlighted-group { background: rgba(123, 44, 191, 0.04); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(123, 44, 191, 0.1); }
-        .hint-pill { font-size: 0.7rem; font-weight: 600; background: rgba(50, 150, 255, 0.1); color: #3296ff; padding: 2px 8px; border-radius: 10px; display: flex; align-items: center; gap: 4px; }
-        
-        .styled-input-main {
-          background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08);
-          color: white; padding: 0.85rem 1.2rem; border-radius: 12px; outline: none; transition: all 0.25s;
-        }
-        .styled-input-main:focus { border-color: var(--accent-color); background: rgba(123, 44, 191, 0.05); }
-        .accent-border { border-color: rgba(123, 44, 191, 0.3); }
-
-        .compact-input {
-          padding: 0.6rem 0.8rem !important;
-          font-size: 0.9rem !important;
-        }
-
-        .var-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: var(--accent-color);
-          padding: 2px 8px;
-          border-radius: 6px;
-          font-size: 0.75rem;
-          font-family: monospace;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .var-btn:hover {
-          background: var(--accent-color);
-          color: white;
-          border-color: var(--accent-color);
-        }
-
-        .delete-icon-btn {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .delete-icon-btn:hover {
-          background: #ef4444;
-          color: white;
-        }
-
-        .add-pair-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          color: var(--text-secondary);
-          padding: 0.75rem;
-          border-radius: 12px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          transition: all 0.2s;
-        }
-        .add-pair-btn:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: var(--accent-color);
-          color: white;
-        }
-
-        .grid-responsive { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
-        
-        .color-trigger { 
-          width: 48px; height: 48px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); 
-          cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .color-trigger:hover { transform: scale(1.05); border-color: rgba(255,255,255,0.3); }
-
-        .modal-footer { display: flex; gap: 1rem; margin-top: 1rem; }
-        .btn-ghost { 
-          display: flex; align-items: center; gap: 8px; flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.1); 
-          color: var(--text-secondary); padding: 0.85rem; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; 
-        }
-        .btn-ghost:hover { background: rgba(255,255,255,0.02); color: white; border-color: rgba(255,255,255,0.2); }
-        
-        .btn-primary { 
-          flex: 2; background: var(--accent-color); border: none; color: white; padding: 0.85rem; border-radius: 14px; 
-          font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 25px rgba(123, 44, 191, 0.3);
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .premium-field-overlay {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          z-index: 5;
-        }
-
-        .premium-field-overlay-small {
-          position: absolute;
-          top: 24px; left: 0; right: 0; bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          z-index: 5;
-        }
-
-        .lock-tag {
-          background: rgba(255, 183, 3, 0.9);
-          color: black;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 800;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          pointer-events: auto;
-        }
-
-        .resolve-btn {
-          background: var(--accent-color);
-          color: white;
-          border: none;
-          padding: 0 1.5rem;
-          border-radius: 12px;
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .resolve-btn:hover:not(:disabled) {
-          filter: brightness(1.2);
-          transform: translateY(-2px);
-        }
-        .resolve-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .channel-preview {
-          margin-top: 12px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 12px;
-          animation: slideDown 0.3s ease-out;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .channel-preview img {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: 2px solid var(--accent-color);
-        }
-        .channel-info {
-          display: flex;
-          flex-direction: column;
-        }
-        .channel-name {
-          font-weight: 700;
-          font-size: 0.9rem;
-          color: white;
-        }
-        .channel-id {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          font-family: monospace;
-        }
-        .input-with-action {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          position: relative;
-        }
-
-        .action-link-btn {
-          background: rgba(123, 44, 191, 0.1);
-          color: var(--accent-color);
-          border: 1px solid rgba(123, 44, 191, 0.2);
-          padding: 8px 16px;
-          border-radius: 10px;
-          font-size: 0.8rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .action-link-btn:hover:not(:disabled) {
-          background: var(--accent-color);
-          color: white;
-          transform: translateY(-2px);
-        }
-
-        .validation-chip {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: rgba(16, 185, 129, 0.05);
-          border: 1px solid rgba(16, 185, 129, 0.2);
-          padding: 10px 16px;
-          border-radius: 16px;
-          margin-top: 12px;
-          animation: chipIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes chipIn {
-          from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .chip-avatar {
-          position: relative;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 2px solid #10b981;
-          padding: 2px;
-        }
-
-        .chip-avatar img {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .check-mark {
-          position: absolute;
-          bottom: -2px;
-          right: -2px;
-          background: #10b981;
-          color: white;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          font-size: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid #0f0f13;
-        }
-
-        .chip-content {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .chip-title {
-          font-weight: 700;
-          font-size: 0.9rem;
-          color: white;
-        }
-
-        .chip-subtitle {
-          font-size: 0.7rem;
-          color: #10b981;
-          text-transform: uppercase;
-          font-weight: 800;
-          letter-spacing: 0.5px;
-        }
-
-        .styled-input-main.valid {
-          border-color: rgba(16, 185, 129, 0.3);
-          background: rgba(16, 185, 129, 0.02);
-        }
-
-        /* Autocomplete Styles */
-        .autocomplete-wrapper {
-          position: relative;
-        }
-
-        .search-loader {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 16px;
-          height: 16px;
-          border: 2px solid rgba(255,255,255,0.1);
-          border-top-color: var(--accent-color);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: translateY(-50%) rotate(360deg); }
-        }
-
-        .autocomplete-dropdown {
-          position: absolute;
-          top: calc(100% + 8px);
-          left: 0;
-          width: 100%;
-          background: rgba(15, 15, 20, 0.95);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-          overflow: hidden;
-          z-index: 1000;
-          animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes dropIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .autocomplete-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          cursor: pointer;
-          transition: background 0.2s;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .autocomplete-item:last-child {
-          border-bottom: none;
-        }
-
-        .autocomplete-item:hover {
-          background: rgba(255, 255, 255, 0.08);
-        }
-
-        .game-thumb {
-          width: 46px;
-          height: 21px; /* 120x45 typical ratio for Steam */
-          border-radius: 2px;
-          object-fit: cover;
-        }
-
-        .game-thumb.circle {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-        }
-
-        .game-info {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .game-title {
-          font-weight: 700;
-          font-size: 0.85rem;
-          color: white;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .live-badge {
-          background: #ef4444;
-          color: white;
-          font-size: 0.55rem;
-          padding: 2px 4px;
-          border-radius: 4px;
-          font-weight: 900;
-        }
-
-        .game-id {
-          font-size: 0.65rem;
-          color: rgba(255,255,255,0.4);
-          font-family: monospace;
-        }
-
-      `}</style>
     </div>
   );
 }

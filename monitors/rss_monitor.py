@@ -54,6 +54,15 @@ class RSSMonitor(BaseMonitor):
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             published_ts = calendar.timegm(entry.published_parsed)
         
+        # Safety check: Ignore entries older than 48 hours
+        if published_ts:
+            import time
+            now_ts = int(time.time())
+            age_hours = (now_ts - published_ts) / 3600
+            if age_hours > 48:
+                log.info(f"[RSS] Skipping old entry for '{entry_title}' - Age: {age_hours:.1f}h")
+                return
+        
         img_url = None
         if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
             img_url = entry.media_thumbnail[0]["url"]

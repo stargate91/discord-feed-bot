@@ -56,209 +56,63 @@ export default function LogStreamer() {
   const formatLog = (line) => {
     if (!line || !line.trim()) return null;
     
-    let color = "rgba(255,255,255,0.7)";
-    if (line.includes("[ERROR]")) color = "#ff5555";
-    else if (line.includes("[WARNING]")) color = "#ffb86c";
-    else if (line.includes("[INFO]")) color = "#50fa7b";
+    let className = "";
+    if (line.includes("[ERROR]")) className = "ui-log-error";
+    else if (line.includes("[WARNING]")) className = "ui-log-warning";
+    else if (line.includes("[INFO]")) className = "ui-log-info";
     
     return (
-      <div className="log-line" style={{ color }}>
+      <div className={`log-line ${className}`} style={{ marginBottom: '4px', lineHeight: 1.4, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
         <span className="line-text">{line}</span>
       </div>
     );
   };
 
   return (
-    <div className={`log-streamer-container ${isExpanded ? 'expanded' : ''}`}>
-      <div className="console-header">
-        <div className="header-left">
-          <Terminal size={14} className="terminal-icon" />
-          <span className="console-title">System Log Streamer</span>
-          {isLive && !error && <div className="live-indicator">
-            <div className="dot"></div>
-            LIVE
-          </div>}
-          {error && <div className="error-indicator">
-            OFFLINE
-          </div>}
+    <div className="ui-terminal" style={{ height: isExpanded ? '600px' : '300px' }}>
+      <div className="ui-terminal-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Terminal size={14} style={{ color: '#bd93f9' }} />
+          <span className="ui-form-label" style={{ margin: 0, opacity: 0.6 }}>System Log Streamer</span>
+          {isLive && !error && (
+            <div className="ui-terminal-status ui-terminal-status-live">
+              <div className="ui-dot"></div>
+              LIVE
+            </div>
+          )}
+          {error && (
+            <div className="ui-terminal-status" style={{ background: 'rgba(255, 85, 85, 0.1)', color: '#ff5555' }}>
+              OFFLINE
+            </div>
+          )}
         </div>
-        <div className="header-actions">
-          <button onClick={() => setIsLive(!isLive)} className={`action-btn ${isLive ? 'active' : ''}`} title="Toggle Live Sync">
-            <RefreshCw size={14} className={isLive && !error ? 'spin' : ''} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setIsLive(!isLive)} className="ui-btn" style={{ padding: '6px', background: 'transparent', color: isLive ? '#50fa7b' : 'rgba(255,255,255,0.3)' }}>
+            <RefreshCw size={14} className={isLive && !error ? 'ui-spin' : ''} />
           </button>
-          <button onClick={clearLogs} className="action-btn" title="Clear Console">
+          <button onClick={clearLogs} className="ui-btn" style={{ padding: '6px', background: 'transparent', color: 'rgba(255,255,255,0.3)' }}>
             <Trash2 size={14} />
           </button>
-          <button onClick={() => setIsExpanded(!isExpanded)} className="action-btn" title="Toggle Size">
+          <button onClick={() => setIsExpanded(!isExpanded)} className="ui-btn" style={{ padding: '6px', background: 'transparent', color: 'rgba(255,255,255,0.3)' }}>
             {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
         </div>
       </div>
 
-      <div className="console-body" ref={scrollRef}>
+      <div className="ui-terminal-body" ref={scrollRef}>
         {loading ? (
-          <div className="loading-state">Initializing secure stream...</div>
+          <div className="ui-terminal-loading" style={{ color: 'rgba(255, 255, 255, 0.3)', fontStyle: 'italic' }}>Initializing secure stream...</div>
         ) : error ? (
-          <div className="error-state">
-            <div className="error-msg">CONNECTION ERROR: {error}</div>
-            <button className="retry-btn" onClick={fetchLogs}>Try Reconnect</button>
+          <div className="ui-terminal-error">
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', background: 'rgba(255, 85, 85, 0.05)', padding: '10px 15px', borderRadius: '8px', border: '1px dashed rgba(255, 85, 85, 0.2)', color: '#ff5555' }}>
+              CONNECTION ERROR: {error}
+            </div>
+            <button className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '0.75rem', padding: '6px 15px' }} onClick={fetchLogs}>Try Reconnect</button>
           </div>
         ) : (
           logs.map((line, i) => <div key={i}>{formatLog(line)}</div>)
         )}
       </div>
-
-      <style jsx>{`
-        .log-streamer-container {
-          background: #0d0d12;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          height: 300px;
-        }
-
-        .log-streamer-container.expanded {
-          height: 600px;
-          border-color: rgba(123, 44, 191, 0.3);
-        }
-
-        .console-header {
-          background: rgba(255, 255, 255, 0.03);
-          padding: 8px 15px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .terminal-icon { color: #bd93f9; }
-        .console-title { font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .live-indicator {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.65rem;
-          font-weight: 900;
-          color: #50fa7b;
-          background: rgba(80, 250, 123, 0.1);
-          padding: 2px 8px;
-          border-radius: 10px;
-        }
-
-        .live-indicator .dot {
-          width: 6px;
-          height: 6px;
-          background: #50fa7b;
-          border-radius: 50%;
-          animation: blink 1s infinite;
-        }
-
-        @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
-
-        .header-actions { display: flex; gap: 8px; }
-        .action-btn {
-          background: transparent;
-          border: none;
-          color: rgba(255,255,255,0.3);
-          cursor: pointer;
-          padding: 4px;
-          border-radius: 6px;
-          transition: all 0.2s;
-        }
-
-        .action-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .action-btn.active { color: #50fa7b; }
-
-        .spin { animation: rotate 2s linear infinite; }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .console-body {
-          flex: 1;
-          padding: 15px;
-          font-family: 'JetBrains Mono', 'Fira Code', monospace;
-          font-size: 0.8rem;
-          overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.1) transparent;
-        }
-
-        .console-body::-webkit-scrollbar { width: 6px; }
-        .console-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-        .log-line {
-          margin-bottom: 4px;
-          line-height: 1.4;
-          white-space: pre-wrap;
-          word-break: break-all;
-        }
-
-        .loading-state {
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: rgba(255, 255, 255, 0.3);
-          font-style: italic;
-        }
-
-        .error-indicator {
-          font-size: 0.65rem;
-          font-weight: 900;
-          color: #ff5555;
-          background: rgba(255, 85, 85, 0.1);
-          padding: 2px 8px;
-          border-radius: 10px;
-          letter-spacing: 0.5px;
-        }
-
-        .error-state {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 15px;
-          color: #ff5555;
-          text-align: center;
-          padding: 20px;
-        }
-
-        .error-msg {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.8rem;
-          background: rgba(255, 85, 85, 0.05);
-          padding: 10px 15px;
-          border-radius: 8px;
-          border: 1px dashed rgba(255, 85, 85, 0.2);
-        }
-
-        .retry-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-          padding: 6px 15px;
-          border-radius: 8px;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .retry-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
     </div>
   );
 }

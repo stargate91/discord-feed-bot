@@ -253,10 +253,10 @@ function MonitorsContent() {
 
   return (
     <div className={styles.monitorsPageWrapper}>
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Manage Monitors</h1>
-          <p className="page-subtitle">Configure and oversee your automated feed sources and notification targets.</p>
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Manage Monitors</h1>
+          <p className="ui-dashboard-subtitle">Configure and oversee your automated feed sources and notification targets.</p>
         </div>
 
         <div className="page-header-actions">

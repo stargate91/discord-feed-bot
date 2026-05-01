@@ -57,11 +57,9 @@ export default function GuildSwitcher({ isMaster }) {
 
   if (!mounted) {
     return (
-      <div className="guild-switcher-wrapper" ref={dropdownRef}>
-        <button className="guild-switcher-toggle" disabled>
-          <div className="current-guild-info">
-            <span className="guild-name-mini">Loading servers...</span>
-          </div>
+      <div className="ui-guild-switcher-wrapper" ref={dropdownRef}>
+        <button className="ui-guild-switcher-toggle" disabled>
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>Loading servers...</span>
         </button>
       </div>
     );
@@ -77,76 +75,82 @@ export default function GuildSwitcher({ isMaster }) {
   };
 
   return (
-    <div className="guild-switcher-wrapper" ref={dropdownRef}>
-      <button 
-        className={`guild-switcher-toggle ${isOpen ? 'active' : ''}`}
+    <div className="ui-guild-switcher-wrapper" ref={dropdownRef}>
+      <button
+        className={`ui-guild-switcher-toggle ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
+        type="button"
       >
-        <div className="current-guild-info">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
           {currentGuild ? (
             <>
               {currentGuild.icon ? (
-                <img 
-                  src={getGuildIconUrl(currentGuild.id, currentGuild.icon, 128)} 
-                  alt="" 
-                  className="guild-icon-mini" 
+                <img
+                  src={getGuildIconUrl(currentGuild.id, currentGuild.icon, 128)}
+                  alt=""
+                  className="ui-guild-icon-mini"
                 />
               ) : (
-                <div className="guild-icon-placeholder small">
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>
                   {currentGuild.name.substring(0, 1)}
                 </div>
               )}
-              <span className="guild-name-mini">{currentGuild.name}</span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentGuild.name}</span>
             </>
           ) : loading && currentGuildId ? (
-            <span className="guild-name-mini" style={{ opacity: 0.5, textAlign: 'center', width: '100%', display: 'block' }}>Loading...</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textAlign: 'center', width: '100%' }}>Loading...</span>
           ) : (
             <>
-              <div className="guild-icon-mini global">🌐</div>
-              <span className="guild-name-mini">Global Dashboard</span>
+              <div className="ui-guild-icon-mini" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', fontSize: '1.2rem' }}>🌐</div>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white' }}>Global Dashboard</span>
             </>
           )}
         </div>
+        <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid rgba(255,255,255,0.4)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}></div>
       </button>
 
       {isOpen && (
-        <div className="guild-switcher-dropdown">
-          <div className="dropdown-scroll">
+        <div className="ui-select-dropdown" style={{ top: 'calc(100% + 10px)', right: 0, left: 0, padding: '8px' }}>
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {loading ? (
-              <div className="dropdown-loading">Loading servers...</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>Loading servers...</div>
             ) : guilds.filter(g => g.hasBot).length > 0 ? (
               guilds.filter(g => g.hasBot).map((guild) => (
-                <div 
+                <div
                   key={guild.id}
-                  className={`dropdown-item ${currentGuildId === guild.id ? 'active' : ''}`}
+                  className={`ui-select-item ${currentGuildId === guild.id ? 'ui-selected' : ''}`}
                   onClick={() => handleSelect(guild.id)}
+                  style={{ gap: '12px', padding: '8px 12px' }}
                 >
                   {guild.icon ? (
-                    <img 
-                      src={getGuildIconUrl(guild.id, guild.icon, 128)} 
-                      alt="" 
-                      className="item-icon-img" 
+                    <img
+                      src={getGuildIconUrl(guild.id, guild.icon, 128)}
+                      alt=""
+                      style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }}
                     />
                   ) : (
-                    <div className="item-icon-placeholder">
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800 }}>
                       {guild.name.substring(0, 1)}
                     </div>
                   )}
-                  <div className="item-text">
-                    <span className="item-name">{guild.name}</span>
-                    <span className="item-status">● Online</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{guild.name}</span>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>● Online</span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="dropdown-empty">No servers found.</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No servers found.</div>
             )}
           </div>
-          
-          <div className="dropdown-footer">
-             <button onClick={() => router.push('/select-server')} className="btn-text">
-               View All Servers
-             </button>
+
+          <div style={{ padding: '10px 8px 4px', marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <button
+              onClick={() => router.push('/select-server')}
+              style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-hover)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', padding: '8px' }}
+            >
+              View All Servers
+            </button>
           </div>
         </div>
       )}

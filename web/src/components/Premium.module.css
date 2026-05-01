@@ -7,13 +7,18 @@
   background: transparent;
   color: white;
   font-family: var(--font-inter);
+  overflow-x: hidden;
 }
 
 .landingContainer {
-  max-width: 1600px;
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 5rem 2rem 8rem;
-  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .marketingHeader {
@@ -38,9 +43,11 @@
 
 .pricingGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
   width: 100%;
+  justify-items: center;
+  align-items: stretch;
 }
 
 .sparkleBadge {
@@ -130,6 +137,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   width: 100%;
+  align-items: stretch;
 }
 
 .dashboardBillingToggle {
@@ -281,4 +289,28 @@
   .comparisonWrapper { font-size: 0.8rem; }
   .featureColTitle, .tierColTitle { padding: 1rem 0.5rem; }
   .featureName { padding: 1rem; }
+}
+
+@media (max-width: 768px) {
+  .landingContainer {
+    padding: 4rem 1rem;
+    align-items: stretch;
+  }
+  
+  .pricingGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .comparisonWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tableHeaderRow, .featureRow {
+    min-width: 800px;
+  }
+  
+  .marketingHeader h2 {
+    font-size: 2.5rem;
+  }
 }

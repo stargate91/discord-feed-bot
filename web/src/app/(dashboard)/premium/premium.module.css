@@ -37,17 +37,34 @@
 }
 
 .pageContainer {
-  width: 100%;
+  width: calc(100% + 4rem);
+  margin: -2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .tableWrapper {
+    display: none;
+  }
 }
 
 .tableWrapper {
   width: 100%;
-  padding: 1rem 0 10rem;
+  padding: 1rem 2rem 4rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .tableWrapper.isCentered {
   text-align: center;
-  max-width: 1450px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 

@@ -73,34 +73,40 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
+    <div className="ui-modal-overlay">
+      <div className="ui-modal-content" style={{ maxWidth: '600px' }}>
+        <div className="ui-modal-header">
           <div>
-            <h3>Bulk Edit Monitors</h3>
-            <p className="subtitle">Updating {monitorCount} selected monitors</p>
+            <h3 className="ui-modal-title">Bulk Edit Monitors</h3>
+            <p className="ui-modal-subtitle">Updating {monitorCount} selected monitors</p>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <button className="ui-modal-close" onClick={onClose}><X size={20} /></button>
         </div>
 
         {isLocked ? (
-          <div className="locked-container">
-            <AlertCircle size={48} color="#ffb703" />
-            <h3>Professional Feature</h3>
-            <p>Tidying up many monitors at once is a professional-grade tool. Upgrade your server to unlock bulk editing.</p>
-            <button className="btn-primary" onClick={onClose} style={{ alignSelf: 'center', flex: 'none', padding: '0.8rem 2.5rem' }}>I Understand</button>
+          <div className="ui-modal-body" style={{ textAlign: 'center', padding: '4rem 2.5rem' }}>
+            <div style={{ width: '80px', height: '80px', background: 'rgba(255, 183, 3, 0.1)', color: '#ffb703', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 0 20px rgba(255, 183, 3, 0.2)' }}>
+              <AlertCircle size={40} />
+            </div>
+            <h3 className="ui-modal-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Professional Feature</h3>
+            <p className="ui-modal-subtitle" style={{ fontSize: '1.1rem', maxWidth: '400px', margin: '0 auto 2.5rem', textTransform: 'none', color: 'rgba(255,255,255,0.6)' }}>
+              Tidying up many monitors at once is a professional-grade tool. Upgrade your server to unlock bulk editing.
+            </p>
+            <button className="ui-btn ui-btn-primary" onClick={onClose} style={{ padding: '0.8rem 3rem' }}>I Understand</button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="modal-form">
-            <div className="info-box">
-              <Info size={18} />
-              <span>Only checked fields will be updated on all {monitorCount} monitors. Other settings will remain unchanged.</span>
+          <form onSubmit={handleSubmit} className="ui-modal-body" style={{ padding: '2rem' }}>
+            <div style={{ background: 'rgba(123, 44, 191, 0.05)', border: '1px solid rgba(123, 44, 191, 0.1)', padding: '1.25rem', borderRadius: '20px', display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
+              <Info size={20} style={{ color: 'var(--accent-color)' }} />
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                Only checked fields will be updated on all <strong>{monitorCount}</strong> monitors. Other settings will remain unchanged.
+              </p>
             </div>
 
-            <div className="form-group-bulk">
-              <div className="bulk-check-label">
-                <input type="checkbox" checked={formData.use_channels} onChange={e => setFormData({...formData, use_channels: e.target.checked})} />
-                <label>Update Target Channels</label>
+            <div className="ui-form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                <input type="checkbox" checked={formData.use_channels} onChange={e => setFormData({...formData, use_channels: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <label className="ui-form-label" style={{ marginBottom: 0, fontSize: '1rem' }}>Update Target Channels</label>
               </div>
               <div style={{ opacity: formData.use_channels ? 1 : 0.4, pointerEvents: formData.use_channels ? 'auto' : 'none' }}>
                 <MultiSelect 
@@ -112,10 +118,10 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
               </div>
             </div>
 
-            <div className="form-group-bulk">
-              <div className="bulk-check-label">
-                <input type="checkbox" checked={formData.use_roles} onChange={e => setFormData({...formData, use_roles: e.target.checked})} />
-                <label>Update Ping Roles</label>
+            <div className="ui-form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                <input type="checkbox" checked={formData.use_roles} onChange={e => setFormData({...formData, use_roles: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <label className="ui-form-label" style={{ marginBottom: 0, fontSize: '1rem' }}>Update Ping Roles</label>
               </div>
               <div style={{ opacity: formData.use_roles ? 1 : 0.4, pointerEvents: formData.use_roles ? 'auto' : 'none' }}>
                 <MultiSelect 
@@ -127,15 +133,14 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
               </div>
             </div>
 
-            <div className="form-group-bulk">
-              <div className="bulk-check-label">
-                <input type="checkbox" checked={formData.use_color} onChange={e => setFormData({...formData, use_color: e.target.checked})} />
-                <label>Update Embed Color</label>
+            <div className="ui-form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                <input type="checkbox" checked={formData.use_color} onChange={e => setFormData({...formData, use_color: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <label className="ui-form-label" style={{ marginBottom: 0, fontSize: '1rem' }}>Update Embed Color</label>
               </div>
               <div style={{ 
                 opacity: formData.use_color ? 1 : 0.4, 
-                pointerEvents: formData.use_color ? 'auto' : 'none', 
-                marginTop: '8px'
+                pointerEvents: formData.use_color ? 'auto' : 'none'
               }}>
                 <ColorPicker 
                   value={formData.embed_color} 
@@ -144,59 +149,56 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
               </div>
             </div>
 
-            <div className="form-group-bulk">
-              <div className="bulk-check-label">
-                <input type="checkbox" checked={formData.use_native} onChange={e => setFormData({...formData, use_native: e.target.checked})} />
-                <label>Update Native YouTube Player</label>
+            <div className="ui-form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                <input type="checkbox" checked={formData.use_native} onChange={e => setFormData({...formData, use_native: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <label className="ui-form-label" style={{ marginBottom: 0, fontSize: '1rem' }}>Update Native Player</label>
               </div>
-              <div style={{ opacity: formData.use_native ? 1 : 0.4, pointerEvents: formData.use_native ? 'auto' : 'none', marginTop: '8px' }}>
-                <div className="alert-toggle-container" style={{ 
+              <div style={{ opacity: formData.use_native ? 1 : 0.4, pointerEvents: formData.use_native ? 'auto' : 'none' }}>
+                <div style={{ 
                   background: 'rgba(255,255,255,0.03)', 
-                  padding: '0.75rem 1.25rem', 
+                  padding: '1rem 1.5rem', 
                   borderRadius: '16px', 
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.05)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
-                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'white' }}>Use Native Discord Player</label>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.2' }}>
-                      Only applies to YouTube monitors.
-                    </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label className="ui-form-label" style={{ color: 'white', marginBottom: 0 }}>Use Native Discord Player</label>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>Only applies to YouTube monitors.</p>
                   </div>
-                  <label className="switch" style={{ margin: 0 }}>
+                  <label className="ui-switch">
                     <input 
                       type="checkbox" 
                       checked={formData.use_native_player} 
                       onChange={(e) => setFormData({...formData, use_native_player: e.target.checked})}
                     />
-                    <span className="slider round"></span>
+                    <span className="ui-switch-slider"></span>
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="form-group-bulk" style={{ opacity: isPremium || tier >= 2 ? 1 : 0.5 }}>
-              <div className="bulk-check-label">
-                <input type="checkbox" checked={formData.use_custom_image} onChange={e => setFormData({...formData, use_custom_image: e.target.checked})} />
-                <label>Update Custom Image URL</label>
+            <div className="ui-form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', opacity: isPremium || tier >= 2 ? 1 : 0.5 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                <input type="checkbox" checked={formData.use_custom_image} onChange={e => setFormData({...formData, use_custom_image: e.target.checked})} style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', cursor: 'pointer' }} />
+                <label className="ui-form-label" style={{ marginBottom: 0, fontSize: '1rem' }}>Update Custom Image URL</label>
               </div>
-              <div style={{ opacity: formData.use_custom_image ? 1 : 0.4, pointerEvents: formData.use_custom_image ? 'auto' : 'none', marginTop: '8px' }}>
+              <div style={{ opacity: formData.use_custom_image ? 1 : 0.4, pointerEvents: formData.use_custom_image ? 'auto' : 'none' }}>
                 <input 
                   type="text"
-                  className="styled-input-main"
+                  className="ui-input"
                   placeholder="https://imgur.com/example.png"
                   value={formData.custom_image}
                   onChange={(e) => setFormData({...formData, custom_image: e.target.value})}
-                  style={{ width: '100%' }}
                 />
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn-primary" disabled={loading}>
+            <div className="ui-modal-footer">
+              <button type="button" className="ui-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }} onClick={onClose}>Cancel</button>
+              <button type="submit" className="ui-btn ui-btn-primary" disabled={loading}>
                 {loading ? 'Updating...' : `Apply to ${monitorCount} Monitors`}
               </button>
             </div>
@@ -204,142 +206,6 @@ export default function BulkEditModal({ isOpen, onClose, onSave, monitorCount, g
         )}
       </div>
 
-      <style jsx>{`
-        .modal-overlay {
-          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-          display: flex; align-items: flex-start; justify-content: center;
-          z-index: 1000; padding: 2rem; overflow-y: auto;
-        }
-        .modal-content {
-          width: 100%; max-width: 550px; margin-top: 2rem; margin-bottom: 2rem;
-          background: #12121a; border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 40px 100px rgba(0,0,0,0.8); padding: 2.5rem; border-radius: 28px;
-          position: relative;
-        }
-        .modal-content::before {
-          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-          background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-        .subtitle { color: var(--accent-hover); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .info-box {
-          background: rgba(123, 44, 191, 0.05);
-          border: 1px solid rgba(123, 44, 191, 0.1);
-          padding: 1rem;
-          border-radius: 14px;
-          display: flex;
-          gap: 12px;
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.5);
-          margin-bottom: 2rem;
-          line-height: 1.5;
-        }
-
-        .form-group-bulk {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-bottom: 1.5rem;
-          background: rgba(255,255,255,0.01);
-          padding: 1.5rem;
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.04);
-          transition: all 0.3s;
-        }
-        .form-group-bulk:hover {
-          background: rgba(255,255,255,0.02);
-          border-color: rgba(255,255,255,0.08);
-        }
-
-        .bulk-check-label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 4px;
-        }
-        .bulk-check-label input { 
-          width: 20px; height: 20px; cursor: pointer; 
-          accent-color: var(--accent-color);
-          border-radius: 6px;
-        }
-        .bulk-check-label label { font-size: 0.95rem; font-weight: 700; color: white; cursor: pointer; }
-
-        .styled-input-main {
-          background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-          color: white; padding: 0.8rem 1rem; border-radius: 12px; outline: none; transition: all 0.25s;
-          font-family: monospace;
-        }
-        .styled-input-main:focus { border-color: var(--accent-color); background: rgba(0,0,0,0.5); }
-        
-        .color-trigger { 
-          width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); 
-          cursor: pointer; transition: transform 0.2s;
-        }
-        .color-trigger:hover { transform: scale(1.05); }
-
-        .locked-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 1.5rem;
-          padding: 3rem 0;
-        }
-        .locked-container h3 { font-size: 1.5rem; font-weight: 800; }
-        .locked-container p { color: rgba(255,255,255,0.5); font-size: 0.95rem; max-width: 300px; line-height: 1.6; }
-
-        .modal-footer { display: flex; gap: 1rem; margin-top: 1.5rem; }
-        .btn-ghost { 
-          flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-          color: white; padding: 1rem; border-radius: 16px; font-weight: 700; cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
-        .btn-primary { 
-          flex: 2; background: var(--accent-color); border: none; color: white; padding: 1rem; border-radius: 16px; 
-          font-weight: 800; cursor: pointer; transition: all 0.3s;
-          box-shadow: 0 10px 25px rgba(123, 44, 191, 0.3);
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(123, 44, 191, 0.4); filter: brightness(1.1); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .close-btn { 
-          background: rgba(255,255,255,0.05); border: none; color: white; width: 36px; height: 36px; 
-          border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-          transition: all 0.2s;
-        }
-        .close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-
-        /* Switch Toggle Styles */
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 46px;
-          height: 24px;
-          flex-shrink: 0;
-        }
-
-        .switch input { 
-          opacity: 0; width: 0; height: 0;
-        }
-
-        .slider {
-          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-          background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); transition: .3s;
-        }
-
-        .slider:before {
-          position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px;
-          background-color: white; transition: .3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        input:checked + .slider { background-color: var(--accent-color); border-color: var(--accent-color); }
-        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        .slider.round { border-radius: 24px; }
-        .slider.round:before { border-radius: 50%; }
-      `}</style>
     </div>
   );
 }

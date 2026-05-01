@@ -73,10 +73,10 @@ export default function PremiumDashboard({ guildId, session }) {
 
   return (
     <div className={styles.premiumDashboardContainer}>
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Premium Plans</h1>
-          <p className="page-subtitle">
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Premium Plans</h1>
+          <p className="ui-dashboard-subtitle">
             Manage your server's premium status and unlock advanced features.
           </p>
         </div>
@@ -86,11 +86,19 @@ export default function PremiumDashboard({ guildId, session }) {
         </div>
       </header>
 
-      <div className={styles.billingSwitcherWrapper}>
-        <div className={styles.dashboardBillingToggle}>
-          <button onClick={() => setBillingInterval('mo')} className={billingInterval === 'mo' ? styles.active : ''}>Monthly</button>
-          <button onClick={() => setBillingInterval('yr')} className={billingInterval === 'yr' ? styles.active : ''}>
-            Yearly <span className={styles.saveBadge}>SAVE 20%</span>
+      <div className="ui-billing-toggle-wrapper">
+        <div className="ui-billing-toggle">
+          <button 
+            onClick={() => setBillingInterval('mo')} 
+            className={billingInterval === 'mo' ? 'ui-active' : ''}
+          >
+            Monthly
+          </button>
+          <button 
+            onClick={() => setBillingInterval('yr')} 
+            className={billingInterval === 'yr' ? 'ui-active' : ''}
+          >
+            Yearly <span className="ui-billing-save">SAVE 20%</span>
           </button>
         </div>
       </div>

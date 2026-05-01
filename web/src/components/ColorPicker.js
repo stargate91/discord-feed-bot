@@ -118,169 +118,55 @@ export default function ColorPicker({ value, onChange, disabled = false }) {
   }, [isDragging, handleSvMove, handleHueMove]);
 
   return (
-    <div className={`advanced-picker ${disabled ? 'disabled' : ''}`}>
+    <div className={`ui-color-picker ${disabled ? 'disabled' : ''}`} style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
       {/* Saturation & Value Square */}
       <div 
         ref={svPanelRef}
-        className="sv-panel"
+        className="ui-color-picker-panel"
         style={{ backgroundColor: `hsl(${hsv.h}, 100%, 50%)` }}
         onMouseDown={(e) => { !disabled && setIsDragging('sv'); handleSvMove(e); }}
       >
-        <div className="sv-white"></div>
-        <div className="sv-black"></div>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to right, #fff, transparent)' }}></div>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to top, #000, transparent)' }}></div>
         <div 
-          className="sv-cursor" 
-          style={{ left: `${hsv.s}%`, top: `${100 - hsv.v}%` }}
+          style={{ position: 'absolute', width: '12px', height: '12px', border: '2px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', boxShadow: '0 0 5px rgba(0,0,0,0.5)', pointerEvents: 'none', left: `${hsv.s}%`, top: `${100 - hsv.v}%` }}
         ></div>
       </div>
 
       {/* Hue Slider */}
       <div 
         ref={hueSliderRef}
-        className="hue-slider"
+        className="ui-color-picker-slider"
         onMouseDown={(e) => { !disabled && setIsDragging('h'); handleHueMove(e); }}
       >
-        <div className="hue-cursor" style={{ left: `${(hsv.h / 360) * 100}%` }}></div>
+        <div style={{ position: 'absolute', top: '50%', width: '6px', height: '18px', background: 'white', borderRadius: '3px', transform: 'translate(-50%, -50%)', boxShadow: '0 0 5px rgba(0,0,0,0.5)', pointerEvents: 'none', left: `${(hsv.h / 360) * 100}%` }}></div>
       </div>
 
       {/* Footer: Hex & Presets */}
-      <div className="picker-footer">
-        <div className="hex-display">
-          <Hash size={14} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '10px', gap: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <Hash size={14} style={{ color: 'rgba(255,255,255,0.4)' }} />
           <input 
             type="text" 
+            style={{ background: 'transparent', border: 'none', color: 'white', fontFamily: 'monospace', fontSize: '0.85rem', width: '60px', outline: 'none' }}
             value={value?.replace('#', '')} 
             onChange={(e) => onChange('#' + e.target.value)}
             disabled={disabled}
           />
-          <div className="color-preview-blob" style={{ backgroundColor: value }}></div>
+          <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', backgroundColor: value }}></div>
         </div>
         
-        <div className="mini-presets">
+        <div style={{ display: 'flex', gap: '6px' }}>
           {PRESET_COLORS.map(c => (
             <div 
               key={c} 
-              className="mini-dot" 
+              className="ui-color-picker-dot" 
               style={{ backgroundColor: c }}
               onClick={() => !disabled && onChange(c)}
             />
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        .advanced-picker {
-          width: 100%;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 18px;
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .disabled { opacity: 0.5; pointer-events: none; }
-
-        .sv-panel {
-          position: relative;
-          height: 150px;
-          width: 100%;
-          border-radius: 12px;
-          cursor: crosshair;
-          overflow: hidden;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .sv-white {
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(to right, #fff, transparent);
-        }
-
-        .sv-black {
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(to top, #000, transparent);
-        }
-
-        .sv-cursor {
-          position: absolute;
-          width: 12px; height: 12px;
-          border: 2px solid white;
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          box-shadow: 0 0 5px rgba(0,0,0,0.5);
-          pointer-events: none;
-        }
-
-        .hue-slider {
-          position: relative;
-          height: 12px;
-          width: 100%;
-          border-radius: 6px;
-          background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
-          cursor: pointer;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .hue-cursor {
-          position: absolute;
-          top: 50%;
-          width: 6px; height: 18px;
-          background: white;
-          border-radius: 3px;
-          transform: translate(-50%, -50%);
-          box-shadow: 0 0 5px rgba(0,0,0,0.5);
-          pointer-events: none;
-        }
-
-        .picker-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-        }
-
-        .hex-display {
-          display: flex;
-          align-items: center;
-          background: rgba(0,0,0,0.3);
-          padding: 6px 10px;
-          border-radius: 10px;
-          gap: 6px;
-          border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .hex-display input {
-          background: transparent;
-          border: none;
-          color: white;
-          font-family: monospace;
-          font-size: 0.85rem;
-          width: 60px;
-          outline: none;
-        }
-
-        .color-preview-blob {
-          width: 16px; height: 16px;
-          border-radius: 4px;
-          border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .mini-presets {
-          display: flex;
-          gap: 6px;
-        }
-
-        .mini-dot {
-          width: 14px; height: 14px;
-          border-radius: 50%;
-          cursor: pointer;
-          border: 1px solid rgba(255,255,255,0.1);
-          transition: transform 0.2s;
-        }
-
-        .mini-dot:hover { transform: scale(1.3); }
-      `}</style>
     </div>
   );
 }

@@ -39,10 +39,10 @@ export default async function Dashboard({ searchParams }) {
 
   return (
     <div className={styles.dashboardPageContent}>
-      <header className="page-header">
-        <div className="page-header-info">
-          <h1 className="page-title">Dashboard Overview</h1>
-          <p className="page-subtitle">Welcome back, {session.user.name}.</p>
+      <header className="ui-dashboard-header">
+        <div className="ui-dashboard-info">
+          <h1 className="ui-dashboard-title">Dashboard Overview</h1>
+          <p className="ui-dashboard-subtitle">Welcome back, {session.user.name}.</p>
         </div>
 
         <div className="page-header-actions">
@@ -79,7 +79,8 @@ export default async function Dashboard({ searchParams }) {
             <EmptyStateCard guildId={guildId} />
           )}
 
-          <div className={`card ${styles.usageCard}`}>
+          <div className="ui-card">
+            <div className="ui-card-glow"></div>
             <h3 className={styles.usageTitle}>Plan Usage & Limits</h3>
             <UsageIndicator
               label="Feed Monitors"

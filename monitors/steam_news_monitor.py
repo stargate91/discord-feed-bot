@@ -125,6 +125,16 @@ class SteamNewsMonitor(BaseMonitor):
         return list(reversed(all_candidates))
 
     async def process_item(self, item):
+        # Safety check: Ignore items older than 48 hours
+        published_ts = item.get("date")
+        if published_ts:
+            import time
+            now_ts = int(time.time())
+            age_hours = (now_ts - published_ts) / 3600
+            if age_hours > 48:
+                log.info(f"[SteamNews] Skipping old news for '{item.get('title')}' - Age: {age_hours:.1f}h")
+                return
+
         output = self._format_news_item(item)
         await self.send_update(content=output["content"], view=output["view"])
 

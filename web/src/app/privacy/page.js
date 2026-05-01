@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPage() {
   return (
-    <div className="policy-page">
-      <div className="policy-container">
-        <Link href="/" className="back-link">
+    <div className="ui-policy-page ui-container">
+      <div className="ui-policy-container">
+        <Link href="/" className="ui-back-link">
           <ArrowLeft size={16} /> Back to Home
         </Link>
         
